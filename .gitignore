@@ -1,0 +1,41 @@
+# Dependencies and generated build output
+node_modules/
+dist/
+
+# Local environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+!**/.env.example
+config.h
+**/config.h
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local databases and runtime output
+*.sqlite
+*.sqlite3
+*.db
+logs/
+*.log
+coverage/
+
+# IDE and operating-system files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
