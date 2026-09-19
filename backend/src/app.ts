@@ -13,6 +13,8 @@ import { InMemoryConversationRepository } from "./modules/conversation/repositor
 import { ConversationService } from "./modules/conversation/service.js";
 import { InMemoryMemoryRepository } from "./modules/memory/repository.js";
 import { MemoryService } from "./modules/memory/service.js";
+import { MockIntelligenceEngine } from "./modules/intelligence/mock-intelligence-engine.js";
+import { OpenRouterIntelligenceProvider } from "./modules/intelligence/openrouter-intelligence-provider.js";
 
 export interface AppOptions {
   light?: LightDevice;
@@ -22,25 +24,38 @@ export function buildApp(options: AppOptions = {}) {
   const app = Fastify({
     logger: true
   });
+
   const identityService = new IdentityService({
     userRepository: new InMemoryUserRepository(),
     sessionRepository: new InMemorySessionRepository(),
   });
+
   const conversationService = new ConversationService({
     conversationRepository: new InMemoryConversationRepository(),
     identityService,
   });
+
   const memoryRepository = new InMemoryMemoryRepository();
   const memoryService = new MemoryService({ memoryRepository });
   const light = options.light ?? new MockLight("light-777");
+
+  const intelligenceEngine = new MockIntelligenceEngine(
+    new OpenRouterIntelligenceProvider(),
+  );
 
   app.register(chatRoutes, {
     memoryService,
     conversationService,
     identityService,
+    intelligenceEngine,
     actionDispatcher: new ActionDispatcher({ light }),
   });
-  app.register(conversationRoutes, { conversationService, identityService });
+
+  app.register(conversationRoutes, {
+    conversationService,
+    identityService,
+  });
+
   app.register(healthRoutes);
   app.register(memoryRoutes, { memoryService });
 
