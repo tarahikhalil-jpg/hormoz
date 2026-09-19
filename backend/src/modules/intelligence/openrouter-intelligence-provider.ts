@@ -24,25 +24,61 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
       }),
     });
 
+    const rawText = await response.text();
+
+    console.log("OpenRouter status:", response.status);
+    console.log("OpenRouter raw response:", rawText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenRouter request failed: ${response.status} ${errorText}`);
+      throw new Error(
+        `OpenRouter request failed: ${response.status} ${rawText}`,
+      );
     }
 
-    const data = (await response.json()) as {
+    let data: {
       choices?: Array<{
         message?: {
-          content?: string;
+          content?: string | Array<{
+            type?: string;
+            text?: string;
+          }>;
         };
       }>;
+      error?: {
+        message?: string;
+        code?: string;
+      };
     };
+
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      throw new Error("OpenRouter returned invalid JSON");
+    }
 
     const content = data.choices?.[0]?.message?.content;
 
-    if (!content) {
-      throw new Error("OpenRouter returned an empty response");
+    if (typeof content === "string" && content.trim()) {
+      return content.trim();
     }
 
-    return content;
+    if (Array.isArray(content)) {
+      const text = content
+        .map((part) => part.text ?? "")
+        .join("")
+        .trim();
+
+      if (text) {
+        return text;
+      }
+    }
+
+    if (data.error?.message) {
+      throw new Error(
+        `OpenRouter error: ${data.error.code ?? "unknown"} ${data.error.message}`,
+      );
+    }
+
+    throw new Error("OpenRouter returned an empty response");
   }
 }
