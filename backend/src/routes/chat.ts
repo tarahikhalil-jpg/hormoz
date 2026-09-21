@@ -19,6 +19,12 @@ export interface ChatRoutesOptions {
   actionDispatcher?: ActionDispatcher;
 }
 
+const MAX_MESSAGE_LENGTH = 2000;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 10;
+
+const requestLog = new Map<string, { count: number; resetAt: number }>();
+
 export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
   app,
   {
@@ -26,13 +32,20 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
     conversationService,
     identityService,
     intelligenceEngine = new MockIntelligenceEngine(),
-    actionDispatcher = new ActionDispatcher({ light: new MockLight("light-777") }),
+    actionDispatcher = new ActionDispatcher({
+      light: new MockLight("light-777"),
+    }),
   },
 ) => {
   app.post("/api/v1/chat", async (request, reply) => {
-    const body = request.body as { message?: string; conversationId?: string };
+    const body = request.body as {
+      message?: string;
+      conversationId?: string;
+    };
 
-    if (!body?.message?.trim()) {
+    const message = body?.message?.trim();
+
+    if (!message) {
       return reply.code(400).send({
         success: false,
         error: "message is required",
@@ -40,31 +53,82 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
       });
     }
 
-    if (body.conversationId) {
-      if (!conversationService || !identityService) {
-        return reply.code(503).send({ success: false, error: "conversation loop unavailable", version: "0.1" });
-      }
-      return runConversationLoop(request, reply, body.message, body.conversationId, conversationService, identityService, memoryService, intelligenceEngine);
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return reply.code(413).send({
+        success: false,
+        error: "message is too long",
+        version: "0.1",
+      });
     }
 
-    const action = interpretCommand(body.message);
-    if (action) return actionDispatcher.dispatch(action);
+    const clientKey = request.ip;
+    const now = Date.now();
+    const current = requestLog.get(clientKey);
+
+    if (!current || now >= current.resetAt) {
+      requestLog.set(clientKey, {
+        count: 1,
+        resetAt: now + RATE_LIMIT_WINDOW_MS,
+      });
+    } else {
+      current.count++;
+
+      if (current.count > RATE_LIMIT_MAX_REQUESTS) {
+        return reply.code(429).send({
+          success: false,
+          error: "too many requests",
+          version: "0.1",
+        });
+      }
+    }
+
+    if (body.conversationId) {
+      if (!conversationService || !identityService) {
+        return reply.code(503).send({
+          success: false,
+          error: "conversation loop unavailable",
+          version: "0.1",
+        });
+      }
+
+      return runConversationLoop(
+        request,
+        reply,
+        message,
+        body.conversationId,
+        conversationService,
+        identityService,
+        memoryService,
+        intelligenceEngine,
+      );
+    }
+
+    const action = interpretCommand(message);
+
+    if (action) {
+      return actionDispatcher.dispatch(action);
+    }
 
     const userIdHeader = request.headers["x-user-id"];
-    const userId = typeof userIdHeader === "string" && userIdHeader.trim()
-      ? userIdHeader.trim()
-      : "chat-fallback-user";
+
+    const userId =
+      typeof userIdHeader === "string" && userIdHeader.trim()
+        ? userIdHeader.trim()
+        : "chat-fallback-user";
+
     const memories = await memoryService.listMemories(userId);
+
     const context = Object.fromEntries(
       memories.map((memory) => [`memory.${memory.key}`, memory.value]),
     );
 
-    const engineResponse: IntelligenceResponse = await intelligenceEngine.generate({
-      userId,
-      correlationId: `chat-${Date.now()}`,
-      messages: [{ role: "user", content: body.message }],
-      context,
-    });
+    const engineResponse: IntelligenceResponse =
+      await intelligenceEngine.generate({
+        userId,
+        correlationId: `chat-${Date.now()}`,
+        messages: [{ role: "user", content: message }],
+        context,
+      });
 
     if (engineResponse.status === "failed") {
       return reply.code(502).send({
@@ -93,41 +157,93 @@ async function runConversationLoop(
   intelligenceEngine: IntelligenceEngine,
 ) {
   const sessionHeader = request.headers["x-session-id"];
-  const sessionId = typeof sessionHeader === "string" ? sessionHeader.trim() : "";
-  if (!sessionId) return reply.code(401).send({ success: false, error: "UNAUTHORIZED", version: "0.1" });
+  const sessionId =
+    typeof sessionHeader === "string" ? sessionHeader.trim() : "";
+
+  if (!sessionId) {
+    return reply.code(401).send({
+      success: false,
+      error: "UNAUTHORIZED",
+      version: "0.1",
+    });
+  }
 
   try {
     const identity = await identityService.authenticate(sessionId);
-    const conversation = await conversationService.get(conversationId, identity.user.userId);
-    const withUserMessage = await conversationService.appendMessage(conversation.id, identity.user.userId, {
-      role: "user",
-      content: message,
-    });
+
+    const conversation = await conversationService.get(
+      conversationId,
+      identity.user.userId,
+    );
+
+    const withUserMessage = await conversationService.appendMessage(
+      conversation.id,
+      identity.user.userId,
+      {
+        role: "user",
+        content: message,
+      },
+    );
+
     const memories = await memoryService.listMemories(identity.user.userId);
-    const context = Object.fromEntries(memories.map((memory) => [`memory.${memory.key}`, memory.value]));
+
+    const context = Object.fromEntries(
+      memories.map((memory) => [`memory.${memory.key}`, memory.value]),
+    );
+
     const engineResponse = await intelligenceEngine.generate({
       userId: identity.user.userId,
       conversationId: withUserMessage.id,
       correlationId: `chat-${Date.now()}`,
-      messages: withUserMessage.messages.map(({ role, content }) => ({ role, content })),
+      messages: withUserMessage.messages.map(({ role, content }) => ({
+        role,
+        content,
+      })),
       context,
     });
 
     if (engineResponse.status === "failed") {
-      return reply.code(502).send({ success: false, error: engineResponse.error.message, version: "0.1" });
+      return reply.code(502).send({
+        success: false,
+        error: engineResponse.error.message,
+        version: "0.1",
+      });
     }
 
-    const completed = await conversationService.appendMessage(conversation.id, identity.user.userId, {
-      role: "assistant",
-      content: engineResponse.content,
-    });
-    return { success: true, response: engineResponse.content, conversation: completed, version: "0.1" };
+    const completed = await conversationService.appendMessage(
+      conversation.id,
+      identity.user.userId,
+      {
+        role: "assistant",
+        content: engineResponse.content,
+      },
+    );
+
+    return {
+      success: true,
+      response: engineResponse.content,
+      conversation: completed,
+      version: "0.1",
+    };
   } catch (error) {
     if (error instanceof Error && "code" in error) {
       const code = String(error.code);
-      const statusCode = code.includes("NOT_FOUND") ? 404 : code.includes("FORBIDDEN") ? 403 : code.includes("CLOSED") ? 409 : 401;
-      return reply.code(statusCode).send({ success: false, error: code, version: "0.1" });
+
+      const statusCode = code.includes("NOT_FOUND")
+        ? 404
+        : code.includes("FORBIDDEN")
+          ? 403
+          : code.includes("CLOSED")
+            ? 409
+            : 401;
+
+      return reply.code(statusCode).send({
+        success: false,
+        error: code,
+        version: "0.1",
+      });
     }
+
     throw error;
   }
 }
