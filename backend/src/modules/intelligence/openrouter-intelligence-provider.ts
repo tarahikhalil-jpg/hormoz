@@ -29,7 +29,7 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
           body: JSON.stringify({
             model,
             messages: request.messages,
-            max_tokens: request.maxOutputLength ?? 200,
+            max_tokens: request.maxOutputLength ?? 120,
           }),
         });
 
