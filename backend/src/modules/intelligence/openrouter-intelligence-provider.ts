@@ -49,6 +49,8 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
 
         let data: {
           choices?: Array<{
+            finish_reason?: string;
+            native_finish_reason?: string;
             message?: {
               content?:
                 | string
@@ -70,7 +72,16 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
           throw new Error("OpenRouter returned invalid JSON");
         }
 
-        const content = data.choices?.[0]?.message?.content;
+        if (data.error?.message) {
+          throw new Error(
+            `OpenRouter error: ${
+              data.error.code ?? "unknown"
+            } ${data.error.message}`,
+          );
+        }
+
+        const choice = data.choices?.[0];
+        const content = choice?.message?.content;
 
         if (typeof content === "string" && content.trim()) {
           return content.trim();
@@ -87,15 +98,14 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
           }
         }
 
-        if (data.error?.message) {
-          throw new Error(
-            `OpenRouter error: ${
-              data.error.code ?? "unknown"
-            } ${data.error.message}`,
-          );
-        }
+        const finishReason =
+          choice?.native_finish_reason ??
+          choice?.finish_reason ??
+          "unknown";
 
-        throw new Error("OpenRouter returned an empty response");
+        throw new Error(
+          `OpenRouter returned no final answer (finish_reason: ${finishReason})`,
+        );
       } catch (error) {
         lastError =
           error instanceof Error ? error : new Error(String(error));
