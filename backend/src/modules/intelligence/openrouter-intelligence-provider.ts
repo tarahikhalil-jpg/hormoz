@@ -29,14 +29,17 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
           body: JSON.stringify({
             model,
             messages: request.messages,
-            max_tokens: request.maxOutputLength ?? 120,
+            max_tokens: 16,
           }),
         });
 
         const rawText = await response.text();
 
         console.log(`OpenRouter attempt ${attempt} status:`, response.status);
-        console.log(`OpenRouter attempt ${attempt} raw response:`, rawText);
+        console.log(
+          `OpenRouter attempt ${attempt} raw response:`,
+          rawText,
+        );
 
         if (!response.ok) {
           throw new Error(
@@ -47,10 +50,12 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
         let data: {
           choices?: Array<{
             message?: {
-              content?: string | Array<{
-                type?: string;
-                text?: string;
-              }>;
+              content?:
+                | string
+                | Array<{
+                    type?: string;
+                    text?: string;
+                  }>;
             };
           }>;
           error?: {
@@ -84,7 +89,9 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
 
         if (data.error?.message) {
           throw new Error(
-            `OpenRouter error: ${data.error.code ?? "unknown"} ${data.error.message}`,
+            `OpenRouter error: ${
+              data.error.code ?? "unknown"
+            } ${data.error.message}`,
           );
         }
 
