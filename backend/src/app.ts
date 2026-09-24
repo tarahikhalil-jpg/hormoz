@@ -65,7 +65,8 @@ export function buildApp(options: AppOptions = {}) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hormoz AI — Nava</title>
+  <title>هوش هرمز | Hormoz Intelligence</title>
+
   <style>
     body {
       margin: 0;
@@ -75,32 +76,69 @@ export function buildApp(options: AppOptions = {}) {
     }
 
     .container {
-      max-width: 720px;
+      max-width: 760px;
       margin: 0 auto;
-      padding: 24px 16px;
+      padding: 24px 16px 50px;
     }
 
+    .hero,
     .card {
       background: white;
-      border-radius: 20px;
-      padding: 20px;
+      border-radius: 22px;
+      padding: 24px;
+      margin-bottom: 18px;
       box-shadow: 0 8px 30px rgba(0,0,0,.08);
     }
 
-    h1 {
-      margin-top: 0;
+    .hero {
       text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    h2 {
+      margin-top: 0;
     }
 
     .subtitle {
-      text-align: center;
       color: #666;
-      margin-bottom: 24px;
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .nava-intro {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 16px;
+      background: #fff3d6;
+      line-height: 2;
+      text-align: right;
+    }
+
+    .card {
+      line-height: 2;
+    }
+
+    .principle {
+      font-weight: bold;
+      text-align: center;
+      padding: 18px;
+      margin-top: 15px;
+      border-radius: 16px;
+      background: #f7f1e4;
+    }
+
+    .chat-title {
+      text-align: center;
+      margin-bottom: 16px;
     }
 
     #messages {
-      min-height: 260px;
-      max-height: 55vh;
+      min-height: 220px;
+      max-height: 50vh;
       overflow-y: auto;
       padding: 10px;
       border: 1px solid #ddd;
@@ -154,19 +192,100 @@ export function buildApp(options: AppOptions = {}) {
     button:disabled {
       opacity: .5;
     }
+
+    .footer {
+      text-align: center;
+      color: #777;
+      font-size: 14px;
+      margin-top: 25px;
+    }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <div class="card">
-      <h1>🌹 هرمز AI</h1>
-      <div class="subtitle">نوا — دستیار هوشمند هرمز</div>
+
+    <section class="hero">
+      <h1>🌹 هوش هرمز</h1>
+      <div class="subtitle">
+        Hormoz Intelligence
+        <br>
+        یک پروژه نوپا برای نزدیک‌تر کردن فناوری هوشمند به انسان
+      </div>
+
+      <div class="nava-intro">
+        <strong>سلام، من نوا هستم.</strong>
+        <br>
+        دستیار هوش مصنوعی پروژه هوش هرمز.
+        <br>
+        هدف من کمک به انسان برای یادگیری، فهمیدن، حل مسئله، ساختن و تصمیم‌گیری بهتر است.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🌱 هرمز برای چیست؟</h2>
+
+      <p>
+        هوش هرمز فقط یک صفحه اینترنتی یا یک کسب‌وکار هوشمند نیست.
+      </p>
+
+      <p>
+        این پروژه از یک سؤال ساده شروع شده است:
+        اگر فناوری هوشمند می‌تواند به انسان کمک کند،
+        چرا استفاده از آن نباید برای کسانی که امکانات مالی یا فنی کمتری دارند
+        هم ساده‌تر و قابل دسترس‌تر باشد؟
+      </p>
+
+      <p>
+        هرمز یک پروژه نوپاست که با امکانات محدود،
+        یادگیری، آزمون‌وخطا و تلاش مداوم ساخته شده است.
+      </p>
+
+      <p>
+        هنوز کامل نیست.
+        بعضی امکانات در حال توسعه و آزمایش هستند.
+      </p>
+
+      <div class="principle">
+        «نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.»
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🤝 چرا این صفحه ساخته شده؟</h2>
+
+      <p>
+        فعلاً از شما نمی‌خواهیم به هرمز اعتماد کنید.
+      </p>
+
+      <p>
+        فقط می‌خواهیم آن را ببینید،
+        با ایده آن آشنا شوید و اگر فرصتی داشتید
+        نظر واقعی خودتان را بگویید.
+      </p>
+
+      <p>
+        اگر این ایده برای شما ارزش داشت،
+        می‌توانید آن را به دیگران معرفی کنید.
+      </p>
+
+      <p>
+        اگر فکر می‌کنید جایی اشتباه کرده‌ایم،
+        همان را هم به ما بگویید.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2 class="chat-title">💬 گفت‌وگو با نوا</h2>
 
       <div id="messages">
         <div class="message nava">
-          سلام بابا خلیل 🌹<br>
-          من نوا هستم. منتظرم با من صحبت کنی.
+          سلام 🌹
+          <br>
+          من نوا هستم.
+          <br>
+          اگر اتصال هوش مصنوعی در دسترس باشد،
+          می‌توانی با من صحبت کنی.
         </div>
       </div>
 
@@ -178,7 +297,14 @@ export function buildApp(options: AppOptions = {}) {
         />
         <button id="sendButton">ارسال</button>
       </div>
+    </section>
+
+    <div class="footer">
+      رؤیا • تلاش • ادامه
+      <br>
+      777
     </div>
+
   </div>
 
   <script>
