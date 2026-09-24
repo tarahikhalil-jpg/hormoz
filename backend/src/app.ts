@@ -206,16 +206,19 @@ export function buildApp(options: AppOptions = {}) {
       button.disabled = true;
 
       try {
-        const response = await fetch("/api/v1/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": "khalil"
-          },
-          body: JSON.stringify({
-            message
-          })
-        });
+        const response = await fetch(
+          "https://hormoz-ai-backend-777.onrender.com/api/v1/chat",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-user-id": "khalil"
+            },
+            body: JSON.stringify({
+              message
+            })
+          }
+        );
 
         const data = await response.json();
 
@@ -223,6 +226,7 @@ export function buildApp(options: AppOptions = {}) {
           throw new Error(
             data?.message ||
             data?.error?.message ||
+            data?.error ||
             "خطا در دریافت پاسخ"
           );
         }
@@ -237,7 +241,8 @@ export function buildApp(options: AppOptions = {}) {
 
       } catch (error) {
         addMessage(
-          "ارتباط با نوا برقرار نشد: " + error.message,
+          "ارتباط با نوا برقرار نشد: " +
+          (error?.message || "خطای نامشخص"),
           "error"
         );
       } finally {
