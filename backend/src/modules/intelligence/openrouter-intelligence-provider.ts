@@ -30,9 +30,6 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
             model,
             messages: request.messages,
             max_tokens: 64,
-            reasoning: {
-              effort: "none",
-            },
           }),
         });
 
