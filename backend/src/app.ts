@@ -48,6 +48,8 @@ body {
   color: #fff;
 }
 
+/* ===== HERO ===== */
+
 .hero {
   min-height: 100vh;
   position: relative;
@@ -55,12 +57,15 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
+
   background:
     linear-gradient(
-      rgba(0,0,0,.28),
-      rgba(0,0,0,.62)
+      rgba(0,0,0,.25),
+      rgba(0,0,0,.68)
     ),
-    url("/hormoz.jpg") center/cover no-repeat;
+    url("https://images.pexels.com/photos/34389434/pexels-photo-34389434.jpeg?cs=srgb&dl=pexels-byamirli-34389434.jpg&fm=jpg")
+    center / cover no-repeat;
+
   padding: 30px 20px;
 }
 
@@ -70,36 +75,56 @@ body {
 }
 
 .logo {
-  width: 92px;
-  height: 92px;
+  width: 96px;
+  height: 96px;
   margin: 0 auto 22px;
+
   border-radius: 50%;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255,.16);
-  border: 1px solid rgba(255,255,255,.35);
-  backdrop-filter: blur(8px);
+
+  background: rgba(255,255,255,.17);
+  border: 1px solid rgba(255,255,255,.38);
+
+  backdrop-filter: blur(9px);
+
   font-size: 28px;
   font-weight: bold;
+
+  box-shadow:
+    0 10px 40px rgba(0,0,0,.25);
 }
 
 h1 {
   margin: 0 0 14px;
   font-size: clamp(38px, 8vw, 76px);
+
+  text-shadow:
+    0 4px 18px rgba(0,0,0,.45);
 }
 
 .subtitle {
   font-size: clamp(18px, 4vw, 27px);
   line-height: 1.8;
+
   margin: 0 auto 20px;
+
+  text-shadow:
+    0 3px 12px rgba(0,0,0,.5);
 }
 
 .quote {
   font-size: 16px;
   line-height: 2;
-  opacity: .92;
+
+  opacity: .94;
+
   margin-bottom: 28px;
+
+  text-shadow:
+    0 3px 10px rgba(0,0,0,.55);
 }
 
 .buttons {
@@ -113,33 +138,63 @@ button,
 .chat-button {
   border: none;
   border-radius: 14px;
+
   padding: 13px 22px;
+
   font-size: 16px;
   cursor: pointer;
+
   text-decoration: none;
   color: #fff;
+
   background: rgba(255,255,255,.17);
+
   border: 1px solid rgba(255,255,255,.28);
+
+  backdrop-filter: blur(7px);
+
+  transition: .2s ease;
 }
 
 button:hover,
 .chat-button:hover {
   background: rgba(255,255,255,.28);
+  transform: translateY(-1px);
 }
+
+/* ===== MUSIC ===== */
 
 .music-button {
   position: fixed;
+
   left: 18px;
   top: 18px;
-  z-index: 10;
+
+  z-index: 20;
+
   padding: 10px 14px;
+
   font-size: 14px;
+
+  background: rgba(0,0,0,.35);
+
+  backdrop-filter: blur(8px);
 }
+
+/* ===== CHAT ===== */
 
 .chat-section {
   min-height: 100vh;
+
   padding: 70px 18px;
-  background: #07141d;
+
+  background:
+    radial-gradient(
+      circle at top,
+      #103242 0,
+      #07141d 45%,
+      #050d13 100%
+    );
 }
 
 .chat-box {
@@ -157,64 +212,124 @@ button:hover,
   margin-bottom: 10px;
 }
 
+.chat-title p {
+  opacity: .75;
+}
+
 .messages {
   min-height: 330px;
   max-height: 55vh;
+
   overflow-y: auto;
+
   padding: 18px;
+
   border-radius: 20px;
+
   background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
+
+  border: 1px solid rgba(255,255,255,.10);
+
+  box-shadow:
+    0 20px 50px rgba(0,0,0,.18);
 }
 
 .message {
   padding: 12px 15px;
+
   border-radius: 15px;
+
   margin-bottom: 12px;
+
   line-height: 1.9;
+
   white-space: pre-wrap;
 }
 
 .user {
-  background: rgba(255,255,255,.1);
+  background: rgba(255,255,255,.10);
 }
 
 .nava {
   background: rgba(0,160,180,.18);
+
+  border: 1px solid rgba(0,200,220,.08);
 }
 
 .input-row {
   display: flex;
+
   gap: 10px;
+
   margin-top: 15px;
 }
 
 input {
   flex: 1;
+
   min-width: 0;
+
   padding: 15px;
+
   border-radius: 14px;
+
   border: 1px solid rgba(255,255,255,.15);
+
   background: rgba(255,255,255,.08);
+
   color: white;
+
   font-size: 16px;
+
   outline: none;
+}
+
+input:focus {
+  border-color: rgba(0,200,220,.5);
 }
 
 .send {
   background: #087f8c;
+
   min-width: 90px;
 }
 
-footer {
-  text-align: center;
-  padding: 30px 15px;
-  background: #050d13;
-  opacity: .8;
-  font-size: 13px;
+.send:disabled {
+  opacity: .55;
+  cursor: wait;
 }
 
+/* ===== FOOTER ===== */
+
+footer {
+  text-align: center;
+
+  padding: 30px 15px;
+
+  background: #050d13;
+
+  opacity: .8;
+
+  font-size: 13px;
+
+  line-height: 2;
+}
+
+/* ===== MOBILE ===== */
+
 @media (max-width: 600px) {
+
+  .hero {
+    padding: 25px 16px;
+  }
+
+  .logo {
+    width: 82px;
+    height: 82px;
+
+    font-size: 24px;
+  }
+
   .input-row {
     flex-direction: column;
   }
@@ -222,19 +337,40 @@ footer {
   .send {
     width: 100%;
   }
+
+  .music-button {
+    left: 12px;
+    top: 12px;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<button class="music-button" id="musicButton">
-🎵 موسیقی
+<!-- ===== MUSIC BUTTON ===== -->
+
+<button
+  class="music-button"
+  id="musicButton"
+  type="button"
+>
+  🎵 موسیقی
 </button>
 
-<audio id="backgroundMusic" loop preload="none">
-  <source src="/hormoz-music.mp3" type="audio/mpeg">
+<audio
+  id="backgroundMusic"
+  loop
+  preload="none"
+>
+  <source
+    src="/hormoz-music.mp3"
+    type="audio/mpeg"
+  >
 </audio>
+
+
+<!-- ===== HERO ===== -->
 
 <section class="hero">
 
@@ -244,7 +380,9 @@ footer {
       هرمز
     </div>
 
-    <h1>هوش هرمز</h1>
+    <h1>
+      هوش هرمز
+    </h1>
 
     <p class="subtitle">
       نوا، دستیار هوشمند هرمز
@@ -255,32 +393,58 @@ footer {
     </p>
 
     <div class="buttons">
-      <a class="chat-button" href="#chat">
+
+      <a
+        class="chat-button"
+        href="#chat"
+      >
         ورود به گفت‌وگو با نوا
       </a>
+
     </div>
 
   </div>
 
 </section>
 
-<section class="chat-section" id="chat">
+
+<!-- ===== CHAT ===== -->
+
+<section
+  class="chat-section"
+  id="chat"
+>
 
   <div class="chat-box">
 
     <div class="chat-title">
-      <h2>گفت‌وگو با نوا</h2>
-      <p>سلام کن؛ نوا آماده است.</p>
+
+      <h2>
+        گفت‌وگو با نوا
+      </h2>
+
+      <p>
+        سلام کن؛ نوا آماده است.
+      </p>
+
     </div>
 
-    <div class="messages" id="messages">
+
+    <div
+      class="messages"
+      id="messages"
+    >
+
       <div class="message nava">
         سلام 🌹 من نوا هستم، دستیار هوش هرمز.
         چطور می‌تونم کمکت کنم؟
       </div>
+
     </div>
 
+
     <div class="input-row">
+
       <input
         id="messageInput"
         type="text"
@@ -288,81 +452,164 @@ footer {
         autocomplete="off"
       />
 
-      <button class="send" id="sendButton">
+      <button
+        class="send"
+        id="sendButton"
+        type="button"
+      >
         ارسال
       </button>
+
     </div>
 
   </div>
 
 </section>
 
+
+<!-- ===== FOOTER ===== -->
+
 <footer>
+
   هوش هرمز • نوا
+
   <br>
+
   رؤیا • تلاش • ادامه
+
 </footer>
 
+
 <script>
+
 const API = "/api/v1/chat";
 
-const input = document.getElementById("messageInput");
-const sendButton = document.getElementById("sendButton");
-const messages = document.getElementById("messages");
+const input =
+  document.getElementById("messageInput");
 
-const music = document.getElementById("backgroundMusic");
-const musicButton = document.getElementById("musicButton");
+const sendButton =
+  document.getElementById("sendButton");
+
+const messages =
+  document.getElementById("messages");
+
+
+/* ===== MUSIC ===== */
+
+const music =
+  document.getElementById("backgroundMusic");
+
+const musicButton =
+  document.getElementById("musicButton");
 
 let musicOn = false;
 
-musicButton.addEventListener("click", async () => {
-  try {
-    if (!musicOn) {
-      await music.play();
-      musicOn = true;
-      musicButton.textContent = "🔇 توقف موسیقی";
-    } else {
-      music.pause();
-      musicOn = false;
-      musicButton.textContent = "🎵 موسیقی";
+musicButton.addEventListener(
+  "click",
+  async () => {
+
+    try {
+
+      if (!musicOn) {
+
+        await music.play();
+
+        musicOn = true;
+
+        musicButton.textContent =
+          "🔇 توقف موسیقی";
+
+      } else {
+
+        music.pause();
+
+        musicOn = false;
+
+        musicButton.textContent =
+          "🎵 موسیقی";
+      }
+
+    } catch (error) {
+
+      musicButton.textContent =
+        "🎵 موسیقی";
+
+      addMessage(
+        "فایل موسیقی هنوز روی سایت قرار نگرفته است.",
+        "nava"
+      );
     }
-  } catch (error) {
-    musicButton.textContent = "🎵 پخش نشد";
+
   }
-});
+);
+
+
+/* ===== CHAT ===== */
 
 function addMessage(text, type) {
-  const div = document.createElement("div");
-  div.className = "message " + type;
-  div.textContent = text;
+
+  const div =
+    document.createElement("div");
+
+  div.className =
+    "message " + type;
+
+  div.textContent =
+    text;
+
   messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
+
+  messages.scrollTop =
+    messages.scrollHeight;
 }
 
+
 async function sendMessage() {
-  const message = input.value.trim();
+
+  const message =
+    input.value.trim();
 
   if (!message) return;
 
-  addMessage(message, "user");
+  addMessage(
+    message,
+    "user"
+  );
+
   input.value = "";
+
   sendButton.disabled = true;
 
   try {
-    const response = await fetch(API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-user-id": "public"
-      },
-      body: JSON.stringify({
-        message
-      })
-    });
 
-    const data = await response.json();
+    const response =
+      await fetch(
+        API,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "x-user-id":
+              "public"
+          },
+
+          body:
+            JSON.stringify({
+              message
+            })
+        }
+      );
+
+
+    const data =
+      await response.json();
+
 
     if (!response.ok) {
+
       throw new Error(
         data?.message ||
         data?.error ||
@@ -370,106 +617,221 @@ async function sendMessage() {
       );
     }
 
+
     const answer =
       data.content ||
       data.response ||
       data.message ||
       "پاسخی دریافت نشد.";
 
-    addMessage(answer, "nava");
+
+    addMessage(
+      answer,
+      "nava"
+    );
 
   } catch (error) {
+
     addMessage(
       "فعلاً ارتباط با نوا برقرار نشد. لطفاً دوباره امتحان کن.",
       "nava"
     );
+
   }
 
+
   sendButton.disabled = false;
+
   input.focus();
 }
 
-sendButton.addEventListener("click", sendMessage);
 
-input.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    sendMessage();
+sendButton.addEventListener(
+  "click",
+  sendMessage
+);
+
+
+input.addEventListener(
+  "keydown",
+  (event) => {
+
+    if (event.key === "Enter") {
+
+      sendMessage();
+
+    }
+
   }
-});
+);
+
 </script>
 
 </body>
 </html>
 `;
 
-export function buildApp(options: AppOptions = {}) {
-  const app = Fastify({ logger: true });
 
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
+export function buildApp(
+  options: AppOptions = {}
+) {
 
-  app.register(fastifyStatic, {
-    root: path.join(__dirname, "../public"),
-    prefix: "/",
-  });
+  const app =
+    Fastify({
+      logger: true
+    });
 
-  const identityService = new IdentityService({
-    userRepository: new InMemoryUserRepository(),
-    sessionRepository: new InMemorySessionRepository(),
-  });
 
-  const conversationService = new ConversationService({
-    conversationRepository: new InMemoryConversationRepository(),
-    identityService,
-  });
+  const __filename =
+    fileURLToPath(import.meta.url);
 
-  const memoryRepository = new InMemoryMemoryRepository();
+  const __dirname =
+    path.dirname(__filename);
 
-  const memoryService = new MemoryService({
-    memoryRepository,
-  });
+
+  /* ===== STATIC FILES ===== */
+
+  app.register(
+    fastifyStatic,
+    {
+      root:
+        path.join(
+          __dirname,
+          "../public"
+        ),
+
+      prefix: "/",
+    }
+  );
+
+
+  /* ===== IDENTITY ===== */
+
+  const identityService =
+    new IdentityService({
+      userRepository:
+        new InMemoryUserRepository(),
+
+      sessionRepository:
+        new InMemorySessionRepository(),
+    });
+
+
+  /* ===== CONVERSATION ===== */
+
+  const conversationService =
+    new ConversationService({
+      conversationRepository:
+        new InMemoryConversationRepository(),
+
+      identityService,
+    });
+
+
+  /* ===== MEMORY ===== */
+
+  const memoryRepository =
+    new InMemoryMemoryRepository();
+
+
+  const memoryService =
+    new MemoryService({
+      memoryRepository,
+    });
+
+
+  /* ===== DEVICE ===== */
 
   const light =
     options.light ??
     new MockLight("light-777");
+
+
+  /* ===== INTELLIGENCE ===== */
 
   const intelligenceEngine =
     new MockIntelligenceEngine(
       new OpenRouterIntelligenceProvider()
     );
 
-  app.register(chatRoutes, {
-    memoryService,
-    conversationService,
-    identityService,
-    intelligenceEngine,
-    actionDispatcher: new ActionDispatcher({
-      light,
-    }),
-  });
 
-  app.register(conversationRoutes, {
-    conversationService,
-    identityService,
-  });
+  /* ===== CHAT ROUTES ===== */
 
-  app.register(healthRoutes);
+  app.register(
+    chatRoutes,
+    {
+      memoryService,
 
-  app.register(memoryRoutes, {
-    memoryService,
-  });
+      conversationService,
 
-  app.get("/", async (_request, reply) => {
-    return reply
-      .type("text/html; charset=utf-8")
-      .send(page);
-  });
+      identityService,
 
-  app.get("/chat", async (_request, reply) => {
-    return reply
-      .type("text/html; charset=utf-8")
-      .send(page);
-  });
+      intelligenceEngine,
+
+      actionDispatcher:
+        new ActionDispatcher({
+          light,
+        }),
+    }
+  );
+
+
+  /* ===== OTHER ROUTES ===== */
+
+  app.register(
+    conversationRoutes,
+    {
+      conversationService,
+
+      identityService,
+    }
+  );
+
+
+  app.register(
+    healthRoutes
+  );
+
+
+  app.register(
+    memoryRoutes,
+    {
+      memoryService,
+    }
+  );
+
+
+  /* ===== HOME ===== */
+
+  app.get(
+    "/",
+    async (_request, reply) => {
+
+      return reply
+        .type(
+          "text/html; charset=utf-8"
+        )
+        .send(page);
+
+    }
+  );
+
+
+  /* ===== CHAT PAGE ===== */
+
+  app.get(
+    "/chat",
+    async (_request, reply) => {
+
+      return reply
+        .type(
+          "text/html; charset=utf-8"
+        )
+        .send(page);
+
+    }
+  );
+
 
   return app;
 }
