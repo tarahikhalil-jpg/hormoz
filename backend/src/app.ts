@@ -30,9 +30,11 @@ const page = `
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>هوش هرمز | نوا</title>
 
 <style>
+
 * {
   box-sizing: border-box;
 }
@@ -61,7 +63,7 @@ body {
   background:
     linear-gradient(
       rgba(0,0,0,.25),
-      rgba(0,0,0,.68)
+      rgba(0,0,0,.72)
     ),
     url("https://images.pexels.com/photos/34389434/pexels-photo-34389434.jpeg?cs=srgb&dl=pexels-byamirli-34389434.jpg&fm=jpg")
     center / cover no-repeat;
@@ -70,43 +72,101 @@ body {
 }
 
 .hero-content {
-  max-width: 850px;
+  max-width: 900px;
   width: 100%;
 }
 
-.logo {
-  width: 96px;
-  height: 96px;
-  margin: 0 auto 22px;
+/* ===== HORMOZ LOGO ===== */
 
-  border-radius: 50%;
+.logo {
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 24px;
+
+  border-radius: 32px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  background: rgba(255,255,255,.17);
-  border: 1px solid rgba(255,255,255,.38);
+  position: relative;
 
-  backdrop-filter: blur(9px);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(0,220,220,.30),
+      rgba(255,255,255,.10)
+    );
 
-  font-size: 28px;
-  font-weight: bold;
+  border: 1px solid rgba(120,240,255,.45);
+
+  backdrop-filter: blur(12px);
 
   box-shadow:
-    0 10px 40px rgba(0,0,0,.25);
+    0 0 35px rgba(0,210,220,.22),
+    0 15px 45px rgba(0,0,0,.35);
+
+  overflow: hidden;
 }
+
+.logo::before {
+  content: "";
+  position: absolute;
+
+  width: 70px;
+  height: 35px;
+
+  border-radius: 50%;
+
+  border-top: 4px solid #66f7f1;
+  border-bottom: 4px solid rgba(80,220,230,.45);
+
+  transform: rotate(-12deg);
+
+  box-shadow:
+    0 0 18px rgba(80,240,240,.45);
+}
+
+.logo::after {
+  content: "777";
+
+  position: absolute;
+
+  bottom: 9px;
+
+  font-size: 10px;
+  letter-spacing: 3px;
+
+  opacity: .75;
+}
+
+.logo-text {
+  position: relative;
+  z-index: 2;
+
+  font-size: 25px;
+  font-weight: bold;
+
+  text-shadow:
+    0 2px 12px rgba(0,0,0,.55);
+}
+
+/* ===== TITLES ===== */
 
 h1 {
   margin: 0 0 14px;
-  font-size: clamp(38px, 8vw, 76px);
+
+  font-size:
+    clamp(38px, 8vw, 76px);
 
   text-shadow:
-    0 4px 18px rgba(0,0,0,.45);
+    0 4px 20px rgba(0,0,0,.5);
 }
 
 .subtitle {
-  font-size: clamp(18px, 4vw, 27px);
+  font-size:
+    clamp(18px, 4vw, 27px);
+
   line-height: 1.8;
 
   margin: 0 auto 20px;
@@ -116,10 +176,11 @@ h1 {
 }
 
 .quote {
-  font-size: 16px;
+  font-size: 17px;
+
   line-height: 2;
 
-  opacity: .94;
+  opacity: .95;
 
   margin-bottom: 28px;
 
@@ -130,21 +191,26 @@ h1 {
 .buttons {
   display: flex;
   justify-content: center;
+
   gap: 12px;
+
   flex-wrap: wrap;
 }
 
 button,
 .chat-button {
   border: none;
+
   border-radius: 14px;
 
   padding: 13px 22px;
 
   font-size: 16px;
+
   cursor: pointer;
 
   text-decoration: none;
+
   color: #fff;
 
   background: rgba(255,255,255,.17);
@@ -159,7 +225,9 @@ button,
 button:hover,
 .chat-button:hover {
   background: rgba(255,255,255,.28);
-  transform: translateY(-1px);
+
+  transform:
+    translateY(-1px);
 }
 
 /* ===== MUSIC ===== */
@@ -176,9 +244,142 @@ button:hover,
 
   font-size: 14px;
 
-  background: rgba(0,0,0,.35);
+  background:
+    rgba(0,0,0,.38);
 
-  backdrop-filter: blur(8px);
+  backdrop-filter:
+    blur(8px);
+}
+
+/* ===== PROJECT INTRO ===== */
+
+.project-section {
+  padding: 75px 18px;
+
+  background:
+    radial-gradient(
+      circle at top,
+      #123d4d 0,
+      #081b26 45%,
+      #061119 100%
+    );
+}
+
+.project-box {
+  max-width: 850px;
+
+  margin: auto;
+
+  text-align: center;
+}
+
+.project-box h2 {
+  margin: 0 0 18px;
+
+  font-size:
+    clamp(28px, 6vw, 42px);
+}
+
+.project-box h2::after {
+  content: "";
+
+  display: block;
+
+  width: 70px;
+  height: 3px;
+
+  margin: 14px auto 0;
+
+  border-radius: 5px;
+
+  background: #5ce7e0;
+}
+
+.project-box p {
+  font-size: 17px;
+
+  line-height: 2.2;
+
+  opacity: .9;
+
+  margin:
+    0 auto 20px;
+}
+
+.principles {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(190px, 1fr)
+    );
+
+  gap: 14px;
+
+  margin-top: 35px;
+}
+
+.principle {
+  padding: 22px 15px;
+
+  border-radius: 20px;
+
+  background:
+    rgba(255,255,255,.055);
+
+  border:
+    1px solid
+    rgba(255,255,255,.10);
+
+  box-shadow:
+    0 15px 35px
+    rgba(0,0,0,.15);
+}
+
+.principle-icon {
+  font-size: 28px;
+
+  margin-bottom: 8px;
+}
+
+.principle strong {
+  display: block;
+
+  margin-bottom: 7px;
+
+  font-size: 17px;
+}
+
+.principle span {
+  font-size: 13px;
+
+  line-height: 1.9;
+
+  opacity: .75;
+}
+
+.motto {
+  margin-top: 35px;
+
+  padding: 22px;
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0,190,200,.12),
+      rgba(255,255,255,.05)
+    );
+
+  border:
+    1px solid
+    rgba(80,230,230,.18);
+
+  font-size: 18px;
+
+  line-height: 2;
 }
 
 /* ===== CHAT ===== */
@@ -199,16 +400,19 @@ button:hover,
 
 .chat-box {
   max-width: 850px;
+
   margin: auto;
 }
 
 .chat-title {
   text-align: center;
+
   margin-bottom: 30px;
 }
 
 .chat-title h2 {
   font-size: 32px;
+
   margin-bottom: 10px;
 }
 
@@ -218,6 +422,7 @@ button:hover,
 
 .messages {
   min-height: 330px;
+
   max-height: 55vh;
 
   overflow-y: auto;
@@ -226,12 +431,16 @@ button:hover,
 
   border-radius: 20px;
 
-  background: rgba(255,255,255,.06);
+  background:
+    rgba(255,255,255,.06);
 
-  border: 1px solid rgba(255,255,255,.10);
+  border:
+    1px solid
+    rgba(255,255,255,.10);
 
   box-shadow:
-    0 20px 50px rgba(0,0,0,.18);
+    0 20px 50px
+    rgba(0,0,0,.18);
 }
 
 .message {
@@ -247,13 +456,17 @@ button:hover,
 }
 
 .user {
-  background: rgba(255,255,255,.10);
+  background:
+    rgba(255,255,255,.10);
 }
 
 .nava {
-  background: rgba(0,160,180,.18);
+  background:
+    rgba(0,160,180,.18);
 
-  border: 1px solid rgba(0,200,220,.08);
+  border:
+    1px solid
+    rgba(0,200,220,.08);
 }
 
 .input-row {
@@ -273,9 +486,12 @@ input {
 
   border-radius: 14px;
 
-  border: 1px solid rgba(255,255,255,.15);
+  border:
+    1px solid
+    rgba(255,255,255,.15);
 
-  background: rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.08);
 
   color: white;
 
@@ -285,7 +501,8 @@ input {
 }
 
 input:focus {
-  border-color: rgba(0,200,220,.5);
+  border-color:
+    rgba(0,200,220,.5);
 }
 
 .send {
@@ -296,6 +513,7 @@ input:focus {
 
 .send:disabled {
   opacity: .55;
+
   cursor: wait;
 }
 
@@ -304,15 +522,25 @@ input:focus {
 footer {
   text-align: center;
 
-  padding: 30px 15px;
+  padding: 35px 15px;
 
   background: #050d13;
 
-  opacity: .8;
+  opacity: .85;
 
   font-size: 13px;
 
-  line-height: 2;
+  line-height: 2.2;
+}
+
+.footer-main {
+  font-size: 15px;
+
+  margin-bottom: 5px;
+}
+
+.footer-motto {
+  opacity: .7;
 }
 
 /* ===== MOBILE ===== */
@@ -324,10 +552,19 @@ footer {
   }
 
   .logo {
-    width: 82px;
-    height: 82px;
+    width: 88px;
+    height: 88px;
 
-    font-size: 24px;
+    border-radius: 27px;
+  }
+
+  .logo-text {
+    font-size: 20px;
+  }
+
+  .logo::before {
+    width: 58px;
+    height: 29px;
   }
 
   .input-row {
@@ -342,13 +579,21 @@ footer {
     left: 12px;
     top: 12px;
   }
+
+  .project-section,
+  .chat-section {
+    padding:
+      55px 15px;
+  }
+
 }
+
 </style>
 </head>
 
 <body>
 
-<!-- ===== MUSIC BUTTON ===== -->
+<!-- ===== MUSIC ===== -->
 
 <button
   class="music-button"
@@ -376,8 +621,13 @@ footer {
 
   <div class="hero-content">
 
-    <div class="logo">
-      هرمز
+    <div
+      class="logo"
+      aria-label="لوگوی هوش هرمز"
+    >
+      <span class="logo-text">
+        هرمز
+      </span>
     </div>
 
     <h1>
@@ -389,7 +639,9 @@ footer {
     </p>
 
     <p class="quote">
-      نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.
+      نوا کمک می‌کند،
+      هرمز هماهنگ می‌کند،
+      انسان تصمیم می‌گیرد.
     </p>
 
     <div class="buttons">
@@ -400,6 +652,117 @@ footer {
       >
         ورود به گفت‌وگو با نوا
       </a>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ===== PROJECT INTRO ===== -->
+
+<section class="project-section">
+
+  <div class="project-box">
+
+    <h2>
+      درباره هوش هرمز
+    </h2>
+
+    <p>
+      هوش هرمز یک پروژه انسان‌محور
+      برای ساختن فضایی امن،
+      ساده و در دسترس برای
+      گفت‌وگو و استفاده از
+      هوش مصنوعی است.
+    </p>
+
+    <p>
+      هدف ما این است که فناوری
+      فقط برای کسانی نباشد
+      که امکانات بیشتری دارند؛
+      هر انسانی که ایده،
+      پرسش یا نیازی دارد
+      باید بتواند با احترام
+      و سادگی با آن ارتباط بگیرد.
+    </p>
+
+    <div class="principles">
+
+      <div class="principle">
+
+        <div class="principle-icon">
+          🔐
+        </div>
+
+        <strong>
+          امنیت
+        </strong>
+
+        <span>
+          امنیت و حریم خصوصی
+          از اصول اساسی هرمز است.
+        </span>
+
+      </div>
+
+
+      <div class="principle">
+
+        <div class="principle-icon">
+          🤝
+        </div>
+
+        <strong>
+          انسان‌محوری
+        </strong>
+
+        <span>
+          فناوری در خدمت انسان
+          و انتخاب آگاهانه اوست.
+        </span>
+
+      </div>
+
+
+      <div class="principle">
+
+        <div class="principle-icon">
+          🧠
+        </div>
+
+        <strong>
+          هوشمندی
+        </strong>
+
+        <span>
+          نوا برای کمک،
+          گفت‌وگو و همراهی ساخته شده است.
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div class="motto">
+
+      <strong>
+        اول امنیت، بعد اتصال و هوشمندی.
+      </strong>
+
+      <br>
+
+      نوا کمک می‌کند،
+      هرمز هماهنگ می‌کند،
+      انسان تصمیم می‌گیرد.
+
+      <br><br>
+
+      <strong>
+        رؤیا • تلاش • ادامه
+      </strong>
 
     </div>
 
@@ -436,8 +799,13 @@ footer {
     >
 
       <div class="message nava">
-        سلام 🌹 من نوا هستم، دستیار هوش هرمز.
+
+        سلام 🌹
+        من نوا هستم،
+        دستیار هوش هرمز.
+
         چطور می‌تونم کمکت کنم؟
+
       </div>
 
     </div>
@@ -471,38 +839,59 @@ footer {
 
 <footer>
 
-  هوش هرمز • نوا
+  <div class="footer-main">
+    هوش هرمز • نوا
+  </div>
 
-  <br>
-
-  رؤیا • تلاش • ادامه
+  <div class="footer-motto">
+    رؤیا • تلاش • ادامه
+    <br>
+    چراغ ۷۷۷ برای خاموش شدن ساخته نشده.
+  </div>
 
 </footer>
 
 
 <script>
 
-const API = "/api/v1/chat";
+const API =
+  "/api/v1/chat";
+
 
 const input =
-  document.getElementById("messageInput");
+  document.getElementById(
+    "messageInput"
+  );
+
 
 const sendButton =
-  document.getElementById("sendButton");
+  document.getElementById(
+    "sendButton"
+  );
+
 
 const messages =
-  document.getElementById("messages");
+  document.getElementById(
+    "messages"
+  );
 
 
 /* ===== MUSIC ===== */
 
 const music =
-  document.getElementById("backgroundMusic");
+  document.getElementById(
+    "backgroundMusic"
+  );
+
 
 const musicButton =
-  document.getElementById("musicButton");
+  document.getElementById(
+    "musicButton"
+  );
+
 
 let musicOn = false;
+
 
 musicButton.addEventListener(
   "click",
@@ -527,6 +916,7 @@ musicButton.addEventListener(
 
         musicButton.textContent =
           "🎵 موسیقی";
+
       }
 
     } catch (error) {
@@ -538,6 +928,7 @@ musicButton.addEventListener(
         "فایل موسیقی هنوز روی سایت قرار نگرفته است.",
         "nava"
       );
+
     }
 
   }
@@ -546,10 +937,15 @@ musicButton.addEventListener(
 
 /* ===== CHAT ===== */
 
-function addMessage(text, type) {
+function addMessage(
+  text,
+  type
+) {
 
   const div =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
 
   div.className =
     "message " + type;
@@ -557,7 +953,9 @@ function addMessage(text, type) {
   div.textContent =
     text;
 
-  messages.appendChild(div);
+  messages.appendChild(
+    div
+  );
 
   messages.scrollTop =
     messages.scrollHeight;
@@ -569,16 +967,21 @@ async function sendMessage() {
   const message =
     input.value.trim();
 
-  if (!message) return;
+  if (!message)
+    return;
+
 
   addMessage(
     message,
     "user"
   );
 
+
   input.value = "";
 
-  sendButton.disabled = true;
+  sendButton.disabled =
+    true;
+
 
   try {
 
@@ -615,6 +1018,7 @@ async function sendMessage() {
         data?.error ||
         "خطا در ارتباط با نوا"
       );
+
     }
 
 
@@ -630,6 +1034,7 @@ async function sendMessage() {
       "nava"
     );
 
+
   } catch (error) {
 
     addMessage(
@@ -640,9 +1045,11 @@ async function sendMessage() {
   }
 
 
-  sendButton.disabled = false;
+  sendButton.disabled =
+    false;
 
   input.focus();
+
 }
 
 
@@ -656,7 +1063,9 @@ input.addEventListener(
   "keydown",
   (event) => {
 
-    if (event.key === "Enter") {
+    if (
+      event.key === "Enter"
+    ) {
 
       sendMessage();
 
@@ -685,8 +1094,11 @@ export function buildApp(
   const __filename =
     fileURLToPath(import.meta.url);
 
+
   const __dirname =
-    path.dirname(__filename);
+    path.dirname(
+      __filename
+    );
 
 
   /* ===== STATIC FILES ===== */
