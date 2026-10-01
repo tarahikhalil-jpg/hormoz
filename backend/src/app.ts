@@ -517,6 +517,187 @@ input:focus {
   cursor: wait;
 }
 
+/* ===== FEEDBACK ===== */
+
+.feedback-section {
+  padding: 65px 18px;
+
+  background:
+    radial-gradient(
+      circle at top,
+      #12333e 0,
+      #07141d 55%,
+      #050d13 100%
+    );
+}
+
+.feedback-box {
+  max-width: 850px;
+
+  margin: auto;
+
+  padding: 28px 22px;
+
+  border-radius: 22px;
+
+  background:
+    rgba(255,255,255,.055);
+
+  border:
+    1px solid
+    rgba(255,255,255,.10);
+
+  box-shadow:
+    0 20px 50px
+    rgba(0,0,0,.18);
+}
+
+.feedback-title {
+  text-align: center;
+
+  margin-bottom: 28px;
+}
+
+.feedback-title h2 {
+  margin: 0 0 10px;
+
+  font-size:
+    clamp(26px, 6vw, 36px);
+}
+
+.feedback-title p {
+  margin: 0;
+
+  line-height: 1.9;
+
+  opacity: .75;
+}
+
+.feedback-question {
+  margin-top: 24px;
+}
+
+.feedback-question > strong {
+  display: block;
+
+  margin-bottom: 12px;
+
+  line-height: 1.8;
+}
+
+.feedback-options {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 10px;
+}
+
+.feedback-option {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 10px 13px;
+
+  border-radius: 13px;
+
+  background:
+    rgba(255,255,255,.06);
+
+  border:
+    1px solid
+    rgba(255,255,255,.10);
+
+  cursor: pointer;
+}
+
+.feedback-option input {
+  flex: none;
+
+  width: auto;
+
+  padding: 0;
+
+  accent-color: #5ce7e0;
+}
+
+.feedback-textarea {
+  width: 100%;
+
+  min-height: 95px;
+
+  resize: vertical;
+
+  padding: 13px;
+
+  border-radius: 14px;
+
+  border:
+    1px solid
+    rgba(255,255,255,.15);
+
+  background:
+    rgba(255,255,255,.07);
+
+  color: white;
+
+  font-family: Tahoma, Arial, sans-serif;
+
+  font-size: 15px;
+
+  line-height: 1.8;
+
+  outline: none;
+}
+
+.feedback-textarea:focus {
+  border-color:
+    rgba(0,200,220,.5);
+}
+
+.feedback-submit {
+  width: 100%;
+
+  margin-top: 24px;
+
+  background: #087f8c;
+}
+
+.feedback-submit:disabled {
+  opacity: .65;
+
+  cursor: default;
+
+  transform: none;
+}
+
+.feedback-message {
+  min-height: 26px;
+
+  margin: 14px 0 0;
+
+  text-align: center;
+
+  line-height: 1.8;
+}
+
+.feedback-note {
+  display: block;
+
+  margin-top: 18px;
+
+  text-align: center;
+
+  line-height: 1.9;
+
+  opacity: .55;
+
+  font-size: 12px;
+}
+
 /* ===== FOOTER ===== */
 
 footer {
@@ -581,9 +762,23 @@ footer {
   }
 
   .project-section,
-  .chat-section {
+  .chat-section,
+  .feedback-section {
     padding:
       55px 15px;
+  }
+
+  .feedback-box {
+    padding:
+      24px 16px;
+  }
+
+  .feedback-options {
+    flex-direction: column;
+  }
+
+  .feedback-option {
+    width: 100%;
   }
 
 }
@@ -835,6 +1030,223 @@ footer {
 </section>
 
 
+<!-- ===== FEEDBACK ===== -->
+
+<section
+  class="feedback-section"
+  id="feedback"
+>
+
+  <div class="feedback-box">
+
+    <div class="feedback-title">
+
+      <h2>
+        💬 بازخورد شما
+      </h2>
+
+      <p>
+        اگر با نوا گفت‌وگو کردید،
+        تجربه‌تان را با ما در میان بگذارید.
+      </p>
+
+    </div>
+
+
+    <div class="feedback-question">
+
+      <strong>
+        ۱. گفت‌وگو با نوا برای شما چطور بود؟
+      </strong>
+
+      <div class="feedback-options">
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb1"
+            value="خیلی خوب"
+          >
+          خیلی خوب
+        </label>
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb1"
+            value="خوب"
+          >
+          خوب
+        </label>
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb1"
+            value="معمولی"
+          >
+          معمولی
+        </label>
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb1"
+            value="ضعیف"
+          >
+          ضعیف
+        </label>
+
+      </div>
+
+    </div>
+
+
+    <div class="feedback-question">
+
+      <strong>
+        ۲. پاسخ‌های نوا چقدر به شما کمک کرد؟
+      </strong>
+
+      <div class="feedback-options">
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb2"
+            value="خیلی زیاد"
+          >
+          خیلی زیاد
+        </label>
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb2"
+            value="تا حدی"
+          >
+          تا حدی
+        </label>
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb2"
+            value="کم"
+          >
+          کم
+        </label>
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb2"
+            value="اصلاً"
+          >
+          اصلاً
+        </label>
+
+      </div>
+
+    </div>
+
+
+    <div class="feedback-question">
+
+      <strong>
+        ۳. آیا دوباره از نوا استفاده می‌کنید؟
+      </strong>
+
+      <div class="feedback-options">
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb3"
+            value="بله"
+          >
+          بله
+        </label>
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb3"
+            value="شاید"
+          >
+          شاید
+        </label>
+
+        <label class="feedback-option">
+          <input
+            type="radio"
+            name="fb3"
+            value="خیر"
+          >
+          خیر
+        </label>
+
+      </div>
+
+    </div>
+
+
+    <div class="feedback-question">
+
+      <strong>
+        ۴. چه چیزی را بیشتر دوست داشتید
+        یا چه چیزی باید بهتر شود؟
+      </strong>
+
+      <textarea
+        id="fb4"
+        class="feedback-textarea"
+        placeholder="نظر شما..."
+      ></textarea>
+
+    </div>
+
+
+    <div class="feedback-question">
+
+      <strong>
+        ۵. اگر پیشنهادی برای هوش هرمز دارید، بنویسید:
+      </strong>
+
+      <textarea
+        id="fb5"
+        class="feedback-textarea"
+        placeholder="پیشنهاد شما..."
+      ></textarea>
+
+    </div>
+
+
+    <button
+      type="button"
+      id="sendFeedback"
+      class="feedback-submit"
+    >
+      ارسال بازخورد
+    </button>
+
+
+    <p
+      id="feedbackMessage"
+      class="feedback-message"
+    ></p>
+
+
+    <small class="feedback-note">
+      🔒 این بازخورد در این مرحله بدون نام،
+      شماره تلفن و اطلاعات هویتی ثبت می‌شود.
+    </small>
+
+  </div>
+
+</section>
+
+
 <!-- ===== FOOTER ===== -->
 
 <footer>
@@ -1070,6 +1482,124 @@ input.addEventListener(
       sendMessage();
 
     }
+
+  }
+);
+
+
+/* ===== FEEDBACK ===== */
+
+const feedbackButton =
+  document.getElementById(
+    "sendFeedback"
+  );
+
+
+const feedbackMessage =
+  document.getElementById(
+    "feedbackMessage"
+  );
+
+
+feedbackButton.addEventListener(
+  "click",
+  () => {
+
+    const experience =
+      document.querySelector(
+        'input[name="fb1"]:checked'
+      )?.value || "";
+
+
+    const help =
+      document.querySelector(
+        'input[name="fb2"]:checked'
+      )?.value || "";
+
+
+    const returnUse =
+      document.querySelector(
+        'input[name="fb3"]:checked'
+      )?.value || "";
+
+
+    const likedOrImprove =
+      document.getElementById(
+        "fb4"
+      ).value.trim();
+
+
+    const suggestion =
+      document.getElementById(
+        "fb5"
+      ).value.trim();
+
+
+    if (
+      !experience &&
+      !help &&
+      !returnUse &&
+      !likedOrImprove &&
+      !suggestion
+    ) {
+
+      feedbackMessage.textContent =
+        "لطفاً حداقل یک مورد را وارد کنید.";
+
+      return;
+
+    }
+
+
+    const feedback = {
+
+      time:
+        new Date().toISOString(),
+
+      experience,
+
+      help,
+
+      returnUse,
+
+      likedOrImprove,
+
+      suggestion
+
+    };
+
+
+    const oldFeedback =
+      JSON.parse(
+        localStorage.getItem(
+          "hormoz_feedback"
+        ) || "[]"
+      );
+
+
+    oldFeedback.push(
+      feedback
+    );
+
+
+    localStorage.setItem(
+      "hormoz_feedback",
+      JSON.stringify(
+        oldFeedback
+      )
+    );
+
+
+    feedbackMessage.textContent =
+      "🙏 ممنون؛ بازخورد شما ثبت شد.";
+
+
+    feedbackButton.disabled =
+      true;
+
+
+    feedbackButton.textContent =
+      "بازخورد ثبت شد ✓";
 
   }
 );
