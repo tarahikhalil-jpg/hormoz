@@ -18,7 +18,10 @@ import { ConversationService } from "./modules/conversation/service.js";
 import { InMemoryMemoryRepository } from "./modules/memory/repository.js";
 import { MemoryService } from "./modules/memory/service.js";
 import { MockIntelligenceEngine } from "./modules/intelligence/mock-intelligence-engine.js";
-import { OpenRouterIntelligenceProvider } from "./modules/intelligence/openrouter-intelligence-provider.js";
+import { OpenRouterIntelligenceProvider
+ } from "./modules/intelligence/
+openrouter-intelligence-provider.js";
+import { adminRoutes } from "./routes/admin.js";
 
 export interface AppOptions {
   light?: LightDevice;
@@ -1733,6 +1736,9 @@ export function buildApp(
 
   app.register(
     healthRoutes
+  );
+  app.register(
+    adminRoutes
   );
 
 
