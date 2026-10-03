@@ -981,7 +981,19 @@ footer {
       <h2>
         گفت‌وگو با نوا
       </h2>
-
+<img
+  src="/hormoz.jpg"
+  alt="پوستر هوش هرمز"
+  style="
+    display:block;
+    width:100%;
+    max-width:760px;
+    height:auto;
+    margin:0 auto 28px;
+    border-radius:22px;
+    box-shadow:0 18px 45px rgba(0,0,0,.28);
+  "
+>
       <p>
         سلام کن؛ نوا آماده است.
       </p>
@@ -1287,65 +1299,41 @@ const messages =
   document.getElementById(
     "messages"
   );
-
-
 /* ===== MUSIC ===== */
 
 const music =
-  document.getElementById(
-    "backgroundMusic"
-  );
-
+  document.getElementById("backgroundMusic");
 
 const musicButton =
-  document.getElementById(
-    "musicButton"
-  );
-
+  document.getElementById("musicButton");
 
 let musicOn = false;
 
+musicButton.addEventListener("click", async () => {
+  try {
+    if (!musicOn) {
+      await music.play();
 
-musicButton.addEventListener(
-  "click",
-  async () => {
+      musicOn = true;
 
-    try {
+      musicButton.textContent =
+        "🔇 توقف موسیقی";
+    } else {
+      music.pause();
 
-      if (!musicOn) {
-
-        await music.play();
-
-        musicOn = true;
-
-        musicButton.textContent =
-          "🔇 توقف موسیقی";
-
-      } else {
-
-        music.pause();
-
-        musicOn = false;
-
-        musicButton.textContent =
-          "🎵 موسیقی";
-
-      }
-
-    } catch (error) {
+      musicOn = false;
 
       musicButton.textContent =
         "🎵 موسیقی";
-
-      addMessage(
-        "فایل موسیقی هنوز روی سایت قرار نگرفته است.",
-        "nava"
-      );
-
     }
+  } catch (error) {
+    console.error("Music playback failed:", error);
 
+    musicButton.textContent =
+      "🎵 پخش موسیقی";
   }
-);
+});
+
 
 
 /* ===== CHAT ===== */
