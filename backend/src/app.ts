@@ -66,8 +66,8 @@ body {
       rgba(0,0,0,.25),
       rgba(0,0,0,.72)
     ),
-    url("https://images.pexels.com/photos/34389434/pexels-photo-34389434.jpeg?cs=srgb&dl=pexels-byamirli-34389434.jpg&fm=jpg")
-    center / cover no-repeat;
+url("/hormoz.jpg")
+       center / cover no-repeat;
 
   padding: 30px 20px;
 }
