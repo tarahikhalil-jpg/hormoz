@@ -1,5 +1,7 @@
 import Fastify from "fastify";
-import fastifyStatic from "@fastify/static";
+import fastifyStatic from
+ "@fastify/static";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -1779,6 +1781,17 @@ export function buildApp(
     }
   );
 
+app.get("/AdminPanel.html", async (_request, reply) => {
+  const filePath = path.join(process.cwd(), "AdminPanel.html");
+  const html = await fs.readFile(filePath, "utf8");
 
+  return reply
+    .type("text/html; charset=utf-8")
+    .send(html);
+});
+
+app.get("/admin", async (_request, reply) => {
+  return reply.redirect("/AdminPanel.html");
+});
   return app;
 }
