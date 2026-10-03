@@ -1782,7 +1782,7 @@ export function buildApp(
   );
 
 app.get("/AdminPanel.html", async (_request, reply) => {
-  const filePath = path.join(process.cwd(), "AdminPanel.html");
+ const filePath = path.join(process.cwd(), "public", "AdminPanel.html");
   const html = await fs.readFile(filePath, "utf8");
 
   return reply
