@@ -865,7 +865,19 @@ footer {
     <h2>
       درباره هوش هرمز
     </h2>
-
+<img
+  src="/hormoz.jpg"
+  alt="پوستر هوش هرمز"
+  style="
+    display:block;
+    width:100%;
+    max-width:760px;
+    height:auto;
+    margin:0 auto 28px;
+    border-radius:22px;
+    box-shadow:0 18px 45px rgba(0,0,0,.28);
+  "
+>
     <p>
       هوش هرمز یک پروژه انسان‌محور
       برای ساختن فضایی امن،
