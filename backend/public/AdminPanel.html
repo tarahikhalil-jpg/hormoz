@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hormoz Admin Panel</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Tahoma, Arial, sans-serif;
+      background: #0b1220;
+      color: #f4f7fb;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    .login-box,
+    .panel {
+      background: #121c2d;
+      border: 1px solid #26354d;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 35px rgba(0,0,0,.25);
+    }
+
+    .login-box {
+      max-width: 430px;
+      margin: 70px auto;
+      text-align: center;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 15px;
+      object-fit: cover;
+      border: 2px solid #526b91;
+      background: #1b2940;
+    }
+
+    h1 {
+      margin: 5px 0 8px;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      color: #aebbd0;
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #354762;
+      background: #0d1626;
+      color: white;
+      font-size: 16px;
+      outline: none;
+      margin-bottom: 12px;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      border: 0;
+      border-radius: 12px;
+      background: #315b91;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .logout {
+      background: #492b35;
+      margin-top: 20px;
+    }
+
+    .error {
+      color: #ff9d9d;
+      margin-top: 12px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .header small {
+      color: #9eabc0;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #172337;
+      border: 1px solid #293b57;
+      border-radius: 15px;
+      padding: 18px;
+    }
+
+    .card-title {
+      color: #9eabc0;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .ok {
+      color: #79e2a2;
+    }
+
+    .waiting {
+      color: #ffd27a;
+    }
+
+    .section {
+      background: #172337;
+      border: 1px solid #293b57;
+      border-radius: 15px;
+      padding: 18px;
+      margin-bottom: 15px;
+    }
+
+    .section h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+    }
+
+    .section p {
+      margin: 7px 0;
+      color: #b7c3d5;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .status-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #29384f;
+      padding: 11px 0;
+    }
+
+    .status-line:last-child {
+      border-bottom: 0;
+    }
+
+    .badge {
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: #163d2b;
+      color: #79e2a2;
+      font-size: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 10px;
+      }
+
+      .login-box {
+        margin: 35px auto;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .card-value {
+        font-size: 17px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div id="loginBox" class="login-box">
+
+    <img
+      src="/hormoz.jpg"
+      class="logo"
+      alt="Hormoz"
+      onerror="this.style.display='none'"
+    >
+
+    <h1>پنل مدیریت هوش هرمز</h1>
+
+    <div class="subtitle">
+      Hormoz Intelligence • Admin
+    </div>
+
+    <input
+      id="password"
+      type="password"
+      placeholder="رمز مدیریت را وارد کنید"
+      autocomplete="current-password"
+    >
+
+    <button onclick="login()">
+      ورود به پنل
+    </button>
+
+    <div id="loginError" class="error"></div>
+
+  </div>
+
+
+  <div id="panel" class="panel hidden">
+
+    <div class="header">
+      <div>
+        <h2>مدیریت هوش هرمز</h2>
+        <small>رؤیا • تلاش • ادامه</small>
+      </div>
+    </div>
+
+
+    <div class="cards">
+
+      <div class="card">
+        <div class="card-title">هوش هرمز</div>
+        <div id="hormozStatus" class="card-value waiting">
+          در حال بررسی...
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">نوا</div>
+        <div id="navaStatus" class="card-value waiting">
+          در حال بررسی...
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">حافظه</div>
+        <div id="memoryStatus" class="card-value waiting">
+          در حال بررسی...
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">احراز هویت</div>
+        <div id="authStatus" class="card-value waiting">
+          در حال بررسی...
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="section">
+
+      <h3>وضعیت سیستم</h3>
+
+      <div class="status-line">
+        <span>Hormoz AI</span>
+        <span id="hormozBadge" class="badge">بررسی...</span>
+      </div>
+
+      <div class="status-line">
+        <span>Nava</span>
+        <span id="navaBadge" class="badge">بررسی...</span>
+      </div>
+
+      <div class="status-line">
+        <span>Memory</span>
+        <span id="memoryBadge" class="badge">بررسی...</span>
+      </div>
+
+    </div>
+
+
+    <div class="section">
+
+      <h3>مدیریت محتوا</h3>
+
+      <p>🖼️ تغییر تصویر اصلی هرمز — مرحله بعد</p>
+      <p>🎵 تغییر موسیقی صفحه — مرحله بعد</p>
+      <p>📝 ویرایش متن صفحه اصلی — مرحله بعد</p>
+      <p>💾 پشتیبان‌گیری — مرحله بعد</p>
+
+    </div>
+
+
+    <div class="section">
+
+      <h3>مدیریت آینده</h3>
+
+      <p>کاربران و فعالیت‌ها</p>
+      <p>گزارش خطاها</p>
+      <p>وضعیت اتصال نوا</p>
+      <p>امنیت و تنظیمات</p>
+
+    </div>
+
+
+    <button class="logout" onclick="logout()">
+      خروج از پنل
+    </button>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const TOKEN_KEY = "hormoz_admin_token";
+
+
+function showPanel() {
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("panel").classList.remove("hidden");
+  checkStatus();
+}
+
+
+function showLogin() {
+  document.getElementById("loginBox").classList.remove("hidden");
+  document.getElementById("panel").classList.add("hidden");
+}
+
+
+async function login() {
+
+  const password =
+    document.getElementById("password").value.trim();
+
+  const error =
+    document.getElementById("loginError");
+
+  error.style.display = "none";
+
+  if (!password) {
+    error.textContent = "رمز مدیریت را وارد کنید.";
+    error.style.display = "block";
+    return;
+  }
+
+  try {
+
+    const response = await fetch(
+      "/api/v1/admin/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          password: password
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "ورود انجام نشد."
+      );
+    }
+
+    localStorage.setItem(
+      TOKEN_KEY,
+      data.token
+    );
+
+    document.getElementById("password").value = "";
+
+    showPanel();
+
+  } catch (err) {
+
+    error.textContent =
+      err.message || "خطا در اتصال به سرور.";
+
+    error.style.display = "block";
+  }
+}
+
+
+async function checkStatus() {
+
+  const token =
+    localStorage.getItem(TOKEN_KEY);
+
+  if (!token) {
+    showLogin();
+    return;
+  }
+
+  try {
+
+    const response = await fetch(
+      "/api/v1/admin/status",
+      {
+        headers: {
+          "Authorization":
+            "Bearer " + token
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "دسترسی رد شد."
+      );
+    }
+
+    document.getElementById("hormozStatus").textContent =
+      data.hormoz;
+
+    document.getElementById("navaStatus").textContent =
+      data.nava;
+
+    document.getElementById("memoryStatus").textContent =
+      data.memory;
+
+    document.getElementById("authStatus").textContent =
+      data.authentication;
+
+    document.getElementById("hormozBadge").textContent =
+      data.hormoz;
+
+    document.getElementById("navaBadge").textContent =
+      data.nava;
+
+    document.getElementById("memoryBadge").textContent =
+      data.memory;
+
+    document.getElementById("hormozStatus")
+      .className = "card-value ok";
+
+    document.getElementById("navaStatus")
+      .className = "card-value ok";
+
+    document.getElementById("memoryStatus")
+      .className = "card-value ok";
+
+    document.getElementById("authStatus")
+      .className = "card-value ok";
+
+  } catch (err) {
+
+    localStorage.removeItem(TOKEN_KEY);
+
+    showLogin();
+
+    const error =
+      document.getElementById("loginError");
+
+    error.textContent =
+      "نشست مدیریت منقضی شده یا اتصال برقرار نیست.";
+
+    error.style.display = "block";
+  }
+}
+
+
+function logout() {
+
+  localStorage.removeItem(TOKEN_KEY);
+
+  showLogin();
+
+  document.getElementById("password").focus();
+}
+
+
+document
+  .getElementById("password")
+  .addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+      login();
+    }
+
+  });
+
+
+window.addEventListener("load", function() {
+
+  const token =
+    localStorage.getItem(TOKEN_KEY);
+
+  if (token) {
+    showPanel();
+  } else {
+    showLogin();
+  }
+
+});
+
+</script>
+
+</body>
+</html>
