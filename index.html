@@ -10,56 +10,214 @@
       box-sizing: border-box;
     }
 
-    html,
     body {
       margin: 0;
-      width: 100%;
-      height: 100%;
-      background: #111;
-    }
-
-    body {
-      font-family: sans-serif;
-      overflow: hidden;
-    }
-
-    .loading {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      min-height: 100vh;
+      font-family: Tahoma, Arial, sans-serif;
+      background: #0d1117;
       color: #fff;
-      background: #111;
-      font-size: 18px;
       text-align: center;
-      line-height: 2;
-      z-index: 0;
     }
 
-    iframe {
-      position: fixed;
-      inset: 0;
+    .page {
+      width: min(900px, 94%);
+      margin: auto;
+      padding: 24px 0 50px;
+    }
+
+    .poster {
       width: 100%;
-      height: 100%;
+      max-width: 850px;
+      display: block;
+      margin: 0 auto 24px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+    }
+
+    h1 {
+      font-size: 32px;
+      margin: 15px 0 8px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      opacity: .9;
+      margin-bottom: 18px;
+    }
+
+    .quote {
+      font-size: 18px;
+      line-height: 2;
+      margin: 20px auto;
+      max-width: 700px;
+    }
+
+    .btn {
+      display: inline-block;
       border: 0;
-      z-index: 1;
-      background: #111;
+      border-radius: 14px;
+      padding: 14px 28px;
+      margin: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #fff;
+      background: #1769aa;
+    }
+
+    .btn:hover {
+      opacity: .9;
+    }
+
+    .music {
+      margin: 20px auto;
+      width: min(600px, 100%);
+    }
+
+    audio {
+      width: 100%;
+    }
+
+    #chatBox {
+      display: none;
+      margin: 25px auto;
+      max-width: 700px;
+      background: #161b22;
+      padding: 20px;
+      border-radius: 18px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 17px;
+      background: #0d1117;
+      color: #fff;
+      border: 1px solid #444;
+    }
+
+    #answer {
+      margin-top: 18px;
+      text-align: right;
+      line-height: 2;
+      white-space: pre-wrap;
+    }
+
+    footer {
+      margin-top: 35px;
+      opacity: .75;
+      font-size: 14px;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="loading">
-    هوش هرمز<br>
-    نوا در حال آماده شدن…
-  </div>
+  <main class="page">
 
-  <iframe
-    src="https://hormoz-ai-backend-777.onrender.com/"
-    title="هوش هرمز">
-  </iframe>
+    <img
+      class="poster"
+      src="https://hormoz-ai-backend-777.onrender.com/hormoz.jpg"
+      alt="پوستر هوش هرمز">
+
+    <h1>هوش هرمز</h1>
+
+    <div class="subtitle">
+      نوا، دستیار هوشمند هرمز
+    </div>
+
+    <div class="quote">
+      نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.
+    </div>
+
+    <button class="btn" onclick="openChat()">
+      🤖 ورود به نوا
+    </button>
+
+    <div class="music">
+      <audio controls preload="none">
+        <source
+          src="https://hormoz-ai-backend-777.onrender.com/بالاخره%20شد_۰۴۱۰۲۰۲۶.mp3"
+          type="audio/mpeg">
+      </audio>
+    </div>
+
+    <section id="chatBox">
+      <h2>گفت‌وگو با نوا</h2>
+
+      <textarea
+        id="message"
+        placeholder="پیامت را برای نوا بنویس..."></textarea>
+
+      <button class="btn" onclick="sendMessage()">
+        ارسال
+      </button>
+
+      <div id="answer"></div>
+    </section>
+
+    <footer>
+      چراغ ۷۷۷ برای خاموش شدن ساخته نشده.
+    </footer>
+
+  </main>
+
+  <script>
+    function openChat() {
+      document.getElementById("chatBox").style.display = "block";
+      document.getElementById("message").focus();
+      window.scrollTo({
+        top: document.getElementById("chatBox").offsetTop,
+        behavior: "smooth"
+      });
+    }
+
+    async function sendMessage() {
+      const message = document.getElementById("message").value.trim();
+      const answer = document.getElementById("answer");
+
+      if (!message) {
+        answer.textContent = "لطفاً پیامت را بنویس.";
+        return;
+      }
+
+      answer.textContent = "نوا در حال آماده شدن است...";
+
+      try {
+        const response = await fetch(
+          "https://hormoz-ai-backend-777.onrender.com/api/v1/chat",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-user-id": "public"
+            },
+            body: JSON.stringify({
+              message: message
+            })
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error("خطا در ارتباط با نوا");
+        }
+
+        answer.textContent =
+          data.reply ||
+          data.message ||
+          "نوا پاسخی دریافت نکرد.";
+
+      } catch (error) {
+        answer.textContent =
+          "نوا در حال بیدار شدن است... چند لحظه دیگر دوباره امتحان کن. 🌱";
+      }
+    }
+  </script>
 
 </body>
 </html>
