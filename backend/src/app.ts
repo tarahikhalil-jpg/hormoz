@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import fastifyStatic from
  "@fastify/static";
+import multipart from "@fastify/multipart";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -1623,7 +1624,12 @@ export function buildApp(
     Fastify({
       logger: true
     });
-
+  app.register(multipart, {
+    limits: {
+      fileSize: 15 * 1024 * 1024,
+      files: 1
+    }
+  });
 
   const __filename =
     fileURLToPath(import.meta.url);
