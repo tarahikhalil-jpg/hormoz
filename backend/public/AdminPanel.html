@@ -84,9 +84,19 @@
       cursor: pointer;
     }
 
+    button:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
+
     .logout {
       background: #492b35;
       margin-top: 20px;
+    }
+
+    .upload-button {
+      background: #087f8c;
+      margin-top: 8px;
     }
 
     .error {
@@ -94,6 +104,28 @@
       margin-top: 12px;
       font-size: 14px;
       display: none;
+    }
+
+    .upload-message {
+      min-height: 25px;
+      margin: 10px 0 0;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .success {
+      color: #79e2a2;
+    }
+
+    .upload-error {
+      color: #ff9d9d;
+    }
+
+    .file-help {
+      color: #8f9db2;
+      font-size: 12px;
+      line-height: 1.8;
+      margin-top: 4px;
     }
 
     .hidden {
@@ -187,6 +219,18 @@
       background: #163d2b;
       color: #79e2a2;
       font-size: 12px;
+    }
+
+    .upload-preview {
+      display: block;
+      width: 100%;
+      max-width: 420px;
+      max-height: 260px;
+      object-fit: contain;
+      margin: 12px auto;
+      border-radius: 15px;
+      border: 1px solid #293b57;
+      background: #0d1626;
     }
 
     @media (max-width: 600px) {
@@ -309,14 +353,97 @@
     </div>
 
 
+    <!-- ===== CONTENT MANAGEMENT ===== -->
+
     <div class="section">
 
       <h3>مدیریت محتوا</h3>
 
-      <p>🖼️ تغییر تصویر اصلی هرمز — مرحله بعد</p>
-      <p>🎵 تغییر موسیقی صفحه — مرحله بعد</p>
-      <p>📝 ویرایش متن صفحه اصلی — مرحله بعد</p>
-      <p>💾 پشتیبان‌گیری — مرحله بعد</p>
+      <p>
+        🖼️ تغییر تصویر اصلی هرمز
+      </p>
+
+      <input
+        id="imageFile"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+      >
+
+      <div class="file-help">
+        JPG / PNG / WebP — حداکثر ۵ مگابایت
+      </div>
+
+      <img
+        id="imagePreview"
+        class="upload-preview hidden"
+        alt="پیش‌نمایش تصویر"
+      >
+
+      <button
+        id="imageUploadButton"
+        class="upload-button"
+        type="button"
+        onclick="uploadFile('image')"
+      >
+        🖼️ آپلود و جایگزینی پوستر
+      </button>
+
+      <div
+        id="imageUploadMessage"
+        class="upload-message"
+      ></div>
+
+
+      <hr style="
+        border:0;
+        border-top:1px solid #29384f;
+        margin:22px 0;
+      ">
+
+
+      <p>
+        🎵 تغییر موسیقی صفحه
+      </p>
+
+      <input
+        id="musicFile"
+        type="file"
+        accept="audio/mpeg,audio/mp3"
+      >
+
+      <div class="file-help">
+        MP3 — حداکثر ۱۵ مگابایت
+      </div>
+
+      <button
+        id="musicUploadButton"
+        class="upload-button"
+        type="button"
+        onclick="uploadFile('music')"
+      >
+        🎵 آپلود و جایگزینی موسیقی
+      </button>
+
+      <div
+        id="musicUploadMessage"
+        class="upload-message"
+      ></div>
+
+
+      <hr style="
+        border:0;
+        border-top:1px solid #29384f;
+        margin:22px 0;
+      ">
+
+
+      <p>
+        📝 ویرایش متن صفحه اصلی — مرحله بعد
+      </p>
+
+      <p>
+        💾 پشتیبان‌گیری — مرحله بعد
+      </p>
 
     </div>
 
@@ -344,58 +471,91 @@
 
 <script>
 
-const TOKEN_KEY = "hormoz_admin_token";
+const TOKEN_KEY =
+  "hormoz_admin_token";
 
 
 function showPanel() {
-  document.getElementById("loginBox").classList.add("hidden");
-  document.getElementById("panel").classList.remove("hidden");
+
+  document
+    .getElementById("loginBox")
+    .classList.add("hidden");
+
+  document
+    .getElementById("panel")
+    .classList.remove("hidden");
+
   checkStatus();
 }
 
 
 function showLogin() {
-  document.getElementById("loginBox").classList.remove("hidden");
-  document.getElementById("panel").classList.add("hidden");
+
+  document
+    .getElementById("loginBox")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("panel")
+    .classList.add("hidden");
 }
 
 
 async function login() {
 
   const password =
-    document.getElementById("password").value.trim();
+    document
+      .getElementById("password")
+      .value
+      .trim();
 
   const error =
-    document.getElementById("loginError");
+    document.getElementById(
+      "loginError"
+    );
 
-  error.style.display = "none";
+  error.style.display =
+    "none";
 
   if (!password) {
-    error.textContent = "رمز مدیریت را وارد کنید.";
-    error.style.display = "block";
+
+    error.textContent =
+      "رمز مدیریت را وارد کنید.";
+
+    error.style.display =
+      "block";
+
     return;
   }
 
   try {
 
-    const response = await fetch(
-      "/api/v1/admin/login",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          password: password
-        })
-      }
-    );
+    const response =
+      await fetch(
+        "/api/v1/admin/login",
+        {
+          method: "POST",
 
-    const data = await response.json();
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              password: password
+            })
+        }
+      );
+
+    const data =
+      await response.json();
 
     if (!response.ok) {
+
       throw new Error(
-        data.message || "ورود انجام نشد."
+        data.message ||
+        "ورود انجام نشد."
       );
     }
 
@@ -404,16 +564,20 @@ async function login() {
       data.token
     );
 
-    document.getElementById("password").value = "";
+    document
+      .getElementById("password")
+      .value = "";
 
     showPanel();
 
   } catch (err) {
 
     error.textContent =
-      err.message || "خطا در اتصال به سرور.";
+      err.message ||
+      "خطا در اتصال به سرور.";
 
-    error.style.display = "block";
+    error.style.display =
+      "block";
   }
 }
 
@@ -421,116 +585,417 @@ async function login() {
 async function checkStatus() {
 
   const token =
-    localStorage.getItem(TOKEN_KEY);
+    localStorage.getItem(
+      TOKEN_KEY
+    );
 
   if (!token) {
+
     showLogin();
+
     return;
   }
 
   try {
 
-    const response = await fetch(
-      "/api/v1/admin/status",
-      {
-        headers: {
-          "Authorization":
-            "Bearer " + token
+    const response =
+      await fetch(
+        "/api/v1/admin/status",
+        {
+          headers: {
+            "Authorization":
+              "Bearer " + token
+          }
         }
-      }
-    );
+      );
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     if (!response.ok) {
+
       throw new Error(
-        data.message || "دسترسی رد شد."
+        data.message ||
+        "دسترسی رد شد."
       );
     }
 
-    document.getElementById("hormozStatus").textContent =
+    document
+      .getElementById("hormozStatus")
+      .textContent =
       data.hormoz;
 
-    document.getElementById("navaStatus").textContent =
+    document
+      .getElementById("navaStatus")
+      .textContent =
       data.nava;
 
-    document.getElementById("memoryStatus").textContent =
+    document
+      .getElementById("memoryStatus")
+      .textContent =
       data.memory;
 
-    document.getElementById("authStatus").textContent =
+    document
+      .getElementById("authStatus")
+      .textContent =
       data.authentication;
 
-    document.getElementById("hormozBadge").textContent =
+    document
+      .getElementById("hormozBadge")
+      .textContent =
       data.hormoz;
 
-    document.getElementById("navaBadge").textContent =
+    document
+      .getElementById("navaBadge")
+      .textContent =
       data.nava;
 
-    document.getElementById("memoryBadge").textContent =
+    document
+      .getElementById("memoryBadge")
+      .textContent =
       data.memory;
 
-    document.getElementById("hormozStatus")
-      .className = "card-value ok";
+    document
+      .getElementById("hormozStatus")
+      .className =
+      "card-value ok";
 
-    document.getElementById("navaStatus")
-      .className = "card-value ok";
+    document
+      .getElementById("navaStatus")
+      .className =
+      "card-value ok";
 
-    document.getElementById("memoryStatus")
-      .className = "card-value ok";
+    document
+      .getElementById("memoryStatus")
+      .className =
+      "card-value ok";
 
-    document.getElementById("authStatus")
-      .className = "card-value ok";
+    document
+      .getElementById("authStatus")
+      .className =
+      "card-value ok";
 
   } catch (err) {
 
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(
+      TOKEN_KEY
+    );
 
     showLogin();
 
     const error =
-      document.getElementById("loginError");
+      document.getElementById(
+        "loginError"
+      );
 
     error.textContent =
       "نشست مدیریت منقضی شده یا اتصال برقرار نیست.";
 
-    error.style.display = "block";
+    error.style.display =
+      "block";
   }
 }
 
+
+/* ===== FILE PREVIEW ===== */
+
+document
+  .getElementById("imageFile")
+  .addEventListener(
+    "change",
+    function() {
+
+      const file =
+        this.files[0];
+
+      const preview =
+        document.getElementById(
+          "imagePreview"
+        );
+
+      if (!file) {
+
+        preview.classList.add(
+          "hidden"
+        );
+
+        return;
+      }
+
+      if (
+        ![
+          "image/jpeg",
+          "image/png",
+          "image/webp"
+        ].includes(file.type)
+      ) {
+
+        preview.classList.add(
+          "hidden"
+        );
+
+        return;
+      }
+
+      const url =
+        URL.createObjectURL(
+          file
+        );
+
+      preview.src =
+        url;
+
+      preview.classList.remove(
+        "hidden"
+      );
+    }
+  );
+
+
+/* ===== FILE UPLOAD ===== */
+
+async function uploadFile(kind) {
+
+  const token =
+    localStorage.getItem(
+      TOKEN_KEY
+    );
+
+  if (!token) {
+
+    showLogin();
+
+    return;
+  }
+
+
+  const inputId =
+    kind === "image"
+      ? "imageFile"
+      : "musicFile";
+
+
+  const messageId =
+    kind === "image"
+      ? "imageUploadMessage"
+      : "musicUploadMessage";
+
+
+  const buttonId =
+    kind === "image"
+      ? "imageUploadButton"
+      : "musicUploadButton";
+
+
+  const input =
+    document.getElementById(
+      inputId
+    );
+
+
+  const message =
+    document.getElementById(
+      messageId
+    );
+
+
+  const button =
+    document.getElementById(
+      buttonId
+    );
+
+
+  const file =
+    input.files[0];
+
+
+  if (!file) {
+
+    message.textContent =
+      "ابتدا فایل را انتخاب کنید.";
+
+    message.className =
+      "upload-message upload-error";
+
+    return;
+  }
+
+
+  const maxSize =
+    kind === "image"
+      ? 5 * 1024 * 1024
+      : 15 * 1024 * 1024;
+
+
+  if (file.size > maxSize) {
+
+    message.textContent =
+      kind === "image"
+        ? "حجم تصویر بیشتر از ۵ مگابایت است."
+        : "حجم موسیقی بیشتر از ۱۵ مگابایت است.";
+
+    message.className =
+      "upload-message upload-error";
+
+    return;
+  }
+
+
+  message.textContent =
+    "⏳ در حال آپلود...";
+
+  message.className =
+    "upload-message";
+
+
+  button.disabled =
+    true;
+
+
+  try {
+
+    const form =
+      new FormData();
+
+    form.append(
+      "file",
+      file
+    );
+
+
+    const response =
+      await fetch(
+        "/api/v1/admin/upload?kind=" +
+        encodeURIComponent(kind),
+        {
+          method: "POST",
+
+          headers: {
+            "Authorization":
+              "Bearer " + token
+          },
+
+          body: form
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.message ||
+        "آپلود انجام نشد."
+      );
+    }
+
+
+    message.textContent =
+      "✅ فایل با موفقیت جایگزین شد.";
+
+    message.className =
+      "upload-message success";
+
+
+    input.value = "";
+
+
+    if (kind === "image") {
+
+      document
+        .getElementById(
+          "imagePreview"
+        )
+        .classList.add(
+          "hidden"
+        );
+
+    }
+
+
+  } catch (err) {
+
+    message.textContent =
+      "❌ " +
+      (
+        err.message ||
+        "خطا در آپلود فایل."
+      );
+
+    message.className =
+      "upload-message upload-error";
+
+  } finally {
+
+    button.disabled =
+      false;
+
+  }
+}
+
+
+/* ===== LOGOUT ===== */
 
 function logout() {
 
-  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(
+    TOKEN_KEY
+  );
 
   showLogin();
 
-  document.getElementById("password").focus();
+  document
+    .getElementById("password")
+    .focus();
 }
 
 
+/* ===== ENTER LOGIN ===== */
+
 document
   .getElementById("password")
-  .addEventListener("keydown", function(event) {
+  .addEventListener(
+    "keydown",
+    function(event) {
 
-    if (event.key === "Enter") {
-      login();
+      if (
+        event.key === "Enter"
+      ) {
+
+        login();
+
+      }
+
+    }
+  );
+
+
+/* ===== INITIAL LOAD ===== */
+
+window.addEventListener(
+  "load",
+  function() {
+
+    const token =
+      localStorage.getItem(
+        TOKEN_KEY
+      );
+
+    if (token) {
+
+      showPanel();
+
+    } else {
+
+      showLogin();
+
     }
 
-  });
-
-
-window.addEventListener("load", function() {
-
-  const token =
-    localStorage.getItem(TOKEN_KEY);
-
-  if (token) {
-    showPanel();
-  } else {
-    showLogin();
   }
-
-});
+);
 
 </script>
 
