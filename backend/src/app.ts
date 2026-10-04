@@ -23,7 +23,7 @@ import { MemoryService } from "./modules/memory/service.js";
 import { MockIntelligenceEngine } from "./modules/intelligence/mock-intelligence-engine.js";
 import { OpenRouterIntelligenceProvider } from "./modules/intelligence/openrouter-intelligence-provider.js";
 import { adminRoutes } from "./routes/admin.js";
-
+import { recordPublicVisit } from "./routes/admin.js";
 export interface AppOptions {
   light?: LightDevice;
 }
@@ -1508,37 +1508,32 @@ const feedbackMessage =
 
 feedbackButton.addEventListener(
   "click",
-  () => {
+  async () => {
 
     const experience =
       document.querySelector(
         'input[name="fb1"]:checked'
       )?.value || "";
 
-
     const help =
       document.querySelector(
         'input[name="fb2"]:checked'
       )?.value || "";
-
 
     const returnUse =
       document.querySelector(
         'input[name="fb3"]:checked'
       )?.value || "";
 
-
     const likedOrImprove =
       document.getElementById(
         "fb4"
       ).value.trim();
 
-
     const suggestion =
       document.getElementById(
         "fb5"
       ).value.trim();
-
 
     if (
       !experience &&
@@ -1547,68 +1542,86 @@ feedbackButton.addEventListener(
       !likedOrImprove &&
       !suggestion
     ) {
-
       feedbackMessage.textContent =
         "لطفاً حداقل یک مورد را وارد کنید.";
 
       return;
-
     }
 
-
-    const feedback = {
-
-      time:
-        new Date().toISOString(),
-
-      experience,
-
-      help,
-
-      returnUse,
-
-      likedOrImprove,
-
-      suggestion
-
-    };
-
-
-    const oldFeedback =
-      JSON.parse(
-        localStorage.getItem(
-          "hormoz_feedback"
-        ) || "[]"
-      );
-
-
-    oldFeedback.push(
-      feedback
-    );
-
-
-    localStorage.setItem(
-      "hormoz_feedback",
-      JSON.stringify(
-        oldFeedback
-      )
-    );
-
-
-    feedbackMessage.textContent =
-      "🙏 ممنون؛ بازخورد شما ثبت شد.";
-
-
-    feedbackButton.disabled =
-      true;
-
+    feedbackButton.disabled = true;
 
     feedbackButton.textContent =
-      "بازخورد ثبت شد ✓";
+      "در حال ارسال...";
 
+    try {
+
+      const response =
+        await fetch(
+          "/api/v1/feedback",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+              experience,
+              help,
+              returnUse,
+              likedOrImprove,
+              suggestion
+            })
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+          "ثبت بازخورد ناموفق بود."
+        );
+      }
+
+      feedbackMessage.textContent =
+        "🙏 ممنون؛ بازخورد شما با موفقیت ثبت شد.";
+
+      feedbackButton.textContent =
+        "بازخورد ثبت شد ✓";
+
+      document
+        .querySelectorAll(
+          'input[name="fb1"], input[name="fb2"], input[name="fb3"]'
+        )
+        .forEach(
+          input => {
+            input.checked = false;
+          }
+        );
+
+      document.getElementById("fb4").value = "";
+      document.getElementById("fb5").value = "";
+
+    } catch (error) {
+
+      feedbackMessage.textContent =
+        "❌ " +
+        (
+          error instanceof Error
+            ? error.message
+            : "خطا در ثبت بازخورد"
+        );
+
+      feedbackButton.disabled = false;
+
+      feedbackButton.textContent =
+        "ارسال بازخورد";
+    }
   }
 );
-
 </script>
 
 </body>
@@ -1623,7 +1636,18 @@ export function buildApp(
   const app =
     Fastify({
       logger: true
-    });
+    }); 
+
+app.addHook("onRequest", async (request) => {
+    if (
+      request.method === "GET" &&
+      (request.url ===
+ "/" ||
+       request.url === "/chat")
+    ) {
+      recordPublicVisit();
+    }
+  });
   app.register(multipart, {
     limits: {
       fileSize: 15 * 1024 * 1024,
