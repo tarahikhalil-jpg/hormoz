@@ -219,6 +219,41 @@
       }
     }
   </script>
+  <button id="installHormoz" style="
+    display:none;
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    z-index:9999;
+    padding:12px 18px;
+    border:none;
+    border-radius:14px;
+    font-size:16px;
+    cursor:pointer;
+  ">
+    📲 نصب هوش هرمز
+  </button>
 
+  <script>
+    let deferredPrompt;
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredPrompt = event;
+
+      const installButton = document.getElementById("installHormoz");
+      installButton.style.display = "block";
+    });
+
+    document.getElementById("installHormoz").addEventListener("click", async () => {
+      if (!deferredPrompt) return;
+
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+
+      deferredPrompt = null;
+      document.getElementById("installHormoz").style.display = "none";
+    });
+  </script>
 </body>
 </html>
