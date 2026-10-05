@@ -3,6 +3,7 @@
   "short_name": "هرمز",
   "description": "نوا، دستیار هوشمند هرمز",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#111827",
