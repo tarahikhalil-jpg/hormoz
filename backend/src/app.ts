@@ -1823,13 +1823,6 @@ app.get("/AdminPanel.html", async (_request, reply) => {
 app.get("/admin", async (_request, reply) => {
   return reply.redirect("/AdminPanel.html");
 });
-app.get("/sw.js", async (_request, reply) => {
-  const filePath = path.join(process.cwd(), "public", "sw.js");
-  const js = await fs.readFile(filePath, "utf8");
 
-  return reply
-    .type("application/javascript; charset=utf-8")
-    .send(js);
-});
   return app;
 }
