@@ -1628,16 +1628,21 @@ async function sendMessage() {
       "nava"
     );
 
-
   } catch (error) {
 
+    console.error("Nava chat failed:", error);
+
+    const detail =
+      error instanceof Error
+        ? error.message
+        : "خطای نامشخص";
+
     addMessage(
-      "فعلاً ارتباط با نوا برقرار نشد. لطفاً دوباره امتحان کن.",
+      "❌ نوا فعلاً پاسخ نداد.\n" + detail,
       "nava"
     );
 
   }
-
 
   sendButton.disabled =
     false;
