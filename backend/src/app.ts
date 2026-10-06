@@ -1337,20 +1337,20 @@ footer {
     <div class="input-row">
 
       <input
-        id="messageInput"
+        id="message"
         type="text"
         placeholder="پیامت را بنویس..."
         autocomplete="off"
       />
 
-      <button
-        class="send"
-        id="sendButton"
-        type="button"
-      >
-        ارسال
-      </button>
-
+<button
+  class="send"
+  id="sendButton"
+  type="button"
+  onclick="sendMessage()"
+>
+  ارسال
+</button>
     </div>
 
   </div>
