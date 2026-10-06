@@ -1597,10 +1597,8 @@ const API = "/api/v1/chat";
 /* =========================================================
    ELEMENTS
    ========================================================= */
-
 const input =
-  document.getElementById("messageInput");
-
+  document.getElementById("message");
 const sendButton =
   document.getElementById("sendButton");
 
@@ -1853,7 +1851,17 @@ async function sendAdminRequest() {
 window.sendAdminRequest =
   sendAdminRequest;
 
+const adminButton =
+  document.getElementById(
+    "adminRequestButton"
+  );
 
+if (adminButton) {
+  adminButton.addEventListener(
+    "click",
+    sendAdminRequest
+  );
+}
 /* =========================================================
    CHAT
    ========================================================= */
