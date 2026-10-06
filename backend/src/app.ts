@@ -1,6 +1,5 @@
 import Fastify from "fastify";
-import fastifyStatic from
- "@fastify/static";
+import fastifyStatic from "@fastify/static";
 import multipart from "@fastify/multipart";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -22,8 +21,8 @@ import { InMemoryMemoryRepository } from "./modules/memory/repository.js";
 import { MemoryService } from "./modules/memory/service.js";
 import { MockIntelligenceEngine } from "./modules/intelligence/mock-intelligence-engine.js";
 import { OpenRouterIntelligenceProvider } from "./modules/intelligence/openrouter-intelligence-provider.js";
-import { adminRoutes } from "./routes/admin.js";
-import { recordPublicVisit } from "./routes/admin.js";
+import { adminRoutes, recordPublicVisit } from "./routes/admin.js";
+
 export interface AppOptions {
   light?: LightDevice;
 }
@@ -31,11 +30,26 @@ export interface AppOptions {
 const page = `
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="google-site-verification" content="QQe7jYuEkWdr-b1plnCDAVUnqKLDLwRV0-bqrjSN7W4">
-<meta name="description" content="هوش هرمز؛ نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+
+<meta
+  name="google-site-verification"
+  content="QQe7jYuEkWdr-b1plnCDAVUnqKLDLwRV0-bqrjSN7W4"
+>
+
+<meta
+  name="description"
+  content="هوش هرمز؛ نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد."
+>
+
 <title>هوش هرمز | نوا</title>
 
 <style>
@@ -60,9 +74,11 @@ body {
 .hero {
   min-height: 100vh;
   position: relative;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   text-align: center;
 
   background:
@@ -70,8 +86,8 @@ body {
       rgba(0,0,0,.25),
       rgba(0,0,0,.72)
     ),
-url("/hormoz.jpg")
-       center / cover no-repeat;
+    url("/hormoz.jpg")
+    center / cover no-repeat;
 
   padding: 30px 20px;
 }
@@ -81,11 +97,10 @@ url("/hormoz.jpg")
   width: 100%;
 }
 
-/* ===== HORMOZ LOGO ===== */
-
 .logo {
   width: 110px;
   height: 110px;
+
   margin: 0 auto 24px;
 
   border-radius: 32px;
@@ -103,7 +118,9 @@ url("/hormoz.jpg")
       rgba(255,255,255,.10)
     );
 
-  border: 1px solid rgba(120,240,255,.45);
+  border:
+    1px solid
+    rgba(120,240,255,.45);
 
   backdrop-filter: blur(12px);
 
@@ -116,6 +133,7 @@ url("/hormoz.jpg")
 
 .logo::before {
   content: "";
+
   position: absolute;
 
   width: 70px;
@@ -140,6 +158,7 @@ url("/hormoz.jpg")
   bottom: 9px;
 
   font-size: 10px;
+
   letter-spacing: 3px;
 
   opacity: .75;
@@ -155,8 +174,6 @@ url("/hormoz.jpg")
   text-shadow:
     0 2px 12px rgba(0,0,0,.55);
 }
-
-/* ===== TITLES ===== */
 
 h1 {
   margin: 0 0 14px;
@@ -195,6 +212,7 @@ h1 {
 
 .buttons {
   display: flex;
+
   justify-content: center;
 
   gap: 12px;
@@ -218,9 +236,12 @@ button,
 
   color: #fff;
 
-  background: rgba(255,255,255,.17);
+  background:
+    rgba(255,255,255,.17);
 
-  border: 1px solid rgba(255,255,255,.28);
+  border:
+    1px solid
+    rgba(255,255,255,.28);
 
   backdrop-filter: blur(7px);
 
@@ -229,7 +250,8 @@ button,
 
 button:hover,
 .chat-button:hover {
-  background: rgba(255,255,255,.28);
+  background:
+    rgba(255,255,255,.28);
 
   transform:
     translateY(-1px);
@@ -256,7 +278,7 @@ button:hover,
     blur(8px);
 }
 
-/* ===== PROJECT INTRO ===== */
+/* ===== PROJECT ===== */
 
 .project-section {
   padding: 75px 18px;
@@ -348,10 +370,12 @@ button:hover,
   margin-bottom: 8px;
 }
 
-.principle strong {
+.principle strong,
+.principle h3 {
   display: block;
 
-  margin-bottom: 7px;
+  margin:
+    0 0 7px;
 
   font-size: 17px;
 }
@@ -362,6 +386,22 @@ button:hover,
   line-height: 1.9;
 
   opacity: .75;
+}
+
+.principle a {
+  display: inline-block;
+
+  margin-top: 10px;
+
+  color: #66f7f1;
+
+  text-decoration: none;
+
+  font-size: 14px;
+}
+
+.principle a:hover {
+  text-decoration: underline;
 }
 
 .motto {
@@ -522,6 +562,57 @@ input:focus {
   cursor: wait;
 }
 
+/* ===== ADMIN ===== */
+
+textarea {
+  font-family:
+    Tahoma,
+    Arial,
+    sans-serif;
+}
+
+#adminRequest {
+  width: 100%;
+
+  min-height: 110px;
+
+  padding: 14px;
+
+  border-radius: 14px;
+
+  border:
+    1px solid
+    rgba(255,255,255,.15);
+
+  background:
+    rgba(255,255,255,.07);
+
+  color: white;
+
+  font-size: 15px;
+
+  line-height: 1.9;
+
+  outline: none;
+
+  resize: vertical;
+}
+
+#adminRequest:focus {
+  border-color:
+    rgba(0,200,220,.5);
+}
+
+#adminResult {
+  min-height: 30px;
+
+  padding: 5px;
+
+  line-height: 2;
+
+  white-space: pre-wrap;
+}
+
 /* ===== FEEDBACK ===== */
 
 .feedback-section {
@@ -649,7 +740,10 @@ input:focus {
 
   color: white;
 
-  font-family: Tahoma, Arial, sans-serif;
+  font-family:
+    Tahoma,
+    Arial,
+    sans-serif;
 
   font-size: 15px;
 
@@ -789,6 +883,7 @@ footer {
 }
 
 </style>
+
 </head>
 
 <body>
@@ -869,19 +964,21 @@ footer {
     <h2>
       درباره هوش هرمز
     </h2>
-<img
-  src="/hormoz.jpg"
-  alt="پوستر هوش هرمز"
-  style="
-    display:block;
-    width:100%;
-    max-width:760px;
-    height:auto;
-    margin:0 auto 28px;
-    border-radius:22px;
-    box-shadow:0 18px 45px rgba(0,0,0,.28);
-  "
->
+
+    <img
+      src="/hormoz.jpg"
+      alt="پوستر هوش هرمز"
+      style="
+        display:block;
+        width:100%;
+        max-width:760px;
+        height:auto;
+        margin:0 auto 28px;
+        border-radius:22px;
+        box-shadow:0 18px 45px rgba(0,0,0,.28);
+      "
+    >
+
     <p>
       هوش هرمز یک پروژه انسان‌محور
       برای ساختن فضایی امن،
@@ -919,7 +1016,6 @@ footer {
 
       </div>
 
-
       <div class="principle">
 
         <div class="principle-icon">
@@ -936,7 +1032,6 @@ footer {
         </span>
 
       </div>
-
 
       <div class="principle">
 
@@ -956,7 +1051,6 @@ footer {
       </div>
 
     </div>
-
 
     <div class="motto">
 
@@ -982,11 +1076,16 @@ footer {
 
 </section>
 
+
+<!-- ===== INCOME ===== -->
+
 <section class="project-section">
 
   <div class="project-box">
 
-    <h2>💰 مسیر درآمد هرمز</h2>
+    <h2>
+      💰 مسیر درآمد هرمز
+    </h2>
 
     <p>
       هرمز فقط برای گفتگو نیست؛
@@ -997,30 +1096,75 @@ footer {
     <div class="principles">
 
       <div class="principle">
-        <div class="principle-icon">🖋️</div>
-        <h3>آثار نوشتاری</h3>
-        <p>شعر، ترانه، داستان، نمایشنامه و فیلمنامه</p>
-        <a href="https://adibjoo.ir/" target="_blank">
+
+        <div class="principle-icon">
+          🖋️
+        </div>
+
+        <h3>
+          آثار نوشتاری
+        </h3>
+
+        <p>
+          شعر، ترانه، داستان، نمایشنامه و فیلمنامه
+        </p>
+
+        <a
+          href="https://adibjoo.ir/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           مسیر آثار ادبی و هنری
         </a>
+
       </div>
 
       <div class="principle">
-        <div class="principle-icon">🎵</div>
-        <h3>پروژه‌های موسیقی</h3>
-        <p>ترانه‌سرایی، آهنگسازی و همکاری موسیقی</p>
-        <a href="https://www.saazino.com/" target="_blank">
+
+        <div class="principle-icon">
+          🎵
+        </div>
+
+        <h3>
+          پروژه‌های موسیقی
+        </h3>
+
+        <p>
+          ترانه‌سرایی، آهنگسازی و همکاری موسیقی
+        </p>
+
+        <a
+          href="https://www.saazino.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           پروژه‌های موسیقی
         </a>
+
       </div>
 
       <div class="principle">
-        <div class="principle-icon">🎼</div>
-        <h3>فروش ترانه و ملودی</h3>
-        <p>معرفی آثار برای همکاری یا فروش</p>
-        <a href="https://enzohekmat.com/" target="_blank">
+
+        <div class="principle-icon">
+          🎼
+        </div>
+
+        <h3>
+          فروش ترانه و ملودی
+        </h3>
+
+        <p>
+          معرفی آثار برای همکاری یا فروش
+        </p>
+
+        <a
+          href="https://enzohekmat.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           مسیر فروش و همکاری
         </a>
+
       </div>
 
     </div>
@@ -1033,11 +1177,17 @@ footer {
   </div>
 
 </section>
+
+
+<!-- ===== SERVICES ===== -->
+
 <section class="project-section">
 
   <div class="project-box">
 
-    <h2>🛠️ خدمات هرمز</h2>
+    <h2>
+      🛠️ خدمات هرمز
+    </h2>
 
     <p>
       هرمز برای حل مسائل واقعی مردم طراحی می‌شود؛
@@ -1091,11 +1241,17 @@ footer {
   </div>
 
 </section>
+
+
+<!-- ===== ADMIN ASSISTANT ===== -->
+
 <section class="project-section">
 
   <div class="project-box">
 
-    <h2>📄 دستیار امور اداری هرمز</h2>
+    <h2>
+      📄 دستیار امور اداری هرمز
+    </h2>
 
     <p>
       موضوع درخواست خود را بنویسید تا نوا در آماده‌سازی
@@ -1106,23 +1262,26 @@ footer {
       id="adminRequest"
       placeholder="مثلاً: برای درخواست مرخصی یک نامه رسمی می‌خواهم..."
       rows="4"
-      style="width:100%; box-sizing:border-box;">
-    </textarea>
+    ></textarea>
 
     <button
-      onclick="sendAdminRequest()"
-      style="margin-top:12px;">
+      id="adminRequestButton"
+      type="button"
+      style="margin-top:12px;"
+    >
       ✍️ آماده‌سازی درخواست
     </button>
 
     <div
       id="adminResult"
-      style="margin-top:15px;">
-    </div>
+      style="margin-top:15px;"
+    ></div>
 
   </div>
 
 </section>
+
+
 <!-- ===== CHAT ===== -->
 
 <section
@@ -1137,25 +1296,26 @@ footer {
       <h2>
         گفت‌وگو با نوا
       </h2>
-<img
-  src="/hormoz.jpg"
-  alt="پوستر هوش هرمز"
-  style="
-    display:block;
-    width:100%;
-    max-width:760px;
-    height:auto;
-    margin:0 auto 28px;
-    border-radius:22px;
-    box-shadow:0 18px 45px rgba(0,0,0,.28);
-  "
->
+
+      <img
+        src="/hormoz.jpg"
+        alt="پوستر هوش هرمز"
+        style="
+          display:block;
+          width:100%;
+          max-width:760px;
+          height:auto;
+          margin:0 auto 28px;
+          border-radius:22px;
+          box-shadow:0 18px 45px rgba(0,0,0,.28);
+        "
+      >
+
       <p>
         سلام کن؛ نوا آماده است.
       </p>
 
     </div>
-
 
     <div
       class="messages"
@@ -1173,7 +1333,6 @@ footer {
       </div>
 
     </div>
-
 
     <div class="input-row">
 
@@ -1220,7 +1379,6 @@ footer {
       </p>
 
     </div>
-
 
     <div class="feedback-question">
 
@@ -1270,7 +1428,6 @@ footer {
 
     </div>
 
-
     <div class="feedback-question">
 
       <strong>
@@ -1319,7 +1476,6 @@ footer {
 
     </div>
 
-
     <div class="feedback-question">
 
       <strong>
@@ -1359,7 +1515,6 @@ footer {
 
     </div>
 
-
     <div class="feedback-question">
 
       <strong>
@@ -1375,7 +1530,6 @@ footer {
 
     </div>
 
-
     <div class="feedback-question">
 
       <strong>
@@ -1390,7 +1544,6 @@ footer {
 
     </div>
 
-
     <button
       type="button"
       id="sendFeedback"
@@ -1399,12 +1552,10 @@ footer {
       ارسال بازخورد
     </button>
 
-
     <p
       id="feedbackMessage"
       class="feedback-message"
     ></p>
-
 
     <small class="feedback-note">
       🔒 این بازخورد در این مرحله بدون نام،
@@ -1435,134 +1586,333 @@ footer {
 
 <script>
 
-const API =
-  "/api/v1/chat";
+/* =========================================================
+   HORMOZ FRONTEND
+   نسخه مقاوم در برابر خطاهای JavaScript
+   ========================================================= */
 
+const API = "/api/v1/chat";
+
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
 
 const input =
-  document.getElementById(
-    "messageInput"
-  );
-
+  document.getElementById("messageInput");
 
 const sendButton =
-  document.getElementById(
-    "sendButton"
-  );
-
+  document.getElementById("sendButton");
 
 const messages =
-  document.getElementById(
-    "messages"
+  document.getElementById("messages");
+
+
+/* =========================================================
+   HELPER
+   ========================================================= */
+
+function getResponseText(data) {
+
+  if (!data) {
+    return "";
+  }
+
+  return (
+    data.content ||
+    data.response ||
+    data.reply ||
+    data.message ||
+    data.answer ||
+    ""
   );
-/* ===== MUSIC ===== */
+}
 
-const music =
-  document.getElementById("backgroundMusic");
 
-const musicButton =
-  document.getElementById("musicButton");
+async function readJsonResponse(response) {
 
-let musicOn = false;
+  const raw =
+    await response.text();
 
-musicButton.addEventListener("click", async () => {
-  try {
-    if (!musicOn) {
-      await music.play();
-
-      musicOn = true;
-
-      musicButton.textContent =
-        "🔇 توقف موسیقی";
-    } else {
-      music.pause();
-
-      musicOn = false;
-
-      musicButton.textContent =
-        "🎵 موسیقی";
-    }
-  } catch (error) {
-    console.error("Music playback failed:", error);
-
-    musicButton.textContent =
-      "🎵 پخش موسیقی";
-  }
-});
-
-async function sendAdminRequest() {
-  const input = document.getElementById("adminRequest");
-  const result = document.getElementById("adminResult");
-
-  const message = input.value.trim();
-
-  if (!message) {
-    result.textContent = "لطفاً موضوع درخواست را بنویسید.";
-    return;
+  if (!raw) {
+    return {};
   }
 
-  result.textContent = "⏳ نوا در حال آماده‌سازی درخواست است...";
-
   try {
-    const response = await fetch("/api/v1/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message:
-          "درخواست اداری کاربر را به یک متن رسمی، محترمانه و آماده استفاده تبدیل کن:\n\n" +
-          message
-      })
-    });
-
-    const data = await response.json();
-
-    result.textContent =
-      data.reply ||
-      data.message ||
-      "نوا پاسخی دریافت نکرد.";
-  } catch (error) {
-    console.error("Admin request failed:", error);
-    result.textContent =
-      "❌ فعلاً ارتباط با نوا برقرار نشد.";
+    return JSON.parse(raw);
+  } catch {
+    throw new Error(
+      "پاسخ نامعتبر از سرور دریافت شد."
+    );
   }
 }
 
-/* ===== CHAT ===== */
+
+/* =========================================================
+   MUSIC
+   ========================================================= */
+
+const music =
+  document.getElementById(
+    "backgroundMusic"
+  );
+
+const musicButton =
+  document.getElementById(
+    "musicButton"
+  );
+
+let musicOn = false;
+
+
+if (
+  music &&
+  musicButton
+) {
+
+  musicButton.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        if (!musicOn) {
+
+          await music.play();
+
+          musicOn = true;
+
+          musicButton.textContent =
+            "🔇 توقف موسیقی";
+
+        } else {
+
+          music.pause();
+
+          musicOn = false;
+
+          musicButton.textContent =
+            "🎵 موسیقی";
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          "Music playback failed:",
+          error
+        );
+
+        musicOn = false;
+
+        musicButton.textContent =
+          "🎵 پخش موسیقی";
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   ADMIN REQUEST
+   ========================================================= */
+
+async function sendAdminRequest() {
+
+  const adminInput =
+    document.getElementById(
+      "adminRequest"
+    );
+
+  const result =
+    document.getElementById(
+      "adminResult"
+    );
+
+  const button =
+    document.getElementById(
+      "adminRequestButton"
+    );
+
+
+  if (
+    !adminInput ||
+    !result
+  ) {
+
+    return;
+
+  }
+
+
+  const message =
+    adminInput.value.trim();
+
+
+  if (!message) {
+
+    result.textContent =
+      "لطفاً موضوع درخواست را بنویسید.";
+
+    return;
+
+  }
+
+
+  result.textContent =
+    "⏳ نوا در حال آماده‌سازی درخواست است...";
+
+
+  if (button) {
+    button.disabled = true;
+  }
+
+
+  try {
+
+    const response =
+      await fetch(
+        API,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "x-user-id":
+              "public"
+          },
+
+          body:
+            JSON.stringify({
+              message:
+                "درخواست اداری کاربر را به یک متن رسمی، محترمانه و آماده استفاده تبدیل کن:\n\n" +
+                message
+            })
+        }
+      );
+
+
+    const data =
+      await readJsonResponse(
+        response
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data?.message ||
+        data?.error ||
+        "خطا در ارتباط با نوا"
+      );
+
+    }
+
+
+    const answer =
+      getResponseText(data);
+
+
+    result.textContent =
+      answer ||
+      "نوا پاسخی دریافت نکرد.";
+
+
+  } catch (error) {
+
+    console.error(
+      "Admin request failed:",
+      error
+    );
+
+    result.textContent =
+      "❌ فعلاً ارتباط با نوا برقرار نشد.";
+
+  } finally {
+
+    if (button) {
+      button.disabled = false;
+    }
+
+  }
+
+}
+
+
+/*
+   تابع را به window می‌دهیم تا
+   اگر جایی onclick قدیمی وجود داشت
+   باز هم کار کند.
+*/
+
+window.sendAdminRequest =
+  sendAdminRequest;
+
+
+/* =========================================================
+   CHAT
+   ========================================================= */
 
 function addMessage(
   text,
   type
 ) {
 
+  if (!messages) {
+    return;
+  }
+
+
   const div =
     document.createElement(
       "div"
     );
 
+
   div.className =
     "message " + type;
 
+
   div.textContent =
     text;
+
 
   messages.appendChild(
     div
   );
 
+
   messages.scrollTop =
     messages.scrollHeight;
+
 }
 
 
 async function sendMessage() {
 
+  if (
+    !input ||
+    !sendButton ||
+    !messages
+  ) {
+
+    return;
+
+  }
+
+
   const message =
     input.value.trim();
 
-  if (!message)
+
+  if (!message) {
     return;
+  }
 
 
   addMessage(
@@ -1573,8 +1923,7 @@ async function sendMessage() {
 
   input.value = "";
 
-  sendButton.disabled =
-    true;
+  sendButton.disabled = true;
 
 
   try {
@@ -1602,7 +1951,9 @@ async function sendMessage() {
 
 
     const data =
-      await response.json();
+      await readJsonResponse(
+        response
+      );
 
 
     if (!response.ok) {
@@ -1617,70 +1968,92 @@ async function sendMessage() {
 
 
     const answer =
-      data.content ||
-      data.response ||
-      data.message ||
-      "پاسخی دریافت نشد.";
+      getResponseText(data);
 
 
     addMessage(
-      answer,
+      answer ||
+      "نوا پاسخی دریافت نکرد.",
       "nava"
     );
 
+
   } catch (error) {
 
-    console.error("Nava chat failed:", error);
+    console.error(
+      "Nava chat failed:",
+      error
+    );
+
 
     const detail =
       error instanceof Error
         ? error.message
         : "خطای نامشخص";
 
+
     addMessage(
-      "❌ نوا فعلاً پاسخ نداد.\n" + detail,
+      "❌ نوا فعلاً پاسخ نداد.\n" +
+      detail,
       "nava"
     );
 
+
+  } finally {
+
+    sendButton.disabled =
+      false;
+
+    input.focus();
+
   }
-
-  sendButton.disabled =
-    false;
-
-  input.focus();
 
 }
 
 
-sendButton.addEventListener(
-  "click",
-  sendMessage
-);
+/* =========================================================
+   CHAT EVENTS
+   ========================================================= */
+
+if (
+  sendButton &&
+  input
+) {
+
+  sendButton.addEventListener(
+    "click",
+    sendMessage
+  );
 
 
-input.addEventListener(
-  "keydown",
-  (event) => {
+  input.addEventListener(
+    "keydown",
+    (event) => {
 
-    if (
-      event.key === "Enter"
-    ) {
+      if (
+        event.key === "Enter"
+      ) {
 
-      sendMessage();
+        event.preventDefault();
+
+        sendMessage();
+
+      }
 
     }
+  );
 
-  }
-);
+}
 
 
-/* ===== FEEDBACK ===== */
+/* =========================================================
+   FEEDBACK
+   ========================================================= */
 
 const feedbackButton =
   document.getElementById(
     "sendFeedback"
   );
-
 
 const feedbackMessage =
   document.getElementById(
@@ -1688,122 +2061,186 @@ const feedbackMessage =
   );
 
 
-feedbackButton.addEventListener(
-  "click",
-  async () => {
+if (
+  feedbackButton &&
+  feedbackMessage
+) {
 
-    const experience =
-      document.querySelector(
-        'input[name="fb1"]:checked'
-      )?.value || "";
+  feedbackButton.addEventListener(
+    "click",
+    async () => {
 
-    const help =
-      document.querySelector(
-        'input[name="fb2"]:checked'
-      )?.value || "";
+      const experience =
+        document.querySelector(
+          'input[name="fb1"]:checked'
+        )?.value || "";
 
-    const returnUse =
-      document.querySelector(
-        'input[name="fb3"]:checked'
-      )?.value || "";
 
-    const likedOrImprove =
-      document.getElementById(
-        "fb4"
-      ).value.trim();
+      const help =
+        document.querySelector(
+          'input[name="fb2"]:checked'
+        )?.value || "";
 
-    const suggestion =
-      document.getElementById(
-        "fb5"
-      ).value.trim();
 
-    if (
-      !experience &&
-      !help &&
-      !returnUse &&
-      !likedOrImprove &&
-      !suggestion
-    ) {
-      feedbackMessage.textContent =
-        "لطفاً حداقل یک مورد را وارد کنید.";
+      const returnUse =
+        document.querySelector(
+          'input[name="fb3"]:checked'
+        )?.value || "";
 
-      return;
-    }
 
-    feedbackButton.disabled = true;
-
-    feedbackButton.textContent =
-      "در حال ارسال...";
-
-    try {
-
-      const response =
-        await fetch(
-          "/api/v1/feedback",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body: JSON.stringify({
-              experience,
-              help,
-              returnUse,
-              likedOrImprove,
-              suggestion
-            })
-          }
+      const likedInput =
+        document.getElementById(
+          "fb4"
         );
 
-      const data =
-        await response.json();
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-          "ثبت بازخورد ناموفق بود."
+      const suggestionInput =
+        document.getElementById(
+          "fb5"
         );
+
+
+      const likedOrImprove =
+        likedInput
+          ? likedInput.value.trim()
+          : "";
+
+
+      const suggestion =
+        suggestionInput
+          ? suggestionInput.value.trim()
+          : "";
+
+
+      if (
+        !experience &&
+        !help &&
+        !returnUse &&
+        !likedOrImprove &&
+        !suggestion
+      ) {
+
+        feedbackMessage.textContent =
+          "لطفاً حداقل یک مورد را وارد کنید.";
+
+        return;
+
       }
 
-      feedbackMessage.textContent =
-        "🙏 ممنون؛ بازخورد شما با موفقیت ثبت شد.";
+
+      feedbackButton.disabled =
+        true;
+
 
       feedbackButton.textContent =
-        "بازخورد ثبت شد ✓";
+        "در حال ارسال...";
 
-      document
-        .querySelectorAll(
-          'input[name="fb1"], input[name="fb2"], input[name="fb3"]'
-        )
-        .forEach(
-          input => {
-            input.checked = false;
-          }
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/v1/feedback",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  experience,
+                  help,
+                  returnUse,
+                  likedOrImprove,
+                  suggestion
+                })
+            }
+          );
+
+
+        const data =
+          await readJsonResponse(
+            response
+          );
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            data?.message ||
+            data?.error ||
+            "ثبت بازخورد ناموفق بود."
+          );
+
+        }
+
+
+        feedbackMessage.textContent =
+          "🙏 ممنون؛ بازخورد شما با موفقیت ثبت شد.";
+
+
+        feedbackButton.textContent =
+          "بازخورد ثبت شد ✓";
+
+
+        document
+          .querySelectorAll(
+            'input[name="fb1"], input[name="fb2"], input[name="fb3"]'
+          )
+          .forEach(
+            (item) => {
+
+              item.checked =
+                false;
+
+            }
+          );
+
+
+        if (likedInput) {
+          likedInput.value = "";
+        }
+
+
+        if (suggestionInput) {
+          suggestionInput.value = "";
+        }
+
+
+      } catch (error) {
+
+        console.error(
+          "Feedback failed:",
+          error
         );
 
-      document.getElementById("fb4").value = "";
-      document.getElementById("fb5").value = "";
 
-    } catch (error) {
+        feedbackMessage.textContent =
+          "❌ " +
+          (
+            error instanceof Error
+              ? error.message
+              : "خطا در ثبت بازخورد"
+          );
 
-      feedbackMessage.textContent =
-        "❌ " +
-        (
-          error instanceof Error
-            ? error.message
-            : "خطا در ثبت بازخورد"
-        );
 
-      feedbackButton.disabled = false;
+        feedbackButton.disabled =
+          false;
 
-      feedbackButton.textContent =
-        "ارسال بازخورد";
+
+        feedbackButton.textContent =
+          "ارسال بازخورد";
+
+      }
+
     }
-  }
-);
+  );
+
+}
+
 </script>
 
 </body>
@@ -1818,27 +2255,52 @@ export function buildApp(
   const app =
     Fastify({
       logger: true
-    }); 
+    });
 
-app.addHook("onRequest", async (request) => {
-    if (
-      request.method === "GET" &&
-      (request.url ===
- "/" ||
-       request.url === "/chat")
-    ) {
-      recordPublicVisit();
+
+  /* ===== PUBLIC VISITS ===== */
+
+  app.addHook(
+    "onRequest",
+    async (request) => {
+
+      if (
+        request.method === "GET" &&
+        (
+          request.url === "/" ||
+          request.url === "/chat"
+        )
+      ) {
+
+        recordPublicVisit();
+
+      }
+
     }
-  });
-  app.register(multipart, {
-    limits: {
-      fileSize: 15 * 1024 * 1024,
-      files: 1
+  );
+
+
+  /* ===== MULTIPART ===== */
+
+  app.register(
+    multipart,
+    {
+      limits: {
+        fileSize:
+          15 * 1024 * 1024,
+
+        files: 1
+      }
     }
-  });
+  );
+
+
+  /* ===== PATHS ===== */
 
   const __filename =
-    fileURLToPath(import.meta.url);
+    fileURLToPath(
+      import.meta.url
+    );
 
 
   const __dirname =
@@ -1858,31 +2320,49 @@ app.addHook("onRequest", async (request) => {
           "../public"
         ),
 
-      prefix: "/",
+      prefix: "/"
     }
   );
 
-app.get("/hormoz-music.mp3", async (_request, reply) => {
-  const filePath = path.join(
-    __dirname,
-    "../public/بالاخره شد_۰۴۱۰۲۰۲۶.mp3"
+
+  /* ===== MUSIC ===== */
+
+  app.get(
+    "/hormoz-music.mp3",
+    async (_request, reply) => {
+
+      const filePath =
+        path.join(
+          __dirname,
+          "../public/بالاخره شد_۰۴۱۰۲۰۲۶.mp3"
+        );
+
+
+      const data =
+        await fs.readFile(
+          filePath
+        );
+
+
+      return reply
+        .type("audio/mpeg")
+        .send(data);
+
+    }
   );
 
-  const data = await fs.readFile(filePath);
 
-  return reply
-    .type("audio/mpeg")
-    .send(data);
-});
   /* ===== IDENTITY ===== */
 
   const identityService =
     new IdentityService({
+
       userRepository:
         new InMemoryUserRepository(),
 
       sessionRepository:
-        new InMemorySessionRepository(),
+        new InMemorySessionRepository()
+
     });
 
 
@@ -1890,10 +2370,12 @@ app.get("/hormoz-music.mp3", async (_request, reply) => {
 
   const conversationService =
     new ConversationService({
+
       conversationRepository:
         new InMemoryConversationRepository(),
 
-      identityService,
+      identityService
+
     });
 
 
@@ -1905,7 +2387,9 @@ app.get("/hormoz-music.mp3", async (_request, reply) => {
 
   const memoryService =
     new MemoryService({
-      memoryRepository,
+
+      memoryRepository
+
     });
 
 
@@ -1913,7 +2397,9 @@ app.get("/hormoz-music.mp3", async (_request, reply) => {
 
   const light =
     options.light ??
-    new MockLight("light-777");
+    new MockLight(
+      "light-777"
+    );
 
 
   /* ===== INTELLIGENCE ===== */
@@ -1929,6 +2415,7 @@ app.get("/hormoz-music.mp3", async (_request, reply) => {
   app.register(
     chatRoutes,
     {
+
       memoryService,
 
       conversationService,
@@ -1939,8 +2426,9 @@ app.get("/hormoz-music.mp3", async (_request, reply) => {
 
       actionDispatcher:
         new ActionDispatcher({
-          light,
-        }),
+          light
+        })
+
     }
   );
 
@@ -1950,9 +2438,11 @@ app.get("/hormoz-music.mp3", async (_request, reply) => {
   app.register(
     conversationRoutes,
     {
+
       conversationService,
 
-      identityService,
+      identityService
+
     }
   );
 
@@ -1960,6 +2450,8 @@ app.get("/hormoz-music.mp3", async (_request, reply) => {
   app.register(
     healthRoutes
   );
+
+
   app.register(
     adminRoutes
   );
@@ -1968,7 +2460,7 @@ app.get("/hormoz-music.mp3", async (_request, reply) => {
   app.register(
     memoryRoutes,
     {
-      memoryService,
+      memoryService
     }
   );
 
@@ -2004,18 +2496,49 @@ app.get("/hormoz-music.mp3", async (_request, reply) => {
     }
   );
 
-app.get("/AdminPanel.html", async (_request, reply) => {
- const filePath = path.join(process.cwd(), "public", "AdminPanel.html");
-  const html = await fs.readFile(filePath, "utf8");
 
-  return reply
-    .type("text/html; charset=utf-8")
-    .send(html);
-});
+  /* ===== ADMIN PANEL ===== */
 
-app.get("/admin", async (_request, reply) => {
-  return reply.redirect("/AdminPanel.html");
-});
+  app.get(
+    "/AdminPanel.html",
+    async (_request, reply) => {
+
+      const filePath =
+        path.join(
+          process.cwd(),
+          "public",
+          "AdminPanel.html"
+        );
+
+
+      const html =
+        await fs.readFile(
+          filePath,
+          "utf8"
+        );
+
+
+      return reply
+        .type(
+          "text/html; charset=utf-8"
+        )
+        .send(html);
+
+    }
+  );
+
+
+  app.get(
+    "/admin",
+    async (_request, reply) => {
+
+      return reply.redirect(
+        "/AdminPanel.html"
+      );
+
+    }
+  );
+
 
   return app;
 }
