@@ -1033,6 +1033,64 @@ footer {
   </div>
 
 </section>
+<section class="project-section">
+
+  <div class="project-box">
+
+    <h2>🛠️ خدمات هرمز</h2>
+
+    <p>
+      هرمز برای حل مسائل واقعی مردم طراحی می‌شود؛
+      از امور اداری و فروش تا تبلیغات، سفر و مدیریت ساده کسب‌وکار.
+    </p>
+
+    <div class="principles">
+
+      <div class="principle">
+        <div class="principle-icon">📢</div>
+        <h3>تبلیغات</h3>
+        <p>ایده، متن تبلیغاتی و معرفی محصول</p>
+      </div>
+
+      <div class="principle">
+        <div class="principle-icon">📄</div>
+        <h3>امورات اداری</h3>
+        <p>نامه، درخواست، فرم و پیگیری امور</p>
+      </div>
+
+      <div class="principle">
+        <div class="principle-icon">🧾</div>
+        <h3>حسابداری و فاکتور</h3>
+        <p>ثبت فروش، محاسبات ساده و فاکتور</p>
+      </div>
+
+      <div class="principle">
+        <div class="principle-icon">🎬</div>
+        <h3>کلیپ تبلیغاتی</h3>
+        <p>ایده، سناریو و محتوای تبلیغاتی</p>
+      </div>
+
+      <div class="principle">
+        <div class="principle-icon">🛒</div>
+        <h3>فروش</h3>
+        <p>معرفی محصول، متن فروش و سفارش‌ها</p>
+      </div>
+
+      <div class="principle">
+        <div class="principle-icon">✈️</div>
+        <h3>سفر و گردشگری</h3>
+        <p>سفر، اقامت، رستوران و حمل‌ونقل</p>
+      </div>
+
+    </div>
+
+    <p class="motto">
+      هرمز برای ساده‌تر کردن کارهای واقعی انسان ساخته می‌شود.
+    </p>
+
+  </div>
+
+</section>
 <!-- ===== CHAT ===== -->
 
 <section
