@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type {
   IntelligenceEngine,
   IntelligenceResponse,
@@ -106,7 +106,23 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
     const action = interpretCommand(message);
 
     if (action) {
-      return actionDispatcher.dispatch(action);
+      try {
+        return await actionDispatcher.dispatch(action);
+      } catch (error) {
+        console.error(
+          "Action dispatcher failed:",
+          error instanceof Error ? error.message : error,
+        );
+
+        return reply.code(500).send({
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "خطا در اجرای فرمان",
+          version: "0.1",
+        });
+      }
     }
 
     const userIdHeader = request.headers["x-user-id"];
@@ -116,33 +132,60 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
         ? userIdHeader.trim()
         : "chat-fallback-user";
 
-    const memories = await memoryService.listMemories(userId);
+    let memories: Awaited<
+      ReturnType<MemoryService["listMemories"]>
+    > = [];
+
+    try {
+      memories = await memoryService.listMemories(userId);
+    } catch (error) {
+      console.error(
+        "Memory service failed:",
+        error instanceof Error ? error.message : error,
+      );
+    }
 
     const context = Object.fromEntries(
       memories.map((memory) => [`memory.${memory.key}`, memory.value]),
     );
 
-    const engineResponse: IntelligenceResponse =
-      await intelligenceEngine.generate({
-        userId,
-        correlationId: `chat-${Date.now()}`,
-        messages: [{ role: "user", content: message }],
-        context,
-      });
+    try {
+      const engineResponse: IntelligenceResponse =
+        await intelligenceEngine.generate({
+          userId,
+          correlationId: `chat-${Date.now()}`,
+          messages: [{ role: "user", content: message }],
+          context,
+        });
 
-    if (engineResponse.status === "failed") {
-      return reply.code(502).send({
+      if (engineResponse.status === "failed") {
+        return reply.code(502).send({
+          success: false,
+          error: engineResponse.error.message,
+          version: "0.1",
+        });
+      }
+
+      return {
+        success: true,
+        response: engineResponse.content,
+        version: "0.1",
+      };
+    } catch (error) {
+      console.error(
+        "Nava engine failed:",
+        error instanceof Error ? error.message : error,
+      );
+
+      return reply.code(500).send({
         success: false,
-        error: engineResponse.error.message,
+        error:
+          error instanceof Error
+            ? error.message
+            : "خطای ناشناخته در موتور نوا",
         version: "0.1",
       });
     }
-
-    return {
-      success: true,
-      response: engineResponse.content,
-      version: "0.1",
-    };
   });
 };
 
@@ -226,6 +269,11 @@ async function runConversationLoop(
       version: "0.1",
     };
   } catch (error) {
+    console.error(
+      "Conversation loop failed:",
+      error instanceof Error ? error.message : error,
+    );
+
     if (error instanceof Error && "code" in error) {
       const code = String(error.code);
 
@@ -244,6 +292,13 @@ async function runConversationLoop(
       });
     }
 
-    throw error;
+    return reply.code(500).send({
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "خطای ناشناخته در حلقه مکالمه",
+      version: "0.1",
+    });
   }
 }
