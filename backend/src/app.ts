@@ -982,7 +982,57 @@ footer {
 
 </section>
 
+<section class="project-section">
 
+  <div class="project-box">
+
+    <h2>💰 مسیر درآمد هرمز</h2>
+
+    <p>
+      هرمز فقط برای گفتگو نیست؛
+      هدف آن کمک به تبدیل توانایی و خلاقیت انسان
+      به ارزش و درآمد واقعی است.
+    </p>
+
+    <div class="principles">
+
+      <div class="principle">
+        <div class="principle-icon">🖋️</div>
+        <h3>آثار نوشتاری</h3>
+        <p>شعر، ترانه، داستان، نمایشنامه و فیلمنامه</p>
+        <a href="https://adibjoo.ir/" target="_blank">
+          مسیر آثار ادبی و هنری
+        </a>
+      </div>
+
+      <div class="principle">
+        <div class="principle-icon">🎵</div>
+        <h3>پروژه‌های موسیقی</h3>
+        <p>ترانه‌سرایی، آهنگسازی و همکاری موسیقی</p>
+        <a href="https://www.saazino.com/" target="_blank">
+          پروژه‌های موسیقی
+        </a>
+      </div>
+
+      <div class="principle">
+        <div class="principle-icon">🎼</div>
+        <h3>فروش ترانه و ملودی</h3>
+        <p>معرفی آثار برای همکاری یا فروش</p>
+        <a href="https://enzohekmat.com/" target="_blank">
+          مسیر فروش و همکاری
+        </a>
+      </div>
+
+    </div>
+
+    <p class="motto">
+      هدف هرمز شهرت نیست؛
+      هدف، تبدیل توانایی واقعی انسان به ارزش و درآمد پایدار است.
+    </p>
+
+  </div>
+
+</section>
 <!-- ===== CHAT ===== -->
 
 <section
