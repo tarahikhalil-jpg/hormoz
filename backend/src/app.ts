@@ -809,7 +809,7 @@ footer {
   preload="none"
 >
   <source
-    src="/بالاخره شد_۰۴۱۰۲۰۲۶.mp3"
+    src="/hormoz-music.mp3"
     type="audio/mpeg"
   >
 </audio>
@@ -1857,7 +1857,18 @@ app.addHook("onRequest", async (request) => {
     }
   );
 
+app.get("/hormoz-music.mp3", async (_request, reply) => {
+  const filePath = path.join(
+    __dirname,
+    "../public/بالاخره شد_۰۴۱۰۲۰۲۶.mp3"
+  );
 
+  const data = await fs.readFile(filePath);
+
+  return reply
+    .type("audio/mpeg")
+    .send(data);
+});
   /* ===== IDENTITY ===== */
 
   const identityService =
