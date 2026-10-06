@@ -1091,6 +1091,38 @@ footer {
   </div>
 
 </section>
+<section class="project-section">
+
+  <div class="project-box">
+
+    <h2>📄 دستیار امور اداری هرمز</h2>
+
+    <p>
+      موضوع درخواست خود را بنویسید تا نوا در آماده‌سازی
+      یک متن رسمی و منظم به شما کمک کند.
+    </p>
+
+    <textarea
+      id="adminRequest"
+      placeholder="مثلاً: برای درخواست مرخصی یک نامه رسمی می‌خواهم..."
+      rows="4"
+      style="width:100%; box-sizing:border-box;">
+    </textarea>
+
+    <button
+      onclick="sendAdminRequest()"
+      style="margin-top:12px;">
+      ✍️ آماده‌سازی درخواست
+    </button>
+
+    <div
+      id="adminResult"
+      style="margin-top:15px;">
+    </div>
+
+  </div>
+
+</section>
 <!-- ===== CHAT ===== -->
 
 <section
@@ -1458,7 +1490,44 @@ musicButton.addEventListener("click", async () => {
   }
 });
 
+async function sendAdminRequest() {
+  const input = document.getElementById("adminRequest");
+  const result = document.getElementById("adminResult");
 
+  const message = input.value.trim();
+
+  if (!message) {
+    result.textContent = "لطفاً موضوع درخواست را بنویسید.";
+    return;
+  }
+
+  result.textContent = "⏳ نوا در حال آماده‌سازی درخواست است...";
+
+  try {
+    const response = await fetch("/api/v1/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message:
+          "درخواست اداری کاربر را به یک متن رسمی، محترمانه و آماده استفاده تبدیل کن:\n\n" +
+          message
+      })
+    });
+
+    const data = await response.json();
+
+    result.textContent =
+      data.reply ||
+      data.message ||
+      "نوا پاسخی دریافت نکرد.";
+  } catch (error) {
+    console.error("Admin request failed:", error);
+    result.textContent =
+      "❌ فعلاً ارتباط با نوا برقرار نشد.";
+  }
+}
 
 /* ===== CHAT ===== */
 
