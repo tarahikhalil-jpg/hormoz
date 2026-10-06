@@ -209,10 +209,8 @@
         }
 
         answer.textContent =
-          data.reply ||
-          data.message ||
-          "نوا پاسخی دریافت نکرد.";
-
+  data.response ||
+  "نوا پاسخی دریافت نکرد.";
       } catch (error) {
         answer.textContent =
           "نوا در حال بیدار شدن است... چند لحظه دیگر دوباره امتحان کن. 🌱";
