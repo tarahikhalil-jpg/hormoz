@@ -1587,7 +1587,7 @@ footer {
    نسخه مقاوم در برابر خطاهای JavaScript
    ========================================================= */
 
-const API = `${window.location.origin}/api/v1/chat`;
+const API = window.location.origin + "/api/v1/chat";
 
 /* =========================================================
    ELEMENTS
