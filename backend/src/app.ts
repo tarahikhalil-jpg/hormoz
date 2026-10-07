@@ -1347,7 +1347,7 @@ footer {
   class="send"
   id="sendButton"
   type="button"
-  onclick="sendMessage()"
+  
 >
   ارسال
 </button>
