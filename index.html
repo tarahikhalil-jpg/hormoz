@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="/manifest.json">
   <title>هوش هرمز | نوا</title>
 
   <style>
@@ -151,9 +151,13 @@
 
       <textarea
         id="message"
-        placeholder="پیامت را برای نوا بنویس..."></textarea>
+        placeholder="پیامت را برای نوا بنویش..."></textarea>
 
-      <button class="btn" onclick="sendMessage()">
+      <button
+        class="btn"
+        type="button"
+        onclick="window.sendMessage()"
+      >
         ارسال
       </button>
 
@@ -209,14 +213,18 @@
         }
 
         answer.textContent =
-  data.response ||
-  "نوا پاسخی دریافت نکرد.";
+          data.response ||
+          "نوا پاسخی دریافت نکرد.";
+
       } catch (error) {
         answer.textContent =
           "نوا در حال بیدار شدن است... چند لحظه دیگر دوباره امتحان کن. 🌱";
       }
     }
+
+    window.sendMessage = sendMessage;
   </script>
+
   <button id="installHormoz" style="
     display:none;
     position:fixed;
@@ -239,26 +247,35 @@
       event.preventDefault();
       deferredPrompt = event;
 
-      const installButton = document.getElementById("installHormoz");
+      const installButton =
+        document.getElementById("installHormoz");
+
       installButton.style.display = "block";
     });
 
-    document.getElementById("installHormoz").addEventListener("click", async () => {
-      if (!deferredPrompt) return;
+    document
+      .getElementById("installHormoz")
+      .addEventListener("click", async () => {
 
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
+        if (!deferredPrompt) return;
 
-      deferredPrompt = null;
-      document.getElementById("installHormoz").style.display = "none";
-    });
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+
+        deferredPrompt = null;
+
+        document.getElementById("installHormoz")
+          .style.display = "none";
+      });
   </script>
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js");
-    });
-  }
-</script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js");
+      });
+    }
+  </script>
+
 </body>
 </html>
