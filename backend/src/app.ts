@@ -1933,7 +1933,8 @@ async function sendMessage() {
 
   sendButton.disabled = true;
 
-
+const controller = new AbortController();
+const timeoutId = setTimeout(() => controller.abort(), 30000);
   try {
 
     const response =
@@ -1950,10 +1951,11 @@ async function sendMessage() {
               "public"
           },
 
-          body:
+                    body:
             JSON.stringify({
               message
-            })
+            }),
+          signal: controller.signal
         }
       );
 
@@ -2008,7 +2010,7 @@ async function sendMessage() {
 
 
   } finally {
-
+clearTimeout(timeoutId);
     sendButton.disabled =
       false;
 
