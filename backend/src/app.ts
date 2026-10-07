@@ -1342,16 +1342,14 @@ footer {
         placeholder="پیامت را بنویس..."
         autocomplete="off"
       />
-
-<button
+  <button
   class="send"
   id="sendButton"
   type="button"
-  
+  onclick="sendMessage()"
 >
   ارسال
-</button>
-    </div>
+</button>  </div>
 
   </div>
 
