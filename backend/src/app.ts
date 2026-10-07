@@ -1346,7 +1346,7 @@ footer {
   class="send"
   id="sendButton"
   type="button"
-  onclick="sendMessage()"
+  
 >
   ارسال
 </button>  </div>
@@ -1583,18 +1583,16 @@ footer {
 
 
 <script>
-
 /* =========================================================
-   HORMOZ FRONTEND
    نسخه مقاوم در برابر خطاهای JavaScript
    ========================================================= */
 
-const API = "/api/v1/chat";
-
+const API = `${window.location.origin}/api/v1/chat`;
 
 /* =========================================================
    ELEMENTS
    ========================================================= */
+
 const input =
   document.getElementById("message");
 const sendButton =
@@ -2019,7 +2017,7 @@ async function sendMessage() {
 /* =========================================================
    CHAT EVENTS
    ========================================================= */
-
+window.sendMessage = sendMessage;
 if (
   sendButton &&
   input
