@@ -1340,14 +1340,12 @@ footer {
   type="text"
   placeholder="پیامت را بنویس..."
   autocomplete="off"
-  onkeydown="if (event.key === 'Enter') { event.preventDefault(); sendMessage(); }"
 >
      
 <button
   class="send"
   id="sendButton"
   type="button"
-  onclick="sendMessage()"
 >
   ارسال
 </button>
@@ -1795,7 +1793,7 @@ async function sendMessage() {
               "public"
           },
 
-                    body:
+          body:
             JSON.stringify({
               message
             })
@@ -2187,7 +2185,7 @@ export function buildApp(
       const filePath =
         path.join(
           __dirname,
-          "../public/بالاخره شد_۰۴۱۰۲۰۲۶.mp3"
+          "../public/hormoz-music.mp3"
         );
 
 
