@@ -1676,23 +1676,20 @@ export function buildApp(
     "/hormoz-music.mp3",
     async (_request, reply) => {
 
-      const filePath =
+          const filePath =
         path.join(
           __dirname,
-          "../public/hormoz-music.mp3"
+          "../public/hormoz-music (1).mp3"
         );
-
 
       const data =
         await fs.readFile(
           filePath
         );
 
-
       return reply
         .type("audio/mpeg")
         .send(data);
-
     }
   );
 
