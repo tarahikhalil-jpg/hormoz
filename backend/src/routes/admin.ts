@@ -370,7 +370,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
 
     const part =
-      await request.file();
+      await (request as any).file();
 
 
     if (!part) {
