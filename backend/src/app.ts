@@ -1335,29 +1335,31 @@ footer {
     </div>
 
     <div class="input-row">
-
-      <input
-        id="message"
-        type="text"
-        placeholder="پیامت را بنویس..."
-        autocomplete="off"
-      />
-  <button
+<input
+  id="message"
+  type="text"
+  placeholder="پیامت را بنویس..."
+  autocomplete="off"
+  onkeydown="if (event.key === 'Enter') { event.preventDefault(); sendMessage(); }"
+>
+     
+<button
   class="send"
   id="sendButton"
   type="button"
-  
+  onclick="sendMessage()"
 >
   ارسال
-</button>  </div>
+</button>
 
-  </div>
+</div>
+
+</div>
 
 </section>
 
 
 <!-- ===== FEEDBACK ===== -->
-
 <section
   class="feedback-section"
   id="feedback"
