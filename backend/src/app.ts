@@ -947,7 +947,12 @@ footer {
       >
         ورود به گفت‌وگو با نوا
       </a>
-
+<a
+class="chat-button"
+href="/orders.html"
+>
+ثبت سفارش و ارتباط با هرمز
+</a>
     </div>
 
   </div>
