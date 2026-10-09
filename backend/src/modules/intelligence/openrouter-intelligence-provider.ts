@@ -1,8 +1,12 @@
 import type { IntelligenceRequest } from "./contracts/intelligence-engine.js";
 import type { IntelligenceProvider } from "./contracts/intelligence-provider.js";
 
-export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
-  public async generate(request: IntelligenceRequest): Promise<string> {
+export class OpenRouterIntelligenceProvider
+  implements IntelligenceProvider
+{
+  public async generate(
+    request: IntelligenceRequest,
+  ): Promise<string> {
     const apiKey = process.env.HORMOZ_AI_API_KEY;
     const baseUrl = process.env.HORMOZ_AI_BASE_URL;
     const model = process.env.HORMOZ_AI_MODEL;
@@ -11,34 +15,39 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
       throw new Error("OpenRouter configuration is incomplete");
     }
 
-    const maxAttempts = 2;
+    const maxAttempts = 3;
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60_000);
+      const timeout = setTimeout(
+        () => controller.abort(),
+        60_000,
+      );
 
       try {
-        const response = await fetch(`${baseUrl}/chat/completions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
+        const response = await fetch(
+          `${baseUrl}/chat/completions`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            signal: controller.signal,
+            body: JSON.stringify({
+              model,
+              messages: request.messages,
+              max_tokens: 512,
+            }),
           },
-          signal: controller.signal,
-          body: JSON.stringify({
-            model,
-            messages: request.messages,
-            max_tokens: 512,
-          }),
-        });
+        );
 
         const rawText = await response.text();
 
-        console.log(`OpenRouter attempt ${attempt} status:`, response.status);
         console.log(
-          `OpenRouter attempt ${attempt} raw response:`,
-          rawText,
+          `OpenRouter attempt ${attempt} status:`,
+          response.status,
         );
 
         if (!response.ok) {
@@ -69,7 +78,9 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
         try {
           data = JSON.parse(rawText);
         } catch {
-          throw new Error("OpenRouter returned invalid JSON");
+          throw new Error(
+            "OpenRouter returned invalid JSON",
+          );
         }
 
         if (data.error?.message) {
@@ -83,7 +94,10 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
         const choice = data.choices?.[0];
         const content = choice?.message?.content;
 
-        if (typeof content === "string" && content.trim()) {
+        if (
+          typeof content === "string" &&
+          content.trim()
+        ) {
           return content.trim();
         }
 
@@ -108,7 +122,9 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
         );
       } catch (error) {
         lastError =
-          error instanceof Error ? error : new Error(String(error));
+          error instanceof Error
+            ? error
+            : new Error(String(error));
 
         console.error(
           `OpenRouter attempt ${attempt} failed:`,
@@ -116,13 +132,18 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
         );
 
         if (attempt < maxAttempts) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await new Promise((resolve) =>
+            setTimeout(resolve, attempt * 2500),
+          );
         }
       } finally {
         clearTimeout(timeout);
       }
     }
 
-    throw lastError ?? new Error("OpenRouter request failed");
+    throw (
+      lastError ??
+      new Error("OpenRouter request failed")
+    );
   }
 }
