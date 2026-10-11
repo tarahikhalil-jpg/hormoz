@@ -1657,7 +1657,18 @@ export function buildApp(
     path.dirname(
       __filename
     );
+/* ===== EXPLICIT SEO FILES ===== */
+app.get("/robots.txt", async (_request, reply) => {
+const filePath = path.join(__dirname, "../public/robots.txt");
+const content = await fs.readFile(filePath, "utf8");
+return reply.type("text/plain; charset=utf-8").send(content);
+});
 
+app.get("/sitemap.xml", async (_request, reply) => {
+const filePath = path.join(__dirname, "../public/sitemap.xml");
+const content = await fs.readFile(filePath, "utf8");
+return reply.type("application/xml; charset=utf-8").send(content);
+});
 
   /* ===== STATIC FILES ===== */
 
