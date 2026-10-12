@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-
+import { Pool } from "pg";
 const sessions = new Set<string>();
 
 type Feedback = {
@@ -16,7 +16,55 @@ type Feedback = {
 };
 
 const feedbacks: Feedback[] = [];
+const db = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 3
+    })
+  : null;
 
+let feedbackTableReady = false;
+
+async function ensureFeedbackTable() {
+  if (!db || feedbackTableReady) return;
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_feedbacks (
+      id TEXT PRIMARY KEY,
+      experience TEXT NOT NULL DEFAULT '',
+      help TEXT NOT NULL DEFAULT '',
+      return_use TEXT NOT NULL DEFAULT '',
+      liked_or_improve TEXT NOT NULL DEFAULT '',
+      suggestion TEXT NOT NULL DEFAULT '',
+      time TIMESTAMPTZ NOT NULL
+    )
+  `);
+
+  feedbackTableReady = true;
+}function rowToFeedback(row: any): Feedback {
+  return {
+    id: String(row.id),
+    experience: String(row.experience ?? ""),
+    help: String(row.help ?? ""),
+    returnUse: String(row.return_use ?? ""),
+    likedOrImprove: String(row.liked_or_improve ?? ""),
+    suggestion: String(row.suggestion ?? ""),
+    time: new Date(row.time).toISOString()
+  };
+}
+
+async function getFeedbackCount() {
+  if (!db) return feedbacks.length;
+
+  await ensureFeedbackTable();
+
+  const result = await db.query(
+    "SELECT COUNT(*)::int AS count FROM hormoz_feedbacks"
+  );
+
+  return Number(result.rows[0]?.count ?? 0);
+}
 let visitCount = 0;
 let lastActivity = new Date().toISOString();
 
@@ -256,7 +304,35 @@ export async function adminRoutes(app: FastifyInstance) {
         new Date().toISOString()
     };
 
-    feedbacks.unshift(feedback);
+    if (db) {
+  try {
+    await ensureFeedbackTable();
+
+    await db.query(
+      `INSERT INTO hormoz_feedbacks
+       (id, experience, help, return_use, liked_or_improve, suggestion, time)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        feedback.id,
+        feedback.experience,
+        feedback.help,
+        feedback.returnUse,
+        feedback.likedOrImprove,
+        feedback.suggestion,
+        feedback.time
+      ]
+    );
+  } catch (error) {
+    request.log.error(error);
+
+    return reply.code(503).send({
+      ok: false,
+      message: "ذخیره بازخورد ناموفق بود."
+    });
+  }
+}
+
+feedbacks.unshift(feedback);
 
     /*
      * جلوگیری از بزرگ شدن بی‌نهایت حافظه
@@ -286,15 +362,36 @@ export async function adminRoutes(app: FastifyInstance) {
           "نیاز به ورود مدیر دارد."
       });
     }
+  });
+if (db) {
+  try {
+    await ensureFeedbackTable();
+
+    const result = await db.query(
+      `SELECT id, experience, help, return_use,
+              liked_or_improve, suggestion, time
+       FROM hormoz_feedbacks
+       ORDER BY time DESC
+       LIMIT 100`
+    );
 
     return {
-      count: feedbacks.length,
-
-      feedbacks:
-        feedbacks.slice(0, 100)
+      count: await getFeedbackCount(),
+      feedbacks: result.rows.map(rowToFeedback)
     };
-  });
+  } catch (error) {
+    request.log.error(error);
 
+    return reply.code(503).send({
+      message: "خواندن بازخوردها ناموفق بود."
+    });
+  }
+}
+
+return {
+  count: feedbacks.length,
+  feedbacks: feedbacks.slice(0, 100)
+};
 
   /*
    * آپلود پوستر و موسیقی
