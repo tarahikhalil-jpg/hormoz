@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
+
 const sessions = new Set<string>();
 
 type Feedback = {
@@ -16,6 +17,7 @@ type Feedback = {
 };
 
 const feedbacks: Feedback[] = [];
+
 const db = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
@@ -27,7 +29,9 @@ const db = process.env.DATABASE_URL
 let feedbackTableReady = false;
 
 async function ensureFeedbackTable() {
-  if (!db || feedbackTableReady) return;
+  if (!db || feedbackTableReady) {
+    return;
+  }
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS hormoz_feedbacks (
@@ -42,7 +46,9 @@ async function ensureFeedbackTable() {
   `);
 
   feedbackTableReady = true;
-}function rowToFeedback(row: any): Feedback {
+}
+
+function rowToFeedback(row: any): Feedback {
   return {
     id: String(row.id),
     experience: String(row.experience ?? ""),
@@ -55,7 +61,9 @@ async function ensureFeedbackTable() {
 }
 
 async function getFeedbackCount() {
-  if (!db) return feedbacks.length;
+  if (!db) {
+    return feedbacks.length;
+  }
 
   await ensureFeedbackTable();
 
@@ -65,6 +73,7 @@ async function getFeedbackCount() {
 
   return Number(result.rows[0]?.count ?? 0);
 }
+
 let visitCount = 0;
 let lastActivity = new Date().toISOString();
 
@@ -106,9 +115,12 @@ async function persistToGitHub(
   const repo = "tarahikhalil-jpg/hormoz";
   const branch = "main";
 
+  const encodedPath = encodeURIComponent(filePath)
+    .replace(/%2F/g, "/");
+
   const url =
     `https://api.github.com/repos/${repo}/contents/` +
-    `${encodeURIComponent(filePath).replace(/%2F/g, "/")}?ref=${branch}`;
+    `${encodedPath}?ref=${branch}`;
 
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -136,7 +148,7 @@ async function persistToGitHub(
   }
 
   const response = await fetch(
-    `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(filePath).replace(/%2F/g, "/")}`,
+    `https://api.github.com/repos/${repo}/contents/${encodedPath}`,
     {
       method: "PUT",
       headers: {
@@ -164,7 +176,6 @@ async function persistToGitHub(
 }
 
 export async function adminRoutes(app: FastifyInstance) {
-
   /*
    * ورود مدیر
    */
@@ -173,11 +184,8 @@ export async function adminRoutes(app: FastifyInstance) {
       password?: string;
     };
 
-    const expected =
-      process.env.HORMOZ_ADMIN_PASSWORD;
-
-    const supplied =
-      body.password ?? "";
+    const expected = process.env.HORMOZ_ADMIN_PASSWORD;
+    const supplied = body.password ?? "";
 
     if (!expected) {
       return reply.code(503).send({
@@ -195,16 +203,13 @@ export async function adminRoutes(app: FastifyInstance) {
 
     if (!valid) {
       return reply.code(401).send({
-        message:
-          "رمز مدیریت نادرست است."
+        message: "رمز مدیریت نادرست است."
       });
     }
 
-    const session =
-      crypto.randomBytes(32).toString("hex");
+    const session = crypto.randomBytes(32).toString("hex");
 
     sessions.add(session);
-
     touchActivity();
 
     return {
@@ -212,16 +217,25 @@ export async function adminRoutes(app: FastifyInstance) {
     };
   });
 
-
   /*
    * وضعیت سیستم
    */
   app.get("/api/v1/admin/status", async (request, reply) => {
-
     if (!isAdmin(request)) {
       return reply.code(401).send({
-        message:
-          "نیاز به ورود مدیر دارد."
+        message: "نیاز به ورود مدیر دارد."
+      });
+    }
+
+    let count: number;
+
+    try {
+      count = await getFeedbackCount();
+    } catch (error) {
+      request.log.error(error);
+
+      return reply.code(503).send({
+        message: "خواندن آمار بازخوردها ناموفق بود."
       });
     }
 
@@ -230,113 +244,91 @@ export async function adminRoutes(app: FastifyInstance) {
       nava: "متصل",
       memory: "در دسترس",
       authentication: "فعال",
-
       visits: visitCount,
-
-      feedbacks: feedbacks.length,
-
+      feedbacks: count,
       lastActivity
     };
   });
 
-
   /*
-   * آمار واقعی فعلی سرور
+   * آمار فعلی سیستم
    */
   app.get("/api/v1/admin/stats", async (request, reply) => {
-
     if (!isAdmin(request)) {
       return reply.code(401).send({
-        message:
-          "نیاز به ورود مدیر دارد."
+        message: "نیاز به ورود مدیر دارد."
+      });
+    }
+
+    let count: number;
+
+    try {
+      count = await getFeedbackCount();
+    } catch (error) {
+      request.log.error(error);
+
+      return reply.code(503).send({
+        message: "خواندن آمار بازخوردها ناموفق بود."
       });
     }
 
     return {
       visits: visitCount,
-
-      feedbacks: feedbacks.length,
-
+      feedbacks: count,
       lastActivity,
-
-      serverTime:
-        new Date().toISOString(),
-
+      serverTime: new Date().toISOString(),
       note:
-        "این آمار تا زمانی که سرور ری‌استارت نشود نگهداری می‌شود."
+        "بازخوردها در صورت اتصال موفق به پایگاه داده ذخیره دائمی می‌شوند؛ شمارش بازدیدها فعلاً حافظه‌ای است."
     };
   });
 
-
   /*
-   * دریافت بازخورد عمومی
-   *
-   * این مسیر عمومی است تا بازدیدکننده
-   * بدون ورود بتواند نظرش را ارسال کند.
+   * ثبت بازخورد عمومی
    */
   app.post("/api/v1/feedback", async (request, reply) => {
-
-    const body =
-      (request.body ?? {}) as Partial<Feedback>;
+    const body = (request.body ?? {}) as Partial<Feedback>;
 
     const feedback: Feedback = {
-      id:
-        crypto.randomBytes(12).toString("hex"),
-
-      experience:
-        String(body.experience ?? "").slice(0, 100),
-
-      help:
-        String(body.help ?? "").slice(0, 100),
-
-      returnUse:
-        String(body.returnUse ?? "").slice(0, 100),
-
-      likedOrImprove:
-        String(body.likedOrImprove ?? "")
-          .slice(0, 2000),
-
-      suggestion:
-        String(body.suggestion ?? "")
-          .slice(0, 2000),
-
-      time:
-        new Date().toISOString()
+      id: crypto.randomBytes(12).toString("hex"),
+      experience: String(body.experience ?? "").slice(0, 100),
+      help: String(body.help ?? "").slice(0, 100),
+      returnUse: String(body.returnUse ?? "").slice(0, 100),
+      likedOrImprove: String(body.likedOrImprove ?? "").slice(0, 2000),
+      suggestion: String(body.suggestion ?? "").slice(0, 2000),
+      time: new Date().toISOString()
     };
 
     if (db) {
-  try {
-    await ensureFeedbackTable();
+      try {
+        await ensureFeedbackTable();
 
-    await db.query(
-      `INSERT INTO hormoz_feedbacks
-       (id, experience, help, return_use, liked_or_improve, suggestion, time)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [
-        feedback.id,
-        feedback.experience,
-        feedback.help,
-        feedback.returnUse,
-        feedback.likedOrImprove,
-        feedback.suggestion,
-        feedback.time
-      ]
-    );
-  } catch (error) {
-    request.log.error(error);
+        await db.query(
+          `INSERT INTO hormoz_feedbacks
+            (id, experience, help, return_use,
+             liked_or_improve, suggestion, time)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            feedback.id,
+            feedback.experience,
+            feedback.help,
+            feedback.returnUse,
+            feedback.likedOrImprove,
+            feedback.suggestion,
+            feedback.time
+          ]
+        );
+      } catch (error) {
+        request.log.error(error);
 
-    return reply.code(503).send({
-      ok: false,
-      message: "ذخیره بازخورد ناموفق بود."
-    });
-  }
-}
+        return reply.code(503).send({
+          ok: false,
+          message: "ذخیره بازخورد ناموفق بود."
+        });
+      }
+    }
 
-feedbacks.unshift(feedback);
+    feedbacks.unshift(feedback);
 
-    /*
-     * جلوگیری از بزرگ شدن بی‌نهایت حافظه
-     */
     if (feedbacks.length > 500) {
       feedbacks.length = 500;
     }
@@ -345,96 +337,76 @@ feedbacks.unshift(feedback);
 
     return reply.code(201).send({
       ok: true,
-      message:
-        "بازخورد شما با موفقیت ثبت شد."
+      message: "بازخورد شما با موفقیت ثبت شد."
     });
   });
-
 
   /*
    * مشاهده بازخوردها در پنل مدیر
    */
   app.get("/api/v1/admin/feedback", async (request, reply) => {
-
     if (!isAdmin(request)) {
       return reply.code(401).send({
-        message:
-          "نیاز به ورود مدیر دارد."
+        message: "نیاز به ورود مدیر دارد."
       });
     }
-  });
-if (db) {
-  try {
-    await ensureFeedbackTable();
 
-    const result = await db.query(
-      `SELECT id, experience, help, return_use,
-              liked_or_improve, suggestion, time
-       FROM hormoz_feedbacks
-       ORDER BY time DESC
-       LIMIT 100`
-    );
+    if (db) {
+      try {
+        await ensureFeedbackTable();
+
+        const result = await db.query(
+          `SELECT id, experience, help, return_use,
+                  liked_or_improve, suggestion, time
+           FROM hormoz_feedbacks
+           ORDER BY time DESC
+           LIMIT 100`
+        );
+
+        return {
+          count: await getFeedbackCount(),
+          feedbacks: result.rows.map(rowToFeedback)
+        };
+      } catch (error) {
+        request.log.error(error);
+
+        return reply.code(503).send({
+          message: "خواندن بازخوردها ناموفق بود."
+        });
+      }
+    }
 
     return {
-      count: await getFeedbackCount(),
-      feedbacks: result.rows.map(rowToFeedback)
+      count: feedbacks.length,
+      feedbacks: feedbacks.slice(0, 100)
     };
-  } catch (error) {
-    request.log.error(error);
-
-    return reply.code(503).send({
-      message: "خواندن بازخوردها ناموفق بود."
-    });
-  }
-}
-
-return {
-  count: feedbacks.length,
-  feedbacks: feedbacks.slice(0, 100)
-};
+  });
 
   /*
    * آپلود پوستر و موسیقی
    */
   app.post("/api/v1/admin/upload", async (request, reply) => {
-
     if (!isAdmin(request)) {
       return reply.code(401).send({
-        message:
-          "نیاز به ورود مدیر دارد."
+        message: "نیاز به ورود مدیر دارد."
       });
     }
 
-    const query =
-      request.query as {
-        kind?: string;
-      };
+    const query = request.query as {
+      kind?: string;
+    };
 
-    const kind =
-      String(query?.kind ?? "");
+    const kind = String(query?.kind ?? "");
 
-
-    /*
-     * نام موسیقی همان فایلی است که
-     * الان صفحه اصلی پخش می‌کند.
-     *
-     * بنابراین آپلود جدید واقعاً
-     * موسیقی صفحه را جایگزین می‌کند.
-     */
     const rules = {
-
       image: {
         mime: new Set([
           "image/jpeg",
           "image/png",
           "image/webp"
         ]),
-
-        filename:
-          "hormoz.jpg",
-
-        max:
-          5 * 1024 * 1024
+        filename: "hormoz.jpg",
+        max: 5 * 1024 * 1024
       },
 
       music: {
@@ -442,154 +414,85 @@ return {
           "audio/mpeg",
           "audio/mp3"
         ]),
-
-        filename:
-          "بالاخره شد_۰۴۱۰۲۰۲۶.mp3",
-
-        max:
-          15 * 1024 * 1024
+        filename: "بالاخره شد_۰۴۱۰۲۰۲۶.mp3",
+        max: 15 * 1024 * 1024
       }
     };
 
-
-    const rule =
-      rules[
-        kind as keyof typeof rules
-      ];
-
+    const rule = rules[kind as keyof typeof rules];
 
     if (!rule) {
       return reply.code(400).send({
-        message:
-          "نوع فایل نامعتبر است."
+        message: "نوع فایل نامعتبر است."
       });
     }
 
-
-    const part =
-      await (request as any).file();
-
+    const part = await (request as any).file();
 
     if (!part) {
       return reply.code(400).send({
-        message:
-          "فایلی دریافت نشد."
+        message: "فایلی دریافت نشد."
       });
     }
-
 
     if (!rule.mime.has(part.mimetype)) {
       return reply.code(415).send({
-        message:
-          "فرمت فایل مجاز نیست."
+        message: "فرمت فایل مجاز نیست."
       });
     }
 
-
-    const buffer =
-      await part.toBuffer();
-
+    const buffer = await part.toBuffer();
 
     if (buffer.length > rule.max) {
       return reply.code(413).send({
-        message:
-          "حجم فایل بیش از حد مجاز است."
+        message: "حجم فایل بیش از حد مجاز است."
       });
     }
 
+    const publicDir = path.join(process.cwd(), "public");
 
-    const publicDir =
-      path.join(
-        process.cwd(),
-        "public"
-      );
+    await fs.mkdir(publicDir, {
+      recursive: true
+    });
 
-
-    await fs.mkdir(
-      publicDir,
-      {
-        recursive: true
-      }
-    );
-
-
-    const target =
-      path.join(
-        publicDir,
-        rule.filename
-      );
-
-
-    const temp =
-      target + ".uploading";
-
+    const target = path.join(publicDir, rule.filename);
+    const temp = target + ".uploading";
 
     /*
-     * ابتدا فایل روی سرور نوشته می‌شود.
+     * ابتدا فایل موقت نوشته می‌شود.
      */
-    await fs.writeFile(
-      temp,
-      buffer
-    );
-
+    await fs.writeFile(temp, buffer);
 
     /*
-     * سپس جایگزین فایل اصلی می‌شود.
+     * سپس فایل اصلی جایگزین می‌شود.
      */
-    await fs.rename(
-      temp,
-      target
-    );
-
+    await fs.rename(temp, target);
 
     try {
-
-      const result =
-        await persistToGitHub(
-          `backend/public/${rule.filename}`,
-          buffer,
-          `Update ${rule.filename} from Hormoz Admin`
-        );
-
+      const result = await persistToGitHub(
+        `backend/public/${rule.filename}`,
+        buffer,
+        `Update ${rule.filename} from Hormoz Admin`
+      );
 
       touchActivity();
 
-
       return {
         ok: true,
-
         kind,
-
-        filename:
-          rule.filename,
-
-        size:
-          buffer.length,
-
-        persistent:
-          true,
-
-        commit:
-          result?.commit?.sha ?? null
+        filename: rule.filename,
+        size: buffer.length,
+        persistent: true,
+        commit: result?.commit?.sha ?? null
       };
-
     } catch (error) {
-
-      console.error(
-        "GitHub persistence failed:",
-        error
-      );
-
+      request.log.error(error);
 
       return reply.code(502).send({
-
         ok: false,
-
         persistent: false,
-
         message:
           "فایل روی سرور موقت ذخیره شد، اما ذخیره دائمی در GitHub ناموفق بود.",
-
         error:
           error instanceof Error
             ? error.message
