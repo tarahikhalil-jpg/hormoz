@@ -939,18 +939,12 @@ footer {
       انسان تصمیم می‌گیرد.
     </p>
 
-    <div class="buttons">
-
       <a
         class="chat-button"
         href="#chat"
       >
 <a
-class="chat-button"
-href="#chat"
->
-ورود به گفت‌وگو با نوا
-</a>
+
     </p>
 
     <div class="buttons">
@@ -969,17 +963,7 @@ href="#chat"
         ارتباط با مدیر و ثبت سفارش
       </a>
 
-      <a
-        class="chat-button"
-        href="https://suno.com/s/0Z2pLQ7obkL3lUCW"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        🎵 شنیدن آهنگ «چراغ روشن نگه دار»
-      </a>
-
-    </div>
- 
+    
 </section>
 
 
@@ -1101,7 +1085,34 @@ href="#chat"
     </div>
 
   </div>
+    </p>
 
+    <div class="buttons">
+
+      <a
+        class="chat-button"
+        href="#chat"
+      >
+        ورود به گفت‌وگو با نوا
+      </a>
+
+      <a
+        class="chat-button"
+        href="/orders.html"
+      >
+        ارتباط با مدیر و ثبت سفارش
+      </a>
+
+      <a
+        class="chat-button"
+        href="https://suno.com/s/0Z2pLQ7obkL3lUCW"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        🎵 شنیدن آهنگ «چراغ روشن نگه دار»
+      </a>
+
+    </div>
 </section>
 
 
