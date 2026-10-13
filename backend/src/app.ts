@@ -951,19 +951,35 @@ href="#chat"
 >
 ورود به گفت‌وگو با نوا
 </a>
+    </p>
 
-  <a
-    class="chat-button"
-    href="https://suno.com/s/0Z2pLQ7obkL3lUCW"
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    🎵 شنیدن آهنگ «چراغ روشن نگه دار»
-  </a>
-         </div>
+    <div class="buttons">
 
-  </div>
+      <a
+        class="chat-button"
+        href="#chat"
+      >
+        ورود به گفت‌وگو با نوا
+      </a>
 
+      <a
+        class="chat-button"
+        href="/orders.html"
+      >
+        ارتباط با مدیر و ثبت سفارش
+      </a>
+
+      <a
+        class="chat-button"
+        href="https://suno.com/s/0Z2pLQ7obkL3lUCW"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        🎵 شنیدن آهنگ «چراغ روشن نگه دار»
+      </a>
+
+    </div>
+ 
 </section>
 
 
