@@ -25,7 +25,31 @@ const db = process.env.DATABASE_URL
       max: 3
     })
   : null;
+try {
+const rawDatabaseUrl = process.env.DATABASE_URL;
 
+if (!rawDatabaseUrl) {
+console.info("[HORMOZ_DB_URL_DIAGNOSTIC] DATABASE_URL is not set");
+} else {
+const parsedDatabaseUrl = new URL(rawDatabaseUrl);
+
+console.info(
+  "[HORMOZ_DB_URL_DIAGNOSTIC]",
+  JSON.stringify({
+    configured: true,
+    protocol: parsedDatabaseUrl.protocol,
+    hostname: parsedDatabaseUrl.hostname,
+    databasePathPresent: parsedDatabaseUrl.pathname.length > 1,
+    queryKeys: Array.from(parsedDatabaseUrl.searchParams.keys()).sort()
+  })
+);
+
+}
+} catch {
+console.error(
+"[HORMOZ_DB_URL_DIAGNOSTIC] DATABASE_URL is set but is not a valid URL"
+);
+}
 let feedbackTableReady = false;
 
 async function ensureFeedbackTable() {
