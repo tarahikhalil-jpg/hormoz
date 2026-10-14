@@ -58,13 +58,95 @@ if (music && musicButton) {
 
 /* CHAT */
 
+function makeLetterActionButton(label, title) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = label;
+  button.title = title;
+  button.style.cssText = "padding:9px 12px;font-size:13px;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.22);cursor:pointer;";
+  return button;
+}
+
+function addLetterActions(messageElement, text) {
+  const actions = document.createElement("div");
+  actions.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;";
+
+  const copyButton = makeLetterActionButton("📋 کپی نامه", "کپی متن");
+  copyButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      copyButton.textContent = "✅ کپی شد";
+    } catch {
+      const helper = document.createElement("textarea");
+      helper.value = text;
+      helper.style.position = "fixed";
+      helper.style.opacity = "0";
+      document.body.appendChild(helper);
+      helper.select();
+      const copied = document.execCommand("copy");
+      helper.remove();
+      copyButton.textContent = copied ? "✅ کپی شد" : "متن را انتخاب و کپی کنید";
+    }
+  });
+
+  const emailButton = makeLetterActionButton("✉️ ارسال با ایمیل", "باز کردن برنامه ایمیل گوشی");
+  emailButton.addEventListener("click", () => {
+    const subject = "نامه از هوش هرمز";
+    const mailto = "mailto:?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(text);
+    window.location.href = mailto;
+  });
+
+  const shareButton = makeLetterActionButton("📤 اشتراک‌گذاری", "ارسال با برنامه‌های گوشی");
+  shareButton.addEventListener("click", async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "نامه از هوش هرمز", text });
+      } catch (error) {
+        if (error && error.name !== "AbortError") {
+          console.error("Sharing failed:", error);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        shareButton.textContent = "✅ کپی شد؛ در برنامه دلخواه بچسبانید";
+      } catch {
+        alert("لطفاً متن نامه را کپی کنید و در برنامه دلخواه خود قرار دهید.");
+      }
+    }
+  });
+
+  const pdfButton = makeLetterActionButton("📄 چاپ / ذخیره PDF", "باز کردن نسخه آماده چاپ؛ در پنجره چاپ گزینه ذخیره به PDF را انتخاب کنید");
+  pdfButton.addEventListener("click", () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("مرورگر پنجره جدید را مسدود کرده است. اجازه باز شدن پنجره را بدهید و دوباره بزنید.");
+      return;
+    }
+    printWindow.document.open();
+    printWindow.document.write(
+      "<!doctype html><html lang='fa' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>نامه از هوش هرمز</title><style>body{font-family:Tahoma,Arial,sans-serif;max-width:800px;margin:40px auto;padding:24px;color:#111;line-height:2.2;white-space:pre-wrap;font-size:16px}h1{font-size:20px;border-bottom:1px solid #ccc;padding-bottom:12px}@media print{body{margin:0 auto;padding:12mm}}</style></head><body><h1>نامه</h1><div id='letter'></div><script>document.getElementById('letter').textContent=" + JSON.stringify(text) + ";window.onload=()=>setTimeout(()=>window.print(),250);<\/script></body></html>"
+    );
+    printWindow.document.close();
+  });
+
+  actions.append(copyButton, emailButton, shareButton, pdfButton);
+  messageElement.appendChild(actions);
+}
+
 function addMessage(text, type) {
   if (!messages) return;
 
   const div = document.createElement("div");
-
   div.className = "message " + type;
-  div.textContent = text;
+
+  const content = document.createElement("div");
+  content.textContent = text;
+  div.appendChild(content);
+
+  if (type === "nava" && text.trim()) {
+    addLetterActions(div, text);
+  }
 
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
