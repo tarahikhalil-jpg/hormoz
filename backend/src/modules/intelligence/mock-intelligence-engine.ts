@@ -28,6 +28,16 @@ function isLikelyCorruptedPersian(text: string, userMessage: string): boolean {
     /تبریک وسیع/u,
     /رسانیدن به این لحظه/u,
     /درخواست می‌کنیم این دستاورد/u,
+    /احوال پروری/u,
+    /دوست.?پیمان/u,
+    /جنابعالباقین/u,
+    /رهصمت/u,
+    /نویدآوری/u,
+    /دل دریا را به یاد بیاوریم/u,
+    /به سویمان قدم نهاده/u,
+    /قلم از کار نبرد/u,
+    /\[نام/u,
+    /جناب آقای\/سرکار خانم/u,
   ];
   if (knownPersianErrors.some((pattern) => pattern.test(text))) {
     return true;
