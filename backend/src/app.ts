@@ -52,6 +52,10 @@ const page = `
 
 <title>هوش هرمز | نوا</title>
 
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/jpeg" href="/hormoz.jpg">
+<meta name="theme-color" content="#111827">
+
 <style>
 
 * {
