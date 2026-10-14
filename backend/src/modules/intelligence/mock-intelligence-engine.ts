@@ -21,6 +21,18 @@ function isLikelyCorruptedPersian(text: string, userMessage: string): boolean {
     return true;
   }
 
+  // Known malformed phrases that the script-mixing check cannot catch.
+  const knownPersianErrors = [
+    /کواشقی/u,
+    /به پشت سر گذاشتید/u,
+    /تبریک وسیع/u,
+    /رسانیدن به این لحظه/u,
+    /درخواست می‌کنیم این دستاورد/u,
+  ];
+  if (knownPersianErrors.some((pattern) => pattern.test(text))) {
+    return true;
+  }
+
   const answerArabic = (text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) ?? []).length;
   const answerLatin = (text.match(/[A-Za-z]/g) ?? []).length;
 
