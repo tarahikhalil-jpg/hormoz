@@ -144,10 +144,6 @@ function addMessage(text, type) {
   content.textContent = text;
   div.appendChild(content);
 
-  if (type === "nava" && text.trim()) {
-    addLetterActions(div, text);
-  }
-
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
 }
@@ -417,6 +413,11 @@ if (adminRequestInput && adminRequestButton && adminResult) {
       const answer = getResponseText(data);
       adminResult.textContent = answer || "پاسخ قابل استفاده‌ای دریافت نشد؛ لطفاً دوباره تلاش کنید.";
       adminResult.style.whiteSpace = "pre-wrap";
+
+      // Letter actions belong to the request-letter area, not ordinary Nava chat.
+      if (answer) {
+        addLetterActions(adminResult, answer);
+      }
     } catch (error) {
       adminResult.textContent = "خطا: " + (error instanceof Error ? error.message : "ارتباط با نوا برقرار نشد.");
     } finally {
