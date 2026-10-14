@@ -18,37 +18,58 @@ type Feedback = {
 
 const feedbacks: Feedback[] = [];
 
-const db = process.env.DATABASE_URL
+function normalizeDatabaseUrl(value: string | undefined): string | null {
+  if (!value) return null;
+
+  let normalized = value.trim();
+
+  // Accept either a raw URL or a copied .env-style assignment.
+  if (/^DATABASE_URL\s*=/i.test(normalized)) {
+    normalized = normalized.replace(/^DATABASE_URL\s*=\s*/i, "");
+  }
+
+  // Remove one pair of surrounding quotes often copied from .env examples.
+  if (
+    (normalized.startsWith("'") && normalized.endsWith("'")) ||
+    (normalized.startsWith('"') && normalized.endsWith('"'))
+  ) {
+    normalized = normalized.slice(1, -1).trim();
+  }
+
+  return normalized || null;
+}
+
+const databaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
+
+const db = databaseUrl
   ? new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: databaseUrl,
       ssl: { rejectUnauthorized: false },
       max: 3
     })
   : null;
+
 try {
-const rawDatabaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.info("[HORMOZ_DB_URL_DIAGNOSTIC] DATABASE_URL is not set or empty");
+  } else {
+    const parsedDatabaseUrl = new URL(databaseUrl);
 
-if (!rawDatabaseUrl) {
-console.info("[HORMOZ_DB_URL_DIAGNOSTIC] DATABASE_URL is not set");
-} else {
-const parsedDatabaseUrl = new URL(rawDatabaseUrl);
-
-console.info(
-  "[HORMOZ_DB_URL_DIAGNOSTIC]",
-  JSON.stringify({
-    configured: true,
-    protocol: parsedDatabaseUrl.protocol,
-    hostname: parsedDatabaseUrl.hostname,
-    databasePathPresent: parsedDatabaseUrl.pathname.length > 1,
-    queryKeys: Array.from(parsedDatabaseUrl.searchParams.keys()).sort()
-  })
-);
-
-}
+    console.info(
+      "[HORMOZ_DB_URL_DIAGNOSTIC]",
+      JSON.stringify({
+        configured: true,
+        protocol: parsedDatabaseUrl.protocol,
+        hostname: parsedDatabaseUrl.hostname,
+        databasePathPresent: parsedDatabaseUrl.pathname.length > 1,
+        queryKeys: Array.from(parsedDatabaseUrl.searchParams.keys()).sort()
+      })
+    );
+  }
 } catch {
-console.error(
-"[HORMOZ_DB_URL_DIAGNOSTIC] DATABASE_URL is set but is not a valid URL"
-);
+  console.error(
+    "[HORMOZ_DB_URL_DIAGNOSTIC] DATABASE_URL remains invalid after normalization"
+  );
 }
 let feedbackTableReady = false;
 
