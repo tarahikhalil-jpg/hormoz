@@ -904,7 +904,7 @@ footer {
   preload="none"
 >
   <source
-    src="/hormoz-music.mp3"
+    src="/hormoz-music%20(1).mp3"
     type="audio/mpeg"
   >
 </audio>
@@ -939,14 +939,6 @@ footer {
       انسان تصمیم می‌گیرد.
     </p>
 
-      <a
-        class="chat-button"
-        href="#chat"
-      >
-<a
-
-    </p>
-
     <div class="buttons">
 
       <a
@@ -963,7 +955,8 @@ footer {
         ارتباط با مدیر و ثبت سفارش
       </a>
 
-    
+    </div>
+  </div>
 </section>
 
 
@@ -1084,9 +1077,6 @@ footer {
 
     </div>
 
-  </div>
-    </p>
-
     <div class="buttons">
 
       <a
@@ -1113,6 +1103,7 @@ footer {
       </a>
 
     </div>
+  </div>
 </section>
 
 
