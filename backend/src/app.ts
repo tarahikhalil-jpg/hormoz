@@ -959,6 +959,13 @@ footer {
         ارتباط با مدیر و ثبت سفارش
       </a>
 
+      <a
+        class="chat-button"
+        href="/about.html"
+      >
+        درباره هرمز
+      </a>
+
     </div>
   </div>
 </section>
