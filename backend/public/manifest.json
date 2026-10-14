@@ -12,7 +12,7 @@
   "icons": [
     {
       "src": "/hormoz.jpg",
-      "sizes": "512x512",
+      "sizes": "400x600",
       "type": "image/jpeg",
       "purpose": "any"
     }
