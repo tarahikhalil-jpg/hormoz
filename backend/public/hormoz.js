@@ -297,3 +297,111 @@ if (feedbackButton && feedbackMessage) {
     }
   );
 }
+
+/* ADMIN WRITING ASSISTANT */
+const adminRequestInput = document.getElementById("adminRequest");
+const adminRequestButton = document.getElementById("adminRequestButton");
+const adminResult = document.getElementById("adminResult");
+
+if (adminRequestInput && adminRequestButton && adminResult) {
+  adminRequestButton.addEventListener("click", async () => {
+    const requestText = adminRequestInput.value.trim();
+    if (!requestText) {
+      adminResult.textContent = "لطفاً موضوع درخواست را بنویسید.";
+      return;
+    }
+
+    adminRequestButton.disabled = true;
+    adminRequestButton.textContent = "در حال آماده‌سازی...";
+    adminResult.textContent = "نوا در حال آماده‌سازی متن است...";
+
+    try {
+      const response = await fetch(API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "public"
+        },
+        body: JSON.stringify({
+          message: "لطفاً بر اساس توضیح زیر یک متن رسمی، روشن و محترمانه به زبان فارسی آماده کن. اگر اطلاعات ضروری کم است، جای خالی مشخص کن و هیچ واقعیتی را جعل نکن. موضوع درخواست: " + requestText
+        })
+      });
+
+      const data = await readJsonResponse(response);
+      if (!response.ok) {
+        throw new Error(data?.message || data?.error || "نوا نتوانست متن را آماده کند.");
+      }
+
+      const answer = getResponseText(data);
+      adminResult.textContent = answer || "پاسخ قابل استفاده‌ای دریافت نشد؛ لطفاً دوباره تلاش کنید.";
+      adminResult.style.whiteSpace = "pre-wrap";
+    } catch (error) {
+      adminResult.textContent = "خطا: " + (error instanceof Error ? error.message : "ارتباط با نوا برقرار نشد.");
+    } finally {
+      adminRequestButton.disabled = false;
+      adminRequestButton.textContent = "✍️ آماده‌سازی درخواست";
+    }
+  });
+}
+
+/* PWA: REGISTER SERVICE WORKER AND OFFER INSTALL */
+let hormozInstallPrompt = null;
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.error("Hormoz service worker registration failed:", error);
+    });
+  });
+}
+
+if (!document.querySelector('link[rel="manifest"]')) {
+  const manifestLink = document.createElement("link");
+  manifestLink.rel = "manifest";
+  manifestLink.href = "/manifest.json";
+  document.head.appendChild(manifestLink);
+}
+
+const installButton = document.createElement("button");
+installButton.type = "button";
+installButton.textContent = "📲 نصب هرمز روی گوشی";
+installButton.setAttribute("aria-label", "نصب اپلیکیشن هرمز روی گوشی");
+installButton.style.cssText = "margin-top:10px;background:#f2ce79;color:#10251f;border:0;border-radius:14px;padding:13px 18px;font:inherit;font-weight:bold;cursor:pointer;";
+const heroButtons = document.querySelector(".hero .buttons");
+if (heroButtons) {
+  heroButtons.appendChild(installButton);
+  installButton.addEventListener("click", async () => {
+    if (hormozInstallPrompt) {
+      hormozInstallPrompt.prompt();
+      await hormozInstallPrompt.userChoice;
+      hormozInstallPrompt = null;
+    } else {
+      alert("برای نصب هرمز: منوی مرورگر را باز کنید و گزینه «افزودن به صفحه اصلی» یا «نصب برنامه» را انتخاب کنید.");
+    }
+  });
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  hormozInstallPrompt = event;
+});
+
+/* MAKE SERVICE AND INCOME SECTIONS ACTIONABLE */
+function addOrdersAction(headingText, label) {
+  const heading = Array.from(document.querySelectorAll("h2")).find((item) =>
+    item.textContent && item.textContent.includes(headingText)
+  );
+  const box = heading?.closest(".project-box");
+  if (!box || box.querySelector("[data-hormoz-orders-action]")) return;
+
+  const link = document.createElement("a");
+  link.href = "/orders.html";
+  link.textContent = label;
+  link.setAttribute("data-hormoz-orders-action", "true");
+  link.className = "chat-button";
+  link.style.cssText = "display:inline-block;margin-top:18px;text-decoration:none;background:#f2ce79;color:#10251f;border-radius:14px;padding:13px 20px;font-weight:bold;";
+  box.appendChild(link);
+}
+
+addOrdersAction("خدمات هرمز", "ثبت درخواست خدمات و همکاری");
+addOrdersAction("مسیر درآمد هرمز", "معرفی اثر، مهارت یا پیشنهاد همکاری");
