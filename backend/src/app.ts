@@ -961,6 +961,13 @@ footer {
 
       <a
         class="chat-button"
+        href="/opportunities.html"
+      >
+        🤝 فرصت‌ها و معرفی خدمات
+      </a>
+
+      <a
+        class="chat-button"
         href="/about.html"
       >
         درباره هرمز
