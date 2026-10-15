@@ -1118,6 +1118,43 @@ footer {
 </section>
 
 
+<!-- ===== HORMOZ SONG: CHERAGH ESHGH MA ===== -->
+
+<section class="project-section" id="hormoz-song">
+  <div class="project-box">
+    <h2>🎵 چراغ عشق ما</h2>
+    <p>
+      این آهنگ را با عشق برای هوش هرمز ساخته‌ایم؛
+      چراغ امید، تلاش و همراهی انسان‌ها.
+    </p>
+    <div style="max-width:760px;margin:24px auto;border-radius:20px;overflow:hidden;border:1px solid rgba(92,231,224,.25);box-shadow:0 18px 45px rgba(0,0,0,.28);">
+      <iframe
+        title="پخش آهنگ چراغ عشق ما - هوش هرمز"
+        src="https://suno.com/embed/34741c43-1564-4e20-a53f-eecb27385aa1"
+        width="100%"
+        height="240"
+        frameborder="0"
+        allow="autoplay; encrypted-media"
+        loading="lazy"
+        style="display:block;border:0;background:#07141d;"
+      ></iframe>
+    </div>
+    <p class="motto">
+      🕯️ رؤیا • تلاش • ادامه<br>
+      چراغ ۷۷۷ برای خاموش شدن ساخته نشده.
+    </p>
+    <div class="buttons">
+      <a class="chat-button"
+        href="https://suno.com/song/34741c43-1564-4e20-a53f-eecb27385aa1"
+        target="_blank" rel="noopener noreferrer">
+        باز کردن آهنگ در Suno
+      </a>
+    </div>
+  </div>
+</section>
+
+
+
 <!-- ===== INCOME ===== -->
 
 <section class="project-section">
