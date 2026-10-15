@@ -1272,6 +1272,21 @@ footer {
   </div>
 </section>
 
+<!-- ===== HORMOZ VIDEO ADS ===== -->
+<section class="project-section" id="hormoz-video-ads">
+  <div class="project-box">
+    <h2>🎬 ویدیوهای تبلیغاتی هرمز</h2>
+    <p>ویدیوهای معرفی هرمز و آگهی‌های تصویری در این بخش نمایش داده می‌شوند.</p>
+    <div style="max-width:850px;margin:22px auto;border-radius:18px;overflow:hidden;border:1px solid rgba(92,231,224,.25);background:#000;">
+      <video controls playsinline preload="metadata" poster="/hormoz.jpg" style="display:block;width:100%;max-height:480px;">
+        <source src="/hormoz-ad.mp4" type="video/mp4">
+        مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+      </video>
+    </div>
+    <p class="motto">برای افزودن یا جایگزینی ویدیو، وارد پنل مدیریت هرمز شوید.</p>
+  </div>
+</section>
+
 <!-- ===== SERVICES ===== -->
 
 <section class="project-section">
