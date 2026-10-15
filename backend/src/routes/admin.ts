@@ -71,6 +71,21 @@ try {
     "[HORMOZ_DB_URL_DIAGNOSTIC] DATABASE_URL remains invalid after normalization"
   );
 }
+let opportunitiesTableReady = false;
+
+async function ensureOpportunitiesTable() {
+  if (!db || opportunitiesTableReady) return;
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_opportunity_requests (
+      id TEXT PRIMARY KEY,
+      request_type TEXT NOT NULL,
+      data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  opportunitiesTableReady = true;
+}
+
 let feedbackTableReady = false;
 
 async function ensureFeedbackTable() {
@@ -221,6 +236,43 @@ async function persistToGitHub(
 }
 
 export async function adminRoutes(app: FastifyInstance) {
+  app.post("/api/v1/opportunities", async (request, reply) => {
+    if (!db) return reply.code(503).send({ ok: false, code: "DATABASE_UNAVAILABLE", message: "ذخیره‌سازی دائمی هنوز روی سرور آماده نیست." });
+    const body = (request.body ?? {}) as { type?: string; data?: Record<string, unknown>; consent?: boolean };
+    const type = body.type === "skill" || body.type === "business" ? body.type : "";
+    if (!type || body.consent !== true || !body.data || typeof body.data !== "object" || Array.isArray(body.data)) {
+      return reply.code(400).send({ ok: false, message: "اطلاعات درخواست یا رضایت معتبر نیست." });
+    }
+    const cleanData: Record<string, string> = {};
+    for (const [key, value] of Object.entries(body.data).slice(0, 10)) {
+      cleanData[String(key).slice(0, 60)] = String(value ?? "").trim().slice(0, 700);
+    }
+    if (!Object.values(cleanData).some(value => value)) return reply.code(400).send({ ok: false, message: "اطلاعات درخواست خالی است." });
+    const id = crypto.randomBytes(8).toString("hex").toUpperCase();
+    try {
+      await ensureOpportunitiesTable();
+      await db.query("INSERT INTO hormoz_opportunity_requests (id, request_type, data) VALUES ($1, $2, $3::jsonb)", [id, type, JSON.stringify(cleanData)]);
+      touchActivity();
+      return reply.code(201).send({ ok: true, id, message: "درخواست با موفقیت در سامانه هرمز ثبت شد." });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ ok: false, code: "SAVE_FAILED", message: "ثبت دائمی درخواست ناموفق بود؛ می‌توانید از واتساپ استفاده کنید." });
+    }
+  });
+
+  app.get("/api/v1/admin/opportunities", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "نیاز به ورود مدیر دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده روی سرور تنظیم نشده است." });
+    try {
+      await ensureOpportunitiesTable();
+      const result = await db.query("SELECT id, request_type, data, created_at FROM hormoz_opportunity_requests ORDER BY created_at DESC LIMIT 100");
+      return { count: result.rows.length, requests: result.rows.map(row => ({ id: String(row.id), type: String(row.request_type), data: row.data && typeof row.data === "object" ? row.data : {}, time: new Date(row.created_at).toISOString() })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "خواندن درخواست‌ها ناموفق بود." });
+    }
+  });
+
   /*
    * ورود مدیر
    */
