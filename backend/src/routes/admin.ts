@@ -459,7 +459,7 @@ export async function adminRoutes(app: FastifyInstance) {
           "audio/mpeg",
           "audio/mp3"
         ]),
-        filename: "بالاخره شد_۰۴۱۰۲۰۲۶.mp3",
+        filename: "hormoz-music (1).mp3",
         max: 15 * 1024 * 1024
       }
     };
