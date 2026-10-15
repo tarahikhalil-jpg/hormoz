@@ -352,6 +352,26 @@
     </section>
 
 
+    <section class="card">
+
+      <h2>🎬 مدیریت ویدیوی تبلیغاتی</h2>
+
+      <p class="subtitle">
+        ویدیوی MP4 را از گوشی انتخاب کن؛ ویدیو در بخش «ویدیوهای تبلیغاتی هرمز» صفحه اصلی نمایش داده می‌شود.
+        حداکثر حجم: 30 مگابایت. هر بار بارگذاری، ویدیوی قبلی را جایگزین می‌کند.
+      </p>
+
+      <input id="videoFile" type="file" accept="video/mp4,.mp4">
+
+      <button onclick="uploadFile('video')">
+        📤 بارگذاری ویدیوی تبلیغاتی
+      </button>
+
+      <div id="videoResult" class="result"></div>
+
+    </section>
+
+
     <!-- FEEDBACK -->
 
     <section class="card">
@@ -682,7 +702,9 @@ async function uploadFile(
     document.getElementById(
       kind === "image"
         ? "imageFile"
-        : "musicFile"
+        : kind === "video"
+          ? "videoFile"
+          : "musicFile"
     );
 
 
@@ -690,7 +712,9 @@ async function uploadFile(
     document.getElementById(
       kind === "image"
         ? "imageResult"
-        : "musicResult"
+        : kind === "video"
+          ? "videoResult"
+          : "musicResult"
     );
 
 
@@ -736,7 +760,9 @@ async function uploadFile(
 
 
     result.textContent =
-      "✅ فایل با موفقیت ارسال و در GitHub ذخیره شد.";
+      data.persistent
+        ? "✅ فایل ذخیره شد و در GitHub ماندگار شد."
+        : "فایل دریافت شد؛ ذخیره دائمی تأیید نشد.";
 
     result.className =
       "result success";
