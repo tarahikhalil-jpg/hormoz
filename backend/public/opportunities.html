@@ -4,24 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#10251f">
-<meta name="description" content="معرفی مهارت‌ها، خدمات و کسب‌وکارها در هوش هرمز؛ فرصتی برای دیده‌شدن و همکاری.">
+<meta name="description" content="فرم معرفی مهارت افراد و ثبت درخواست معرفی کسب‌وکار در هوش هرمز.">
 <title>فرصت‌ها و معرفی خدمات | هوش هرمز</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;padding:18px;font-family:Tahoma,Arial,sans-serif;background:#07141d;color:#fff;line-height:2}
+body{margin:0;padding:16px;font-family:Tahoma,Arial,sans-serif;background:#07141d;color:#fff;line-height:2}
 main{max-width:850px;margin:18px auto}
-.hero,.card,.notice{padding:24px;border-radius:20px;margin-bottom:16px;background:rgba(255,255,255,.06);border:1px solid rgba(92,231,224,.2)}
+.hero,.card,.notice{padding:22px;border-radius:20px;margin-bottom:16px;background:rgba(255,255,255,.06);border:1px solid rgba(92,231,224,.2)}
 .hero{text-align:center;background:linear-gradient(145deg,#123d4d,#081b26)}
 h1,h2{color:#66f7f1}
 h1{font-size:clamp(27px,6vw,40px);line-height:1.6}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
-.card h2{font-size:20px;margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card h2{font-size:21px;margin-top:0}
 .icon{font-size:30px}
-a.button{display:block;text-align:center;text-decoration:none;padding:13px 16px;margin:10px 0;border-radius:12px;background:#087f8c;color:white;font-weight:bold}
-a.secondary{background:transparent;border:1px solid #66f7f1;color:#66f7f1}
-small{opacity:.75}
+label{display:block;margin:12px 0 5px;font-weight:bold}
+input,select,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:#102733;color:#fff;font:16px Tahoma,Arial,sans-serif}
+textarea{min-height:90px;resize:vertical}
+input::placeholder,textarea::placeholder{color:#bdcbd0}
+.consent{display:flex;align-items:flex-start;gap:9px;font-weight:normal;font-size:14px}
+.consent input{width:auto;margin-top:9px;flex-shrink:0}
+button,.button{display:block;width:100%;text-align:center;text-decoration:none;padding:13px 15px;margin:14px 0 4px;border:0;border-radius:12px;background:#087f8c;color:white;font-weight:bold;font-size:16px;cursor:pointer}
+.secondary{background:transparent;border:1px solid #66f7f1;color:#66f7f1}
+small{opacity:.8}
 .notice{border-color:rgba(242,206,121,.4)}
 .notice strong{color:#f2ce79}
+.status{min-height:28px;font-size:14px;color:#f2ce79}
 footer{text-align:center;padding:22px 10px;opacity:.8;font-size:13px}
 </style>
 </head>
@@ -30,49 +37,92 @@ footer{text-align:center;padding:22px 10px;opacity:.8;font-size:13px}
 <section class="hero">
 <div style="font-size:42px">🤝💡</div>
 <h1>فرصت‌ها و معرفی خدمات هرمز</h1>
-<p>مهارتت را معرفی کن؛ خدماتت را به مردم بشناسان؛ راهی برای همکاری پیدا کن.</p>
+<p>مهارتت را معرفی کن؛ کسب‌وکارت را به مردم بشناسان؛ راهی برای همکاری پیدا کن.</p>
 <p><strong>رؤیا • تلاش • ادامه</strong></p>
+</section>
+
+<section class="notice">
+<strong>شفاف و امن:</strong>
+<p>این فرم‌ها اطلاعات را در سایت ذخیره نمی‌کنند. با زدن دکمه، متن آماده‌شده در واتساپ باز می‌شود؛ فقط اگر خودتان پیام را در واتساپ ارسال کنید، درخواست به ما می‌رسد. اطلاعات پیش از هر معرفی عمومی بررسی می‌شود و انتشار بدون هماهنگی انجام نخواهد شد.</p>
+<p>ارسال درخواست تضمین‌کنندهٔ استخدام یا درآمد نیست. رمز عبور، کد ورود، اطلاعات بانکی یا مدارک حساس ننویسید.</p>
 </section>
 
 <section class="grid">
 <article class="card">
 <div class="icon">🛠️</div>
-<h2>معرفی مهارت و تخصص</h2>
-<p>از تعمیرات و کارهای فنی تا آموزش، طراحی، برنامه‌نویسی و مهارت‌های حرفه‌ای.</p>
+<h2>۱. معرفی مهارت و توانایی</h2>
+<p>برای افراد جویای کار، متخصصان، هنرمندان و کسانی که خدماتی برای ارائه دارند.</p>
+<form id="skillForm">
+<label for="skillName">نام یا عنوان نمایشی *</label>
+<input id="skillName" maxlength="80" required placeholder="مثلاً: تعمیرکار لوازم خانگی">
+<label for="skillType">زمینهٔ مهارت *</label>
+<select id="skillType" required>
+<option value="">انتخاب کنید</option>
+<option>فنی و تعمیرات</option><option>ساختمان و خدمات</option><option>آموزش و مشاوره</option><option>هنر، موسیقی و نویسندگی</option><option>طراحی و فناوری</option><option>کشاورزی و محیط‌زیست</option><option>سایر مهارت‌ها</option>
+</select>
+<label for="skillCity">شهر یا محدودهٔ فعالیت *</label>
+<input id="skillCity" maxlength="100" required placeholder="مثلاً: رودان">
+<label for="skillDesc">توضیح کوتاه دربارهٔ توانایی *</label>
+<textarea id="skillDesc" maxlength="700" required placeholder="چه کاری انجام می‌دهید و چه فرصت یا همکاری‌ای می‌خواهید؟"></textarea>
+<label for="skillContact">راه تماس عمومی (اختیاری)</label>
+<input id="skillContact" maxlength="120" placeholder="فقط راه تماسی که با اشتراک آن موافقید">
+<label class="consent"><input id="skillConsent" type="checkbox" required> موافقم این اطلاعات برای بررسی درخواست در پیام واتساپ ارسال شود. انتشار عمومی فقط با هماهنگی جداگانه انجام شود.</label>
+<button type="submit">آماده‌سازی درخواست معرفی مهارت در واتساپ</button>
+<p class="status" id="skillStatus" aria-live="polite"></p>
+</form>
 </article>
+
 <article class="card">
 <div class="icon">🏪</div>
-<h2>معرفی کسب‌وکار و خدمات</h2>
-<p>کسب‌وکارهای محلی می‌توانند برای معرفی خدمات، محصولات یا راه‌های تماس درخواست بدهند.</p>
+<h2>۲. معرفی کسب‌وکار و تبلیغات</h2>
+<p>برای فروشگاه‌ها، اقامتگاه‌ها، کافه‌ها، خدمات محلی، گردشگری و کسب‌وکارهای کوچک.</p>
+<form id="businessForm">
+<label for="bizName">نام کسب‌وکار یا عنوان آگهی *</label>
+<input id="bizName" maxlength="100" required placeholder="نام فروشگاه یا خدمت">
+<label for="bizType">نوع کسب‌وکار *</label>
+<select id="bizType" required>
+<option value="">انتخاب کنید</option>
+<option>فروشگاه و محصولات</option><option>اقامتگاه و گردشگری</option><option>حمل‌ونقل و قایق</option><option>کافه و غذا</option><option>خدمات فنی و حرفه‌ای</option><option>هنر و محصولات دست‌ساز</option><option>سایر کسب‌وکارها</option>
+</select>
+<label for="bizCity">شهر یا محدودهٔ خدمت *</label>
+<input id="bizCity" maxlength="100" required placeholder="شهر یا منطقه">
+<label for="bizDesc">توضیح خدمات یا محصول *</label>
+<textarea id="bizDesc" maxlength="700" required placeholder="چه چیزی ارائه می‌کنید و چه چیزی دوست دارید مردم بدانند؟"></textarea>
+<label for="bizContact">راه تماس عمومی برای مشتریان (اختیاری)</label>
+<input id="bizContact" maxlength="120" placeholder="شماره کاری یا شناسهٔ عمومی">
+<label for="bizLink">نشانی صفحه یا نمونه‌کار (اختیاری)</label>
+<input id="bizLink" maxlength="200" placeholder="نشانی صفحهٔ عمومی، در صورت وجود">
+<label class="consent"><input id="bizConsent" type="checkbox" required> موافقم اطلاعات بالا برای بررسی درخواست از طریق واتساپ ارسال شود. انتشار آگهی و هرگونه هزینه فقط پس از هماهنگی روشن و جداگانه خواهد بود.</label>
+<button type="submit">آماده‌سازی درخواست تبلیغات در واتساپ</button>
+<p class="status" id="bizStatus" aria-live="polite"></p>
+</form>
 </article>
-<article class="card">
-<div class="icon">🎨</div>
-<h2>هنر و خلاقیت</h2>
-<p>معرفی آثار هنری، موسیقی، شعر، داستان، عکس، ویدئو و پروژه‌های خلاقانه.</p>
-</article>
-<article class="card">
-<div class="icon">🤝</div>
-<h2>پیشنهاد همکاری</h2>
-<p>اگر ایده‌ای برای همکاری یا ایجاد فرصت برای افراد جویای کار داری، با هرمز در میان بگذار.</p>
-</article>
-</section>
-
-<section class="notice">
-<strong>شفافیت مهم است:</strong>
-<p>این بخش در مرحلهٔ آغازین است و هنوز فهرست عمومیِ خودکار یا سامانهٔ ثبت آگهی مستقل ندارد. درخواست شما از راه ارتباطی انتخابی دریافت می‌شود؛ انتشار هر معرفی عمومی فقط پس از بررسی و هماهنگی انجام خواهد شد. ارسال درخواست به‌معنای تضمین کار یا درآمد نیست.</p>
-<p>برای حفظ امنیت، رمز عبور، کد ورود، اطلاعات بانکی یا مدارک حساس را ارسال نکنید.</p>
 </section>
 
 <section class="card">
-<h2>چطور درخواستت را بفرستی؟</h2>
-<p>در پیام خود بنویس: ۱) نام یا عنوانی که می‌خواهی نمایش داده شود، ۲) مهارت یا خدمت، ۳) شهر یا محدودهٔ فعالیت، ۴) راه تماس عمومی که با انتشار آن موافقی، ۵) توضیح کوتاه یا نشانی نمونه‌کار.</p>
-<a class="button" href="https://wa.me/989171697669?text=%D8%B3%D9%84%D8%A7%D9%85%D8%8C%20%D9%85%DB%8C%E2%80%8C%D8%AE%D9%88%D8%A7%D9%87%D9%85%20%D9%85%D9%87%D8%A7%D8%B1%D8%AA%20%DB%8C%D8%A7%20%D8%AE%D8%AF%D9%85%D8%AA%20%D8%AE%D9%88%D8%AF%20%D8%B1%D8%A7%20%D8%A8%D8%B1%D8%A7%DB%8C%20%D9%87%D8%B1%D9%85%D8%B2%20%D9%85%D8%B9%D8%B1%D9%81%DB%8C%20%DA%A9%D9%86%D9%85." target="_blank" rel="noopener noreferrer">ارسال درخواست در واتساپ</a>
-<a class="button secondary" href="https://t.me/kh_t69" target="_blank" rel="noopener noreferrer">ارتباط از طریق تلگرام</a>
-<a class="button secondary" href="mailto:tarahikhalil@gmail.com?subject=%D9%85%D8%B9%D8%B1%D9%81%DB%8C%20%D9%85%D9%87%D8%A7%D8%B1%D8%AA%20%DB%8C%D8%A7%20%D8%AE%D8%AF%D9%85%D8%AA%20%D8%AF%D8%B1%20%D9%87%D8%B1%D9%85%D8%B2">ارسال ایمیل</a>
+<h2>پس از ارسال چه می‌شود؟</h2>
+<p>درخواست به‌صورت دستی بررسی می‌شود. این صفحه فعلاً سامانهٔ خودکار استخدام، ثبت عمومی آگهی یا پرداخت آنلاین نیست. پیش از انتشار، دربارهٔ متن، راه تماس، شرایط و هر هزینهٔ احتمالی هماهنگ می‌کنیم. هیچ هزینه‌ای را از طریق این فرم پرداخت نکنید.</p>
 <a class="button secondary" href="/orders.html">ثبت سفارش یا پیشنهاد همکاری</a>
 <a class="button secondary" href="/">بازگشت به صفحهٔ اصلی هرمز</a>
 </section>
 <footer>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.<br>چراغ ۷۷۷ برای خاموش شدن ساخته نشده ❤️</footer>
 </main>
+<script>
+const whatsapp = "https://wa.me/989171697669";
+function val(id){return document.getElementById(id).value.trim();}
+function sendForm(event, fields, statusId, heading){
+ event.preventDefault();
+ const form = event.currentTarget;
+ if(!form.reportValidity()) return;
+ const consent = form.querySelector('input[type="checkbox"]');
+ if(!consent.checked){document.getElementById(statusId).textContent="برای ادامه، رضایت خود را تأیید کنید.";return;}
+ const lines=[heading,...fields.map(([label,id])=>label+": "+(val(id)||"ذکر نشده")),"یادآوری: درخواست برای بررسی است؛ انتشار عمومی فقط پس از هماهنگی جداگانه."];
+ const url=whatsapp+"?text="+encodeURIComponent(lines.join("\n"));
+ document.getElementById(statusId).textContent="واتساپ باز می‌شود. برای ارسال نهایی، پیام را در واتساپ بررسی و خودتان ارسال کنید.";
+ window.open(url,"_blank","noopener,noreferrer");
+}
+document.getElementById("skillForm").addEventListener("submit",e=>sendForm(e,[["عنوان نمایشی","skillName"],["زمینه","skillType"],["شهر/محدوده","skillCity"],["توضیحات","skillDesc"],["راه تماس عمومی","skillContact"]],"skillStatus","درخواست معرفی مهارت در هرمز"));
+document.getElementById("businessForm").addEventListener("submit",e=>sendForm(e,[["نام کسب‌وکار","bizName"],["نوع","bizType"],["شهر/محدوده","bizCity"],["توضیحات","bizDesc"],["راه تماس عمومی","bizContact"],["صفحه/نمونه‌کار","bizLink"]],"bizStatus","درخواست معرفی کسب‌وکار و تبلیغات در هرمز"));
+</script>
 </body>
 </html>
