@@ -1284,6 +1284,45 @@ footer {
 </section>
 
 
+<!-- ===== COMMUNITY PARTICIPATION ===== -->
+
+<section class="project-section" id="participate">
+  <div class="project-box">
+    <h2>هرمز را با هم می‌سازیم</h2>
+    <p>
+      هرمز یک پروژه در حال توسعه است؛ نه همه امکانات آن آماده است و نه ادعا می‌کنیم
+      پاسخ همه نیازها را داریم. می‌خواهیم مردم در شناخت نیازها، تصمیم‌گیری و ساختن
+      قدم‌های بعدی شریک باشند.
+    </p>
+    <div class="principles">
+      <div class="principle">
+        <div class="principle-icon">💬</div>
+        <strong>پیشنهاد و انتقاد</strong>
+        <span>بگویید چه چیزی برای شما مفید است و چه چیزی باید بهتر شود.</span>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">🧰</div>
+        <strong>معرفی مهارت‌ها</strong>
+        <span>توانایی‌ها، ایده‌ها و نیازهای واقعی خود را برای همکاری مطرح کنید.</span>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">🤝</div>
+        <strong>مشارکت در ساختن</strong>
+        <span>پیشنهادهای مردم باید بررسی شوند و مسیر پیشرفت با صداقت اعلام شود.</span>
+      </div>
+    </div>
+    <p class="motto">
+      ما هنوز در آغاز راهیم. امکانات آماده و بخش‌های در حال توسعه را شفاف اعلام می‌کنیم؛
+      تصمیم‌های مهم باید با شنیدن صدای انسان‌ها گرفته شوند.
+    </p>
+    <div class="buttons" style="margin-top:22px;">
+      <a class="chat-button" href="/orders.html">ثبت پیشنهاد یا درخواست همکاری</a>
+      <a class="chat-button" href="/about.html">بیشتر درباره هدف هرمز</a>
+    </div>
+  </div>
+</section>
+
+
 <!-- ===== ADMIN ASSISTANT ===== -->
 
 <section class="project-section">
