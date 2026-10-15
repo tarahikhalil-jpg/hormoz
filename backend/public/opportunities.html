@@ -43,7 +43,7 @@ footer{text-align:center;padding:22px 10px;opacity:.8;font-size:13px}
 
 <section class="notice">
 <strong>شفاف و امن:</strong>
-<p>این فرم‌ها اطلاعات را در سایت ذخیره نمی‌کنند. با زدن دکمه، متن آماده‌شده در واتساپ باز می‌شود؛ فقط اگر خودتان پیام را در واتساپ ارسال کنید، درخواست به ما می‌رسد. اطلاعات پیش از هر معرفی عمومی بررسی می‌شود و انتشار بدون هماهنگی انجام نخواهد شد.</p>
+<p>سامانه ابتدا تلاش می‌کند درخواست را در پایگاه داده هرمز ثبت کند و یک کد پیگیری بدهد. اگر ذخیره‌سازی دائمی در دسترس نباشد، متن آماده‌شده در واتساپ باز می‌شود؛ در این حالت فقط با ارسال پیام از سوی خودتان درخواست به ما می‌رسد. اطلاعات پیش از هر معرفی عمومی بررسی می‌شود و انتشار بدون هماهنگی انجام نخواهد شد.</p>
 <p>ارسال درخواست تضمین‌کنندهٔ استخدام یا درآمد نیست. رمز عبور، کد ورود، اطلاعات بانکی یا مدارک حساس ننویسید.</p>
 </section>
 
@@ -110,19 +110,29 @@ footer{text-align:center;padding:22px 10px;opacity:.8;font-size:13px}
 <script>
 const whatsapp = "https://wa.me/989171697669";
 function val(id){return document.getElementById(id).value.trim();}
-function sendForm(event, fields, statusId, heading){
+async function sendForm(event, fields, statusId, heading, type){
  event.preventDefault();
  const form = event.currentTarget;
  if(!form.reportValidity()) return;
  const consent = form.querySelector('input[type="checkbox"]');
  if(!consent.checked){document.getElementById(statusId).textContent="برای ادامه، رضایت خود را تأیید کنید.";return;}
- const lines=[heading,...fields.map(([label,id])=>label+": "+(val(id)||"ذکر نشده")),"یادآوری: درخواست برای بررسی است؛ انتشار عمومی فقط پس از هماهنگی جداگانه."];
+ const data=Object.fromEntries(fields.map(([label,id])=>[label,val(id)||"ذکر نشده"]));
+ const status=document.getElementById(statusId);
+ status.textContent="در حال ثبت درخواست...";
+ try {
+   const response=await fetch("/api/v1/opportunities",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type,data,consent:true})});
+   const result=await response.json();
+   if(response.ok && result.ok){status.textContent="✅ درخواست در هرمز ثبت شد. کد پیگیری: "+result.id+" — لطفاً این کد را نگه دارید.";form.reset();return;}
+   status.textContent=(result.message||"ذخیره‌سازی دائمی فعلاً در دسترس نیست.")+" واتساپ باز می‌شود؛ برای ارسال نهایی پیام را خودتان ارسال کنید.";
+ } catch(error) {
+   status.textContent="اتصال به سامانه برقرار نشد. واتساپ باز می‌شود؛ برای ارسال نهایی پیام را خودتان ارسال کنید.";
+ }
+ const lines=[heading,...fields.map(([label,id])=>label+": "+(data[label]||"ذکر نشده")),"یادآوری: درخواست برای بررسی است؛ انتشار عمومی فقط پس از هماهنگی جداگانه."];
  const url=whatsapp+"?text="+encodeURIComponent(lines.join("\n"));
- document.getElementById(statusId).textContent="واتساپ باز می‌شود. برای ارسال نهایی، پیام را در واتساپ بررسی و خودتان ارسال کنید.";
  window.open(url,"_blank","noopener,noreferrer");
 }
-document.getElementById("skillForm").addEventListener("submit",e=>sendForm(e,[["عنوان نمایشی","skillName"],["زمینه","skillType"],["شهر/محدوده","skillCity"],["توضیحات","skillDesc"],["راه تماس عمومی","skillContact"]],"skillStatus","درخواست معرفی مهارت در هرمز"));
-document.getElementById("businessForm").addEventListener("submit",e=>sendForm(e,[["نام کسب‌وکار","bizName"],["نوع","bizType"],["شهر/محدوده","bizCity"],["توضیحات","bizDesc"],["راه تماس عمومی","bizContact"],["صفحه/نمونه‌کار","bizLink"]],"bizStatus","درخواست معرفی کسب‌وکار و تبلیغات در هرمز"));
+document.getElementById("skillForm").addEventListener("submit",e=>sendForm(e,[["عنوان نمایشی","skillName"],["زمینه","skillType"],["شهر/محدوده","skillCity"],["توضیحات","skillDesc"],["راه تماس عمومی","skillContact"]],"skillStatus","درخواست معرفی مهارت در هرمز","skill"));
+document.getElementById("businessForm").addEventListener("submit",e=>sendForm(e,[["نام کسب‌وکار","bizName"],["نوع","bizType"],["شهر/محدوده","bizCity"],["توضیحات","bizDesc"],["راه تماس عمومی","bizContact"],["صفحه/نمونه‌کار","bizLink"]],"bizStatus","درخواست معرفی کسب‌وکار و تبلیغات در هرمز","business"));
 </script>
 </body>
 </html>
