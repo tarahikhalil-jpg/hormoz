@@ -372,6 +372,13 @@
     </section>
 
 
+    <section class="card">
+      <h2>🤝 درخواست‌های فرصت‌ها و تبلیغات</h2>
+      <p class="subtitle">درخواست‌های ثبت‌شده در پایگاه داده؛ اطلاعات فقط برای مدیر واردشده نمایش داده می‌شود.</p>
+      <button onclick="loadOpportunities()">🔄 دریافت درخواست‌ها</button>
+      <div id="opportunityList" class="result">برای دریافت، دکمه را بزنید.</div>
+    </section>
+
     <!-- FEEDBACK -->
 
     <section class="card">
@@ -792,6 +799,29 @@ async function uploadFile(
 }
 
 
+async function loadOpportunities() {
+  const box = document.getElementById("opportunityList");
+  box.textContent = "در حال دریافت درخواست‌ها...";
+  try {
+    const data = await api("/api/v1/admin/opportunities");
+    if (!data.requests || data.requests.length === 0) {
+      box.innerHTML = '<div class="empty">هنوز درخواستی در پایگاه داده ثبت نشده است.</div>';
+      return;
+    }
+    box.innerHTML = data.requests.map(item => {
+      const labels = Object.entries(item.data || {}).map(([key, value]) =>
+        "<strong>" + escapeHtml(key) + ":</strong> " + escapeHtml(value) + "<br>"
+      ).join("");
+      return '<div class="feedback"><small>کد: ' + escapeHtml(item.id) + ' · ' +
+        escapeHtml(item.type === "skill" ? "معرفی مهارت" : "معرفی کسب‌وکار") + ' · ' +
+        escapeHtml(formatTime(item.time)) + '</small><br>' + labels + '</div>';
+    }).join("");
+  } catch (error) {
+    box.innerHTML = '<div class="error">' + escapeHtml(error.message) + '</div>';
+  }
+}
+
+
 async function loadFeedback() {
 
   const box =
@@ -953,7 +983,8 @@ async function loadAll() {
   await Promise.all([
     loadStats(),
     loadStatus(),
-    loadFeedback()
+    loadFeedback(),
+    loadOpportunities()
   ]);
 }
 
