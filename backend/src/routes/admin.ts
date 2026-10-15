@@ -461,6 +461,13 @@ export async function adminRoutes(app: FastifyInstance) {
         ]),
         filename: "hormoz-music (1).mp3",
         max: 15 * 1024 * 1024
+      },
+      video: {
+        mime: new Set([
+          "video/mp4"
+        ]),
+        filename: "hormoz-ad.mp4",
+        max: 30 * 1024 * 1024
       }
     };
 
