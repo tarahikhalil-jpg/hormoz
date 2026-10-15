@@ -1,5 +1,11 @@
 هوش هرمز | Hormoz Intelligence
 
+🌐 **خانهٔ عمومی پروژه:** https://tarahikhalil-jpg.github.io/hormoz/
+
+🤖 **نسخهٔ آزمایشی نوا:** https://hormoz-ai-backend-777.onrender.com/
+
+🤝 **دعوت به همکاری:** https://github.com/tarahikhalil-jpg/hormoz/issues/7
+
 رؤیا • تلاش • ادامه
 
 هوش هرمز یک پروژهٔ مستقل و در حال توسعه است که با هدف پیوند فناوری با نیازهای واقعی انسان شکل گرفته است.
@@ -50,9 +56,13 @@
 
 هرمز یک پروژهٔ مستقل و در حال توسعه است. امکانات موجود را می‌توان از طریق وب‌سایت و مخزن عمومی آن بررسی کرد. همکاری و پیشنهادهای سازنده می‌توانند به مسیر توسعهٔ آن کمک کنند.
 
-وب‌سایت: https://hormoz-ai-backend-777.onrender.com/
+وب‌سایت معرفی: https://tarahikhalil-jpg.github.io/hormoz/
+
+نسخهٔ آزمایشی نوا: https://hormoz-ai-backend-777.onrender.com/
 
 مخزن کد: https://github.com/tarahikhalil-jpg/hormoz
+
+دعوت به همکاری: https://github.com/tarahikhalil-jpg/hormoz/issues/7
 
 ---
 
