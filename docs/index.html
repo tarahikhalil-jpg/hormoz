@@ -3,34 +3,106 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#102a43">
-<meta name="description" content="هوش هرمز؛ پروژه‌ای آزمایشی و انسان‌محور برای دسترسی همگانی به فناوری، یادگیری، مهارت و فرصت.">
-<title>هوش هرمز | فناوری برای همه</title>
+<meta name="theme-color" content="#071522">
+<meta name="description" content="هوش هرمز؛ فناوری برای همه، فرصت برای یکدیگر. نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.">
+<title>هوش هرمز | چراغی برای فرصت</title>
 <style>
-:root{color-scheme:dark;--bg:#081522;--panel:#102a43;--gold:#ffd166;--text:#f4f7fb;--muted:#c3d1df;--line:#28445d}
-*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:radial-gradient(ellipse at top,#173c57 0,#081522 60%);color:var(--text);line-height:1.9}
-main{width:min(920px,92%);margin:auto;padding:28px 0 56px}.brand{display:flex;align-items:center;gap:14px;margin:10px 0 38px}.lamp{width:54px;height:54px;display:grid;place-items:center;border:2px solid var(--gold);border-radius:18px;color:var(--gold);font-size:28px;font-weight:bold}.eyebrow{color:var(--gold);font-size:.9rem;letter-spacing:.03em}h1{font-size:clamp(2rem,6vw,3.7rem);line-height:1.35;margin:.2rem 0 1rem}h2{font-size:1.45rem;margin-top:0}p{color:var(--muted);margin:.6rem 0 1rem}.hero{padding:clamp(22px,5vw,48px);border:1px solid var(--line);border-radius:26px;background:#102a43d9;box-shadow:0 18px 55px #0003}.quote{font-size:1.15rem;color:var(--text);border-right:4px solid var(--gold);padding-right:16px;margin:24px 0}.actions{display:flex;flex-wrap:wrap;gap:12px;margin:26px 0 8px}.btn{display:inline-block;text-decoration:none;font-weight:bold;border-radius:12px;padding:12px 18px;background:var(--gold);color:#172536}.btn.secondary{background:transparent;color:var(--text);border:1px solid #7590a8}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:20px 0}.card{border:1px solid var(--line);border-radius:18px;padding:20px;background:#0d2235}.card h2{font-size:1.1rem;color:var(--gold)}.status{border:1px solid #8a6d2e;background:#3a3019;border-radius:14px;padding:15px;color:#ffe7a0;margin-top:20px}.status p{color:#f7e9c5;margin:5px 0}footer{border-top:1px solid var(--line);padding-top:20px;margin-top:35px;font-size:.9rem;color:var(--muted)}a:focus-visible{outline:3px solid white;outline-offset:4px}
+:root{color-scheme:dark;--bg:#071522;--panel:#10283b;--panel2:#0b1e2e;--gold:#ffd782;--teal:#70f1e6;--text:#f6f8fc;--muted:#c2d1df;--line:#29465c}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(ellipse at 50% -15%,#23506a 0,transparent 45%),linear-gradient(180deg,#071522,#08121e 75%);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+a{color:inherit}
+.wrap{width:min(1100px,92%);margin:auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0}
+.brand{display:flex;align-items:center;gap:12px;font-weight:bold;font-size:1.1rem}
+.mark{width:52px;height:52px;display:grid;place-items:center;border-radius:17px;background:linear-gradient(145deg,#ffe5a5,#dba84e);color:#142333;font-size:18px;font-weight:900;box-shadow:0 0 32px #ffd78235}
+.brand small{display:block;color:var(--muted);font-size:.75rem;font-weight:normal}
+.nav{display:flex;gap:18px;flex-wrap:wrap;font-size:.9rem;color:var(--muted)}
+.nav a{text-decoration:none}.nav a:hover{color:var(--gold)}
+.hero{position:relative;overflow:hidden;display:grid;grid-template-columns:1.15fr .85fr;gap:35px;align-items:center;padding:clamp(25px,6vw,68px);border:1px solid #42627a;border-radius:32px;background:linear-gradient(130deg,#14364cfa,#0b1b2bfa 70%);box-shadow:0 30px 90px #0005}
+.hero:before{content:"";position:absolute;width:330px;height:330px;border:1px solid #70f1e61c;border-radius:50%;left:-130px;top:-150px;box-shadow:0 0 0 35px #70f1e609,0 0 0 70px #70f1e605;pointer-events:none}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--teal);font-size:.9rem;font-weight:bold}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 15px var(--teal)}
+h1{font-size:clamp(2.1rem,5.8vw,4.5rem);line-height:1.35;margin:14px 0 16px;letter-spacing:-1px}
+h1 span{color:var(--gold)}
+.lead{max-width:610px;color:var(--muted);font-size:1.05rem}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin:26px 0 16px}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;text-decoration:none;padding:12px 19px;border-radius:14px;background:linear-gradient(135deg,#ffe5a5,#f2c76d);color:#132333;font-weight:bold;box-shadow:0 8px 25px #ffd7821c;transition:transform .2s,filter .2s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.btn.alt{background:#ffffff09;border:1px solid #6a879c;color:var(--text);box-shadow:none}
+.trust{font-size:.8rem;color:#9eb4c6}
+.visual{min-height:330px;display:grid;place-items:center;position:relative}
+.orbit{width:min(330px,75vw);aspect-ratio:1;border:1px solid #70f1e64c;border-radius:50%;display:grid;place-items:center;position:relative;background:radial-gradient(circle,#70f1e61a 0,#70f1e605 55%,transparent 70%);box-shadow:inset 0 0 55px #70f1e60b,0 0 65px #70f1e60a}
+.orbit:before,.orbit:after{content:"";position:absolute;border:1px solid #ffd78235;border-radius:50%;inset:24px}.orbit:after{inset:50px;border-color:#70f1e62b}
+.lamp{position:relative;z-index:2;width:145px;height:175px;display:flex;flex-direction:column;align-items:center;justify-content:center;filter:drop-shadow(0 0 24px #ffd78245)}
+.bulb{width:88px;height:88px;border-radius:48% 48% 42% 42%;background:radial-gradient(circle at 35% 25%,#fff6d8,#ffd782 48%,#c98c35 100%);box-shadow:0 0 35px #ffd78285,0 0 85px #ffd78225;position:relative}
+.bulb:after{content:"";position:absolute;bottom:-13px;left:26px;width:36px;height:22px;background:#d8a64c;border-radius:5px 5px 9px 9px;border-bottom:5px solid #916a32}
+.lamp-base{margin-top:10px;color:var(--gold);font-size:1rem;letter-spacing:5px;font-weight:900}
+.float-tag{position:absolute;padding:8px 13px;border-radius:12px;border:1px solid #ffffff20;background:#0b1c2bd9;color:var(--muted);font-size:.8rem;backdrop-filter:blur(8px)}
+.tag1{top:14%;right:-2%}.tag2{bottom:15%;left:-3%}.tag3{bottom:2%;right:30%;color:var(--gold)}
+.section{padding:70px 0}
+.section-head{text-align:center;max-width:720px;margin:0 auto 30px}
+.kicker{color:var(--gold);font-weight:bold;font-size:.85rem}
+h2{font-size:clamp(1.7rem,4vw,2.5rem);line-height:1.45;margin:8px 0}
+.section-head p,.card p{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{padding:25px;border-radius:22px;background:linear-gradient(145deg,#10283bdc,#0a1b2b);border:1px solid var(--line);min-height:200px;transition:transform .2s,border-color .2s}
+.card:hover{transform:translateY(-4px);border-color:#70f1e65e}
+.icon{width:48px;height:48px;display:grid;place-items:center;border-radius:15px;background:#70f1e610;border:1px solid #70f1e62c;font-size:1.35rem}
+.card h3{margin:15px 0 5px;font-size:1.15rem}
+.quote{margin:15px 0 0;padding:22px 24px;border-right:3px solid var(--gold);border-radius:14px;background:linear-gradient(90deg,#ffd78208,#ffd78212);color:#fff1ce;font-size:1.05rem}
+.feature-band{display:grid;grid-template-columns:1fr auto;gap:25px;align-items:center;padding:clamp(24px,5vw,42px);border:1px solid #42627a;border-radius:26px;background:linear-gradient(110deg,#112e43,#0c1c2b)}
+.feature-band p{color:var(--muted);margin-bottom:0}
+.status{margin-top:18px;padding:14px 17px;border:1px solid #8a6e37;border-radius:14px;background:#352d1a;color:#ffe8ae;font-size:.86rem}
+footer{padding:28px 0 38px;border-top:1px solid #ffffff12;color:#9fb3c4;font-size:.85rem}
+.footline{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media(max-width:760px){.nav{display:none}.hero{grid-template-columns:1fr;padding:26px 22px;gap:10px}.visual{min-height:270px;order:-1}.orbit{width:245px}.lamp{transform:scale(.8)}.tag1{right:0}.tag2{left:0}.grid{grid-template-columns:1fr}.section{padding:48px 0}.feature-band{grid-template-columns:1fr}.feature-band .btn{width:100%}h1{font-size:clamp(2.15rem,10vw,3.3rem)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important}}
 </style>
 </head>
-<body><main>
-<header class="brand"><div class="lamp" aria-label="چراغ هرمز">۷۷۷</div><div><strong>هوش هرمز</strong><div class="eyebrow">رؤیا • تلاش • ادامه</div></div></header>
+<body>
+<div class="wrap">
+<header class="topbar">
+  <div class="brand"><div class="mark">۷۷۷</div><div>هوش هرمز<small>رؤیا • تلاش • ادامه</small></div></div>
+  <nav class="nav" aria-label="منوی اصلی"><a href="#mission">هدف هرمز</a><a href="#values">ارزش‌ها</a><a href="#collaborate">همکاری</a></nav>
+</header>
+<main>
 <section class="hero">
-<div class="eyebrow">یک پروژه مستقل، در حال ساخت</div>
-<h1>فناوری برای همه؛<br>فرصت برای یکدیگر</h1>
-<p>هرمز تلاشی انسان‌محور برای نزدیک‌تر کردن مردم به یادگیری، مهارت، همکاری و فرصت است؛ به‌ویژه برای کسانی که سرمایه و امکانات زیادی در اختیار ندارند.</p>
-<div class="quote">«این فقط رویا نیست؛ دست گرفتن همدیگه است، کمک کردن به همدیگه بدون سوءاستفاده از هم.»</div>
-<div class="actions">
-<a class="btn" href="https://hormoz-ai-backend-777.onrender.com/">آزمایش نوا</a>
-<a class="btn secondary" href="https://github.com/tarahikhalil-jpg/hormoz">دیدن پروژه در گیت‌هاب</a>
-<a class="btn secondary" href="https://github.com/tarahikhalil-jpg/hormoz/issues/7">دعوت به همکاری</a>
+  <div>
+    <div class="eyebrow"><span class="dot"></span> یک ایده انسانی، در مسیر ساخته‌شدن</div>
+    <h1>فناوری برای همه؛<br><span>فرصت برای یکدیگر</span></h1>
+    <p class="lead">هرمز تلاشی مستقل برای نزدیک‌تر کردن انسان‌ها به یادگیری، مهارت، همکاری و فرصت است؛ به‌ویژه برای کسانی که سرمایه و امکانات زیادی در اختیار ندارند.</p>
+    <div class="actions">
+      <a class="btn" href="https://hormoz-ai-backend-777.onrender.com/#chat">✦ گفت‌وگو با نوا</a>
+      <a class="btn alt" href="https://github.com/tarahikhalil-jpg/hormoz">مشاهده پروژه ↗</a>
+    </div>
+    <div class="trust">بدون وعده‌های غیرواقعی؛ با شفافیت درباره مسیر و محدودیت‌ها.</div>
+  </div>
+  <div class="visual" aria-label="نماد چراغ هرمز">
+    <div class="orbit"><div class="lamp"><div class="bulb"></div><div class="lamp-base">HORMOZ · 777</div></div><div class="float-tag tag1">🧠 یادگیری و هوشمندی</div><div class="float-tag tag2">🤝 همراهی انسانی</div><div class="float-tag tag3">چراغ امید</div></div>
+  </div>
+</section>
+<section class="section" id="mission">
+  <div class="section-head"><div class="kicker">چرایی هرمز</div><h2>فناوری وقتی ارزشمند است که به زندگی انسان کمک کند</h2><p>هرمز قرار نیست فقط یک گفت‌وگوگر باشد؛ چشم‌انداز آن پیوند دادن توانایی‌ها، دانش و خدمات با فرصت‌های واقعی است. این مسیر هنوز در حال توسعه است.</p></div>
+  <div class="quote">«این فقط رویا نیست؛ دست گرفتن همدیگه است، کمک کردن به همدیگه بدون سوءاستفاده از هم.»</div>
+</section>
+<section class="section" id="values">
+  <div class="section-head"><div class="kicker">اصول ما</div><h2>سه اصل برای ساختن اعتماد</h2><p>اعتماد با حرف تنها ساخته نمی‌شود؛ با رفتار مسئولانه، شفافیت و احترام به انتخاب انسان شکل می‌گیرد.</p></div>
+  <div class="grid">
+    <article class="card"><div class="icon">🛡️</div><h3>امنیت و حریم خصوصی</h3><p>امنیت باید از آغاز جدی گرفته شود و درباره محدودیت‌های فنی صادقانه صحبت کنیم.</p></article>
+    <article class="card"><div class="icon">🤝</div><h3>همکاری بدون سوءاستفاده</h3><p>هرکس به اندازه توانش می‌تواند با دانش، تجربه یا پیشنهاد سازنده به رشد پروژه کمک کند.</p></article>
+    <article class="card"><div class="icon">🌱</div><h3>فرصت برای همه</h3><p>هدف، کمک به یادگیری و دیده‌شدن توانایی‌های انسان‌هاست؛ نه اینکه پول شرط آغاز باشد.</p></article>
+  </div>
+</section>
+<section class="section" id="collaborate">
+  <div class="feature-band">
+    <div><div class="kicker">دعوت به همراهی</div><h2>چراغ را با هم روشن نگه داریم</h2><p>اگر در طراحی، برنامه‌نویسی، امنیت، هوش مصنوعی، میزبانی کم‌هزینه یا معرفی پروژه تجربه‌ای دارید، راهنمایی و همکاری شما ارزشمند است.</p></div>
+    <a class="btn" href="https://github.com/tarahikhalil-jpg/hormoz/issues/7">پیشنهاد همکاری ↗</a>
+  </div>
+  <div class="status"><strong>وضعیت واقعی:</strong> هرمز پروژه‌ای آزمایشی و در حال توسعه است. بعضی امکانات ممکن است کامل یا همیشه در دسترس نباشند و نسخه نوا روی میزبانی رایگان اجرا می‌شود؛ گاهی برای شروع پاسخ‌گویی به زمان نیاز دارد.</div>
+</section>
+</main>
+<footer><div class="footline"><div><strong>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</strong><br>هوش هرمز · رؤیا • تلاش • ادامه</div><div>چراغ ۷۷۷ برای خاموش شدن ساخته نشده.</div></div></footer>
 </div>
-<div class="status"><strong>شفاف درباره وضعیت پروژه</strong><p>هرمز هنوز آزمایشی و در حال توسعه است؛ همه امکانات کامل یا همیشه در دسترس نیستند. نسخه آزمایشی نوا روی میزبانی رایگان اجرا می‌شود و ممکن است برای بیدار شدن کمی زمان بخواهد.</p></div>
-</section>
-<section class="grid" aria-label="اصول هرمز">
-<article class="card"><h2>🤝 همکاری انسانی</h2><p>یادگیری و پیشرفت با کمک متقابل، احترام و بدون سوءاستفاده از یکدیگر.</p></article>
-<article class="card"><h2>🛡️ امنیت و شفافیت</h2><p>امنیت و حریم خصوصی باید جدی گرفته شوند؛ درباره محدودیت‌ها و وضعیت واقعی پروژه صادق می‌مانیم.</p></article>
-<article class="card"><h2>🌱 فرصت برای همه</h2><p>ایده این است که افراد بتوانند توانایی‌ها و مهارت‌های خود را به فرصت‌های واقعی نزدیک‌تر کنند.</p></article>
-</section>
-<section class="card"><h2>به هرمز کمک کنید بهتر شود</h2><p>اگر در توسعه نرم‌افزار، امنیت، میزبانی کم‌هزینه، مستندسازی یا معرفی پروژه تجربه دارید، پیشنهاد و همکاری شما ارزشمند است. هر همکاری باید روشن، داوطلبانه و بدون وعده پرداختی باشد.</p><a class="btn" href="https://github.com/tarahikhalil-jpg/hormoz/issues/7">دیدن درخواست همکاری</a></section>
-<footer><strong>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</strong><br>این صفحه خانه عمومی پروژه است؛ نسخه آزمایشی نوا جداگانه روی میزبانی رایگان اجرا می‌شود.</footer>
-</main></body></html>
+</body>
+</html>
