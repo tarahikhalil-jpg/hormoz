@@ -1978,11 +1978,12 @@ return reply.type("application/xml; charset=utf-8").send(content);
     "/",
     async (_request, reply) => {
 
+      const homePath = path.join(__dirname, "../public/hormoz-graphic.html");
+      const homeHtml = await fs.readFile(homePath, "utf8");
+
       return reply
-        .type(
-          "text/html; charset=utf-8"
-        )
-        .send(page);
+        .type("text/html; charset=utf-8")
+        .send(homeHtml);
 
     }
   );
