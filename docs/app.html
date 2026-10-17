@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#082f49">
+  <meta name="description" content="هوش هرمز؛ درگاه هوشمند دسترسی به خدمات، فناوری، فرصت‌های شغلی و کسب‌وکارهای محلی برای همه.">
+  
+  <title>هوش هرمز | فناوری و فرصت برای همه</title>
+  <style>
+    :root{--bg:#071b2b;--panel:#102b40;--panel2:#13364e;--text:#f3f8fc;--muted:#c3d4e1;--aqua:#63e6d1;--gold:#ffd27a;--line:#2c4c61}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:radial-gradient(ellipse at top,#123c56 0,#071b2b 56%);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+    a{color:inherit}
+    .wrap{width:min(1050px,92%);margin:auto}
+    header{padding:18px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .brand{font-size:20px;font-weight:bold;color:var(--aqua)}
+    nav{display:flex;gap:14px;flex-wrap:wrap;font-size:14px}
+    nav a{text-decoration:none;color:var(--muted)}
+    .hero{padding:34px 0 28px;text-align:center}
+    .lamp{font-size:48px;line-height:1.4}
+    h1{font-size:clamp(30px,6vw,48px);line-height:1.5;margin:8px 0}
+    .lead{font-size:clamp(18px,3vw,23px);color:var(--aqua);margin:0 auto 12px}
+    .quote{max-width:740px;margin:12px auto 22px;color:var(--muted);font-size:17px}
+    .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .btn{display:inline-block;border:0;border-radius:13px;padding:12px 20px;font:inherit;font-weight:bold;text-decoration:none;cursor:pointer;background:var(--aqua);color:#062532}
+    .btn.secondary{background:transparent;color:var(--text);border:1px solid #54768a}
+    .section{padding:26px 0}
+    .section-head{text-align:center;margin-bottom:18px}
+    h2{font-size:clamp(23px,4vw,31px);margin:0 0 5px}
+    .hint{color:var(--muted);margin:0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:13px}
+    .card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:17px;padding:18px;text-align:right}
+    .card .icon{font-size:30px}
+    .card h3{font-size:18px;margin:5px 0}
+    .card p{color:var(--muted);font-size:14px;margin:4px 0 14px}
+    .card button{width:100%;padding:10px;border-radius:10px;border:1px solid #4c7187;background:#0b2537;color:var(--aqua);font:inherit;cursor:pointer}
+    .feature{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:14px}
+    .notice{border:1px solid #6d5d35;background:#302a1a;color:#ffebba;border-radius:13px;padding:14px;font-size:14px}
+    .status{display:inline-block;font-size:12px;border-radius:20px;padding:2px 9px;background:#214638;color:#baf7d6;margin-bottom:5px}
+    #chatBox{display:none;margin:20px auto 0;max-width:760px;background:#0c2638;border:1px solid var(--line);padding:18px;border-radius:17px;text-align:right}
+    textarea{width:100%;min-height:115px;resize:vertical;border-radius:12px;padding:13px;font:inherit;background:#061723;color:white;border:1px solid #426176}
+    #answer{margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere;color:#fff}
+    .music{max-width:560px;margin:22px auto}
+    audio{width:100%}
+    footer{text-align:center;padding:28px 0 36px;color:var(--muted);font-size:13px}
+    @media(max-width:520px){header{justify-content:center}nav{justify-content:center}.hero{padding-top:18px}.card{padding:15px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">💡 هوش هرمز</div>
+      <nav aria-label="بخش‌های سایت">
+        <a href="#services">خدمات</a>
+        <a href="#work">اشتغال و مهارت</a>
+        <a href="#local">کسب‌وکارهای محلی</a>
+        <a href="#nova">گفت‌وگو با نوا</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="lamp" aria-hidden="true">💡</div>
+        <h1>فناوری برای همه؛ فرصت برای هر استعداد</h1>
+        <p class="lead">دفتر هوشمند خدمات، فناوری و اشتغال هوش هرمز</p>
+        <p class="quote">نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p>
+        <div class="actions">
+          <a class="btn" href="#services">پیدا کردن خدمت موردنیاز</a>
+          <a class="btn secondary" href="#work">پیدا کردن فرصت همکاری</a>
+        </div>
+        <div class="music">
+          <audio controls preload="none" aria-label="موسیقی هوش هرمز">
+            <source src="https://tarahikhalil-jpg.github.io/hormoz/hormoz-music%20(1).mp3" type="audio/mpeg">
+          </audio>
+        </div>
+      </section>
+
+      <section class="section" id="services">
+        <div class="section-head">
+          <h2>چه خدمتی نیاز داری؟</h2>
+          <p class="hint">یک موضوع را انتخاب کن؛ نوا برای پیدا کردن مسیر مناسب کمکت می‌کند.</p>
+        </div>
+        <div class="grid">
+          <article class="card"><div class="icon">💧</div><h3>آب، برق و گاز</h3><p>راهنمایی درباره قبض، قطعی، پیگیری و مسیر ارتباط با شرکت خدماتی.</p><button onclick="startPrompt('برای مشکل آب، برق یا گاز راهنمایی می‌خواهم. کمک کن مسیر رسمی پیگیری را پیدا کنم.')">درخواست راهنمایی</button></article>
+          <article class="card"><div class="icon">📶</div><h3>اینترنت و تلفن</h3><p>راهنمایی برای اینترنت، تلفن همراه، قطعی یا انتخاب سرویس.</p><button onclick="startPrompt('برای اینترنت یا تلفن مشکل دارم. کمک کن راه‌حل و مسیر رسمی پیگیری را پیدا کنم.')">بررسی مشکل</button></article>
+          <article class="card"><div class="icon">🚆</div><h3>سفر و بلیت</h3><p>راهنمایی برای قطار، هواپیما، اتوبوس، کشتی و برنامه‌ریزی سفر.</p><button onclick="startPrompt('برای سفر و تهیه بلیت قطار، هواپیما، اتوبوس یا کشتی راهنمایی می‌خواهم.')">برنامه‌ریزی سفر</button></article>
+          <article class="card"><div class="icon">🏠</div><h3>خانه و خدمات محلی</h3><p>جست‌وجوی مسیر برای اقامت، تعمیرات، خودرو و خدمات موردنیاز.</p><button onclick="startPrompt('به یک خدمت محلی مثل اقامت، تعمیرکار یا خودرو نیاز دارم. کمک کن نیازم را دقیق کنم و راه امن پیدا کنم.')">پیدا کردن خدمت</button></article>
+          <article class="card"><div class="icon">🏛️</div><h3>خدمات اداری و دولتی</h3><p>کمک برای فهم مراحل، مدارک و پیدا کردن درگاه رسمی سازمان مربوطه.</p><button onclick="startPrompt('برای یک خدمت اداری یا دولتی راهنمایی می‌خواهم. اول بپرس کدام خدمت و شهر مدنظرم است و سپس مسیر رسمی را توضیح بده.')">راهنمایی اداری</button></article>
+          <article class="card"><div class="icon">🩺</div><h3>سلامت و بیمه</h3><p>راهنمایی عمومی برای پیدا کردن خدمات و مسیرهای رسمی مرتبط.</p><button onclick="startPrompt('برای پیدا کردن خدمت سلامت یا بیمه و مسیر رسمی دسترسی به آن راهنمایی می‌خواهم.')">یافتن مسیر خدمت</button></article>
+        </div>
+      </section>
+
+      <section class="section" id="work">
+        <div class="section-head">
+          <h2>استعداد تو، فرصت فردا</h2>
+          <p class="hint">هوش هرمز می‌خواهد مهارت افراد را به نیازهای واقعی مردم و کسب‌وکارها پیوند دهد.</p>
+        </div>
+        <div class="feature">
+          <article class="card"><div class="icon">🧰</div><h3>من مهارت دارم</h3><p>مهارت یا تخصصت را معرفی کن تا نوا کمک کند آن را به خدمات قابل ارائه تبدیل کنی.</p><button onclick="startPrompt('می‌خواهم مهارت و تخصصم را به فرصت شغلی تبدیل کنم. از من درباره مهارت، شهر و امکاناتم سؤال کن و یک برنامه عملی کم‌هزینه پیشنهاد بده.')">معرفی مهارت به نوا</button></article>
+          <article class="card"><div class="icon">🌱</div><h3>دنبال کار هستم</h3><p>توانایی‌ها و شرایطت را مشخص کن تا مسیرهای واقع‌بینانه جست‌وجوی کار را بررسی کنیم.</p><button onclick="startPrompt('دنبال کار هستم. لطفاً با پرسیدن چند سؤال درباره مهارت، تجربه، شهر و زمان در دسترسم کمک کن قدم‌های واقعی برای یافتن کار مشخص کنم.')">شروع راهنمایی شغلی</button></article>
+          <article class="card"><div class="icon">💡</div><h3>ایده یا کسب‌وکار دارم</h3><p>برای سنجش ایده، شناخت مشتری و شروع کوچک و کم‌هزینه برنامه بگیر.</p><button onclick="startPrompt('یک ایده یا کسب‌وکار دارم و می‌خواهم آن را با هزینه کم شروع کنم. کمک کن نیاز مشتری، قدم اول و خطرهای اصلی را بررسی کنم.')">بررسی ایده</button></article>
+        </div>
+      </section>
+
+      <section class="section" id="local">
+        <div class="section-head">
+          <h2>رشد کسب‌وکارهای محلی</h2>
+          <p class="hint">برای معرفی خدمات، گردشگری و همکاری میان مردم و کسب‌وکارها.</p>
+        </div>
+        <div class="grid">
+          <article class="card"><div class="icon">🛶</div><h3>گردشگری و اقامت</h3><p>اقامتگاه، راهنمای محلی، قایق و تجربه‌های گردشگری.</p><button onclick="startPrompt('می‌خواهم یک خدمت گردشگری یا اقامتگاه محلی را معرفی کنم یا برای سفر خدمات پیدا کنم. راهنمایی‌ام کن چه اطلاعاتی لازم است.')">درخواست همکاری گردشگری</button></article>
+          <article class="card"><div class="icon">🏪</div><h3>معرفی کسب‌وکار</h3><p>کمک به آماده‌سازی معرفی روشن و قابل اعتماد برای خدمات یا محصولات.</p><button onclick="startPrompt('می‌خواهم کسب‌وکار محلی‌ام را معرفی کنم. کمک کن متن معرفی، خدمات، محدوده فعالیت و راه ارتباط امن را آماده کنم.')">معرفی کسب‌وکار</button></article>
+          <article class="card"><div class="icon">🤝</div><h3>همکاری با هوش هرمز</h3><p>پیشنهاد همکاری، داوطلبی تخصصی یا توسعه فناوری برای همه.</p><button onclick="startPrompt('می‌خواهم در ساخت هوش هرمز یا توسعه فناوری برای همه همکاری کنم. از من درباره توانایی و نوع همکاری موردنظرم بپرس.')">پیشنهاد همکاری</button></article>
+        </div>
+      </section>
+
+      <section class="section" id="nova">
+        <div class="section-head">
+          <h2>با نوا صحبت کن</h2>
+          <p class="hint">نیازت را با زبان خودت بنویس؛ لازم نیست از قبل دسته‌بندی آن را بدانی.</p>
+        </div>
+        <div style="text-align:center"><button class="btn" onclick="openChat()">شروع گفت‌وگو با نوا 🤖</button></div>
+        <section id="chatBox" aria-live="polite">
+          <label for="message"><strong>چه مشکلی داری یا چه کاری می‌خواهی انجام بدهی؟</strong></label>
+          <textarea id="message" placeholder="نیازت را اینجا بنویس..."></textarea>
+          <button class="btn" type="button" onclick="sendMessage()">ارسال به نوا</button>
+          <div id="answer"></div>
+        </section>
+      </section>
+
+      <section class="section">
+        <div class="notice"><strong>شفافیت و امنیت:</strong> در این نسخه، نوا راهنمایی می‌کند و مسیر مناسب را پیشنهاد می‌دهد. ثبت رسمی درخواست، پرداخت قبض، خرید بلیت یا اتصال مستقیم به سامانه‌های دولتی تا زمان ایجاد اتصال مجاز و آزمایش‌شده، فعال اعلام نمی‌شود. رمز، کد یک‌بارمصرف یا اطلاعات بانکی خود را در گفت‌وگو وارد نکن.</div>
+      </section>
+    </main>
+
+    <footer>
+      <p>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p>
+      <p>رؤیا • تلاش • ادامه — چراغ ۷۷۷ برای خاموش شدن ساخته نشده.</p>
+      <p>هوش هرمز؛ فناوری در خدمت انسان و فرصت برای همه.</p>
+    </footer>
+  </div>
+
+
+
+  <script>
+    function openChat() {
+      const box = document.getElementById("chatBox");
+      box.style.display = "block";
+      document.getElementById("message").focus();
+      box.scrollIntoView({behavior:"smooth",block:"center"});
+    }
+    function startPrompt(prompt) {
+      openChat();
+      document.getElementById("message").value = prompt;
+      document.getElementById("message").focus();
+    }
+    async function sendMessage() {
+      const input = document.getElementById("message");
+      const answer = document.getElementById("answer");
+      const message = input.value.trim();
+      if (!message) { answer.textContent = "لطفاً نیازت را بنویس."; return; }
+      answer.textContent = "نوا در حال آماده شدن است؛ ممکن است بار اول کمی زمان ببرد...";
+      try {
+        const response = await fetch("https://hormoz-ai-backend-777.onrender.com/api/v1/chat", {
+          method:"POST",
+          headers:{"Content-Type":"application/json","x-user-id":"public"},
+          body:JSON.stringify({message})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error("ارتباط ناموفق بود");
+        answer.textContent = data.response || "نوا پاسخی دریافت نکرد. دوباره تلاش کن.";
+      } catch (error) {
+        answer.textContent = "فعلاً ارتباط با نوا برقرار نشد. چند لحظه صبر کن و دوباره امتحان کن. اگر سرور در خواب باشد، بیدار شدنش ممکن است کمی زمان ببرد. 🌱";
+      }
+    }
+  </script>
+</body>
+</html>
