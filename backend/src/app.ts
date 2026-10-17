@@ -1735,7 +1735,26 @@ footer {
     چراغ ۷۷۷ برای خاموش شدن ساخته نشده.
   </div>
 
+  <div id="hormoz-visitor-counter" style="margin:18px auto 0;padding:10px 16px;width:max-content;max-width:100%;border:1px solid rgba(120,240,255,.35);border-radius:14px;background:rgba(0,0,0,.22);font-size:14px;color:#d8fbff;">
+    👁️ بازدیدهای سایت: <strong id="hormoz-visit-count">در حال دریافت…</strong>
+  </div>
+
 </footer>
+
+<script>
+(async function loadHormozVisitCount() {
+  const output = document.getElementById("hormoz-visit-count");
+  if (!output) return;
+  try {
+    const response = await fetch("/api/v1/visits", { cache: "no-store" });
+    if (!response.ok) throw new Error("counter unavailable");
+    const data = await response.json();
+    output.textContent = Number(data.visits || 0).toLocaleString("fa-IR");
+  } catch {
+    output.textContent = "فعلاً در دسترس نیست";
+  }
+})();
+</script>
 
 
 <!-- ===== HORMOZ JAVASCRIPT ===== -->
