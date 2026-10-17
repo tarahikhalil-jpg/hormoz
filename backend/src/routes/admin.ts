@@ -136,14 +136,54 @@ async function getFeedbackCount() {
 
 let visitCount = 0;
 let lastActivity = new Date().toISOString();
+let visitsTableReady = false;
 
 function touchActivity() {
   lastActivity = new Date().toISOString();
 }
 
-export function recordPublicVisit() {
-  visitCount += 1;
+async function ensureVisitsTable() {
+  if (!db || visitsTableReady) return;
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_site_stats (
+      id TEXT PRIMARY KEY,
+      total_visits BIGINT NOT NULL DEFAULT 0,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await db.query(
+    "INSERT INTO hormoz_site_stats (id, total_visits) VALUES ('public-site', 0) ON CONFLICT (id) DO NOTHING"
+  );
+  visitsTableReady = true;
+}
+
+async function getPublicVisitCount() {
+  if (!db) return visitCount;
+  await ensureVisitsTable();
+  const result = await db.query(
+    "SELECT total_visits FROM hormoz_site_stats WHERE id = 'public-site'"
+  );
+  return Number(result.rows[0]?.total_visits ?? 0);
+}
+
+export async function recordPublicVisit() {
   touchActivity();
+  if (!db) {
+    visitCount += 1;
+    return visitCount;
+  }
+  try {
+    await ensureVisitsTable();
+    const result = await db.query(
+      "UPDATE hormoz_site_stats SET total_visits = total_visits + 1, updated_at = NOW() WHERE id = 'public-site' RETURNING total_visits"
+    );
+    visitCount = Number(result.rows[0]?.total_visits ?? visitCount + 1);
+    return visitCount;
+  } catch {
+    // Keep the public site available if the database is temporarily unavailable.
+    visitCount += 1;
+    return visitCount;
+  }
 }
 
 function getSession(request: any) {
@@ -236,6 +276,17 @@ async function persistToGitHub(
 }
 
 export async function adminRoutes(app: FastifyInstance) {
+  app.get("/api/v1/visits", async (_request, reply) => {
+    try {
+      return { ok: true, visits: await getPublicVisitCount() };
+    } catch {
+      return reply.code(503).send({
+        ok: false,
+        message: "آمار بازدید موقتاً در دسترس نیست."
+      });
+    }
+  });
+
   app.post("/api/v1/opportunities", async (request, reply) => {
     if (!db) return reply.code(503).send({ ok: false, code: "DATABASE_UNAVAILABLE", message: "ذخیره‌سازی دائمی هنوز روی سرور آماده نیست." });
     const body = (request.body ?? {}) as { type?: string; data?: Record<string, unknown>; consent?: boolean };
@@ -336,12 +387,22 @@ export async function adminRoutes(app: FastifyInstance) {
       });
     }
 
+    let visits: number;
+    try {
+      visits = await getPublicVisitCount();
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({
+        message: "خواندن آمار بازدیدها ناموفق بود."
+      });
+    }
+
     return {
       hormoz: "فعال",
       nava: "متصل",
       memory: "در دسترس",
       authentication: "فعال",
-      visits: visitCount,
+      visits,
       feedbacks: count,
       lastActivity
     };
@@ -369,13 +430,24 @@ export async function adminRoutes(app: FastifyInstance) {
       });
     }
 
+    let visits: number;
+    try {
+      visits = await getPublicVisitCount();
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({
+        message: "خواندن آمار بازدیدها ناموفق بود."
+      });
+    }
+
     return {
-      visits: visitCount,
+      visits,
       feedbacks: count,
       lastActivity,
       serverTime: new Date().toISOString(),
-      note:
-        "بازخوردها در صورت اتصال موفق به پایگاه داده ذخیره دائمی می‌شوند؛ شمارش بازدیدها فعلاً حافظه‌ای است."
+      note: db
+        ? "شمارش بازدیدها در پایگاه داده ذخیره دائمی می‌شود."
+        : "پایگاه داده در دسترس نیست؛ این آمار فقط برای زمان فعالیت فعلی سرور است."
     };
   });
 
