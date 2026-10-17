@@ -1397,6 +1397,67 @@ footer {
 </section>
 
 
+<!-- ===== HORMOZ SERVICES ===== -->
+
+<section class="project-section" id="hormoz-services">
+  <div class="project-box">
+    <h2>🧭 خدمات کاربردی هوش هرمز</h2>
+    <p>نیازت را انتخاب کن تا نوا راهنمایی‌ات کند و قدم بعدی را روشن سازد. در این نسخه، راهنمایی و آماده‌سازی مسیر فعال است؛ ثبت سفارش، پرداخت یا خرید مستقیم فقط پس از اتصال و آزمایش رسمی فعال خواهد شد.</p>
+    <div class="principles">
+      <div class="principle">
+        <div class="principle-icon">💧</div>
+        <strong>قبض و خدمات شهری</strong>
+        <span>آب، برق، گاز و پیگیری از مسیر رسمی.</span>
+        <a class="chat-button" href="#chat" onclick="document.getElementById('message').value='برای مشکل آب، برق، گاز یا قبض راهنمایی می‌خواهم. کمک کن مسیر رسمی پیگیری را پیدا کنم.'; document.getElementById('chat').scrollIntoView({behavior:'smooth'});">شروع راهنمایی</a>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">📶</div>
+        <strong>اینترنت و تلفن</strong>
+        <span>بررسی مشکل اتصال، تلفن یا انتخاب سرویس.</span>
+        <a class="chat-button" href="#chat" onclick="document.getElementById('message').value='برای اینترنت یا تلفن مشکل دارم. کمک کن راه‌حل و مسیر رسمی پیگیری را پیدا کنم.'; document.getElementById('chat').scrollIntoView({behavior:'smooth'});">بررسی مشکل</a>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">🛶</div>
+        <strong>گردشگری و اقامت</strong>
+        <span>اقامتگاه، قایق، راهنمای محلی و برنامه سفر.</span>
+        <a class="chat-button" href="#chat" onclick="document.getElementById('message').value='برای گردشگری، اقامت یا خدمات قایق در هرمز راهنمایی می‌خواهم. کمک کن نیازم را مشخص کنم و نکات امنیتی را بررسی کنم.'; document.getElementById('chat').scrollIntoView({behavior:'smooth'});">برنامه‌ریزی سفر</a>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">🚆</div>
+        <strong>سفر و بلیت</strong>
+        <span>راهنمایی برای مسیر سفر و روش‌های تهیه بلیت.</span>
+        <a class="chat-button" href="#chat" onclick="document.getElementById('message').value='برای برنامه‌ریزی سفر و تهیه بلیت راهنمایی می‌خواهم. مقصد و زمان مناسب را با من بررسی کن.'; document.getElementById('chat').scrollIntoView({behavior:'smooth'});">برنامه‌ریزی سفر</a>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">🧰</div>
+        <strong>مهارت و اشتغال</strong>
+        <span>تبدیل توانایی‌ها به فرصت واقعی و کم‌هزینه.</span>
+        <a class="chat-button" href="#chat" onclick="document.getElementById('message').value='دنبال کار هستم یا مهارتی دارم که می‌خواهم به درآمد تبدیل کنم. از من درباره مهارت، تجربه و شرایط من سؤال کن و قدم‌های عملی پیشنهاد بده.'; document.getElementById('chat').scrollIntoView({behavior:'smooth'});">شروع راهنمایی شغلی</a>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">🏪</div>
+        <strong>کسب‌وکار و تبلیغات</strong>
+        <span>معرفی کسب‌وکار، خدمات، محصولات و محتوای تبلیغاتی.</span>
+        <a class="chat-button" href="#chat" onclick="document.getElementById('message').value='می‌خواهم کسب‌وکار یا خدمتم را معرفی کنم و تبلیغی روشن و قابل اعتماد آماده کنم. درباره خدمات، مخاطب و راه ارتباط امن از من سؤال کن.'; document.getElementById('chat').scrollIntoView({behavior:'smooth'});">معرفی کسب‌وکار</a>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">🏛️</div>
+        <strong>خدمات اداری</strong>
+        <span>فهم مراحل و آماده‌سازی متن و درخواست رسمی.</span>
+        <a class="chat-button" href="#chat" onclick="document.getElementById('message').value='برای یک درخواست اداری راهنمایی می‌خواهم. کمک کن مدارک و مسیر رسمی را مشخص کنم و در صورت نیاز متن درخواست را بنویس.'; document.getElementById('chat').scrollIntoView({behavior:'smooth'});">راهنمایی اداری</a>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">🤝</div>
+        <strong>همکاری با هرمز</strong>
+        <span>ثبت پیشنهاد، معرفی استعداد یا همکاری تخصصی.</span>
+        <a class="chat-button" href="/orders.html">ثبت پیشنهاد</a>
+      </div>
+    </div>
+    <p class="motto">امنیت خط قرمز ماست: برای شروع همکاری، رمز عبور، کد یک‌بارمصرف یا اطلاعات بانکی نفرستید.</p>
+  </div>
+</section>
+
+
 <!-- ===== ADMIN ASSISTANT ===== -->
 
 <section class="project-section">
