@@ -1082,6 +1082,7 @@ async function loadServiceOrders() {
         '<strong>' + escapeHtml(order.orderNumber) + '</strong> · ' + escapeHtml(order.serviceType) +
         '<div style="color:#c2d1df;font-size:.9rem">ثبت: ' + escapeHtml(formatTime(order.createdAt)) +
         ' · وضعیت: ' + escapeHtml(orderStatusLabels[order.status] || order.status) + '</div>' +
+        (order.providerNumber ? '<div>ارائه‌دهنده انتخاب‌شده: ' + escapeHtml(order.providerNumber) + '</div>' : '<div>این درخواست هنوز به ارائه‌دهنده مشخصی اختصاص داده نشده است.</div>') +
         '<div style="margin-top:8px">مشتری: ' + (escapeHtml(order.customerLabel) || 'ثبت نشده') +
         ' · راه تماس: ' + (escapeHtml(order.contact) || 'ثبت نشده') + ' · زبان: ' + escapeHtml(order.language) + '</div>' +
         '<div style="margin:8px 0">' + details + '</div>' +
@@ -1243,6 +1244,7 @@ async function loadProviders() {
         <div>کسب‌وکار: ${escapeHtml(p.businessName || "—")} | شهر: ${escapeHtml(p.city || "—")}</div>
         <div>راه تماس: ${escapeHtml(p.contact)}</div>
         <div>توضیحات: ${escapeHtml(p.description || "—")}</div>
+        <div><strong>قیمت پایه اعلام‌شده:</strong> ${p.startingPrice > 0 ? escapeHtml(Number(p.startingPrice).toLocaleString("fa-IR") + " تومان · " + (p.priceUnit || "")) : "ثبت نشده"}</div>
         <div>روش تسویه ترجیحی: ${escapeHtml(({bank_transfer:"انتقال بانکی",card_to_card:"کارت‌به‌کارت",not_decided:"هنوز مشخص نیست"})[p.payoutMethod] || p.payoutMethod)} | چهار رقم راهنما: ${escapeHtml(p.payoutHint || "ثبت نشده")}</div>
         <div>کارمزد پیشنهادی: ${p.proposedCommissionRate === null ? "اعلام نشده" : escapeHtml(p.proposedCommissionRate + "%")} | کارمزد توافق‌شده فعلی: ${p.agreedCommissionRate === null ? "هنوز توافق نشده" : escapeHtml(p.agreedCommissionRate + "%")}</div>
         <div>وضعیت فعلی: <strong>${escapeHtml(providerStatusLabels[p.status] || p.status)}</strong></div>
