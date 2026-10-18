@@ -212,40 +212,91 @@ function resumeVoiceListening() {
 }
 
 function speakNava(text, onDone) {
-  if (!voiceReplyEnabled || !("speechSynthesis" in window) || !text) {
+  if (!voiceReplyEnabled || !("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined" || !text) {
     if (typeof onDone === "function") onDone();
     return;
   }
+
+  // Android browsers can fail on long utterances or immediately after cancel().
+  // Split the answer into short, natural chunks and start after cancel has settled.
   try {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "fa-IR";
-    utterance.rate = 0.92;
-    utterance.pitch = 1;
-    const voices = window.speechSynthesis.getVoices();
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    speaking = false;
+    const voices = synth.getVoices();
     const persianVoice = voices.find((voice) => /^fa([_-]|$)/i.test(voice.lang));
-    if (persianVoice) utterance.voice = persianVoice;
-    // Android/Chrome may load available voices asynchronously; use the device default if Persian is not listed.
-    utterance.onstart = () => {
-      speaking = true;
-      setVoiceStatus("نوا در حال خواندن پاسخ است…");
-    };
-    speaking = true;
-    setVoiceStatus("نوا در حال پاسخ‌دادن است… پس از پایان پاسخ، دوباره گوش می‌دهد.");
-    utterance.onend = () => {
+    const cleaned = String(text).replace(/\s+/g, " ").trim();
+    const chunks = [];
+    let remaining = cleaned;
+    while (remaining.length > 0) {
+      if (remaining.length <= 180) {
+        chunks.push(remaining);
+        break;
+      }
+      let cut = remaining.lastIndexOf(" ", 180);
+      if (cut < 80) cut = 180;
+      chunks.push(remaining.slice(0, cut).trim());
+      remaining = remaining.slice(cut).trim();
+    }
+
+    let index = 0;
+    let finished = false;
+    const finish = (errorMessage) => {
+      if (finished) return;
+      finished = true;
       speaking = false;
+      if (errorMessage) setVoiceStatus(errorMessage);
       if (typeof onDone === "function") onDone();
     };
-    utterance.onerror = () => {
-      speaking = false;
-      setVoiceStatus("پاسخ متنی آماده است؛ خواندن صوتی در این مرورگر انجام نشد.");
-      if (typeof onDone === "function") onDone();
+    const startNext = () => {
+      if (finished) return;
+      if (index >= chunks.length) {
+        finish();
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(chunks[index++]);
+      utterance.lang = "fa-IR";
+      utterance.rate = 0.88;
+      utterance.pitch = 1;
+      if (persianVoice) utterance.voice = persianVoice;
+      utterance.onstart = () => {
+        speaking = true;
+        setVoiceStatus("نوا در حال خواندن پاسخ است…");
+      };
+      utterance.onend = () => {
+        if (index < chunks.length) {
+          setTimeout(startNext, 120);
+        } else {
+          finish();
+        }
+      };
+      utterance.onerror = (event) => {
+        console.warn("Nava speech output error:", event && event.error);
+        finish("خواندن صوتی در گوشی اجرا نشد. احتمالاً موتور گفتار فارسی گوشی در دسترس نیست؛ پاسخ متنی همچنان آماده است.");
+      };
+      synth.speak(utterance);
     };
-    window.speechSynthesis.speak(utterance);
+
+    setVoiceStatus("در حال آماده‌سازی صدای نوا…");
+    setTimeout(() => {
+      try {
+        if (synth.paused) synth.resume();
+        startNext();
+        // Detect cases where Android never starts speech at all.
+        setTimeout(() => {
+          if (!finished && !speaking && index === 1) {
+            finish("صدای نوا در گوشی شروع نشد؛ احتمالاً موتور خواندن متن گوشی فعال یا نصب نیست.");
+          }
+        }, 5000);
+      } catch (error) {
+        console.error("Nava speech start failed:", error);
+        finish("خواندن صوتی شروع نشد؛ موتور گفتار گوشی در دسترس نیست.");
+      }
+    }, 180);
   } catch (error) {
     console.error("Nava speech output failed:", error);
     speaking = false;
-    setVoiceStatus("پاسخ متنی آماده است؛ صدای فارسی در این مرورگر پشتیبانی نشد.");
+    setVoiceStatus("پاسخ متنی آماده است؛ خواندن صوتی در گوشی اجرا نشد.");
     if (typeof onDone === "function") onDone();
   }
 }
