@@ -61,9 +61,10 @@ function render(){
   const badge=document.createElement("span");badge.className="badge";badge.textContent=p.serviceType;
   const title=document.createElement("h3");title.textContent=p.businessName;
   const city=document.createElement("div");city.className="muted";city.textContent=p.city||"محدوده فعالیت اعلام نشده";
+  const price=document.createElement("div");price.className="badge";price.style.marginTop="8px";price.textContent=p.startingPrice>0?"قیمت پایه: "+Number(p.startingPrice).toLocaleString("fa-IR")+" تومان · "+p.priceUnit:"قیمت نیازمند استعلام";
   const desc=document.createElement("p");desc.textContent=p.description||"توضیح بیشتری ثبت نشده است.";
-  const link=document.createElement("a");link.className="btn";link.href="/orders.html?provider="+encodeURIComponent(p.businessName);link.textContent="ثبت درخواست درباره این خدمت";
-  card.append(badge,title,city,desc,link);results.append(card);
+  const orderTypes={"اقامتگاه و سوئیت":"stay","راننده و خودرو":"driver","قایق و شناور":"boat","رستوران و غذا":"food","راهنمای گردشگری":"tourism","بلیت و سفر":"other","تعمیرکار و برق‌کار":"repair","مهارت و خدمات تخصصی":"skill","سایر":"other"};const orderType=orderTypes[p.serviceType]||"other";const link=document.createElement("a");link.className="btn";link.href="/orders.html?providerNumber="+encodeURIComponent(p.providerNumber)+"&provider="+encodeURIComponent(p.businessName)+"&serviceType="+encodeURIComponent(orderType);link.textContent="انتخاب این ارائه‌دهنده";
+  card.append(badge,title,city,price,desc,link);results.append(card);
  }
 }
 search.addEventListener("input",render);typeFilter.addEventListener("change",render);
