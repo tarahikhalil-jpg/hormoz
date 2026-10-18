@@ -4,7 +4,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
 
-const sessions = new Set<string>();
+type SessionInfo = {
+  role: "admin" | "marketing" | "service_coordinator";
+  memberId?: string;
+  username?: string;
+  displayName: string;
+  expiresAt: number;
+};
+const sessions = new Map<string, SessionInfo>();
+const SESSION_TTL_MS = 4 * 60 * 60 * 1000;
+const loginFailures = new Map<string, { count: number; blockedUntil: number }>();
 
 type Feedback = {
   id: string;
@@ -71,6 +80,80 @@ try {
     "[HORMOZ_DB_URL_DIAGNOSTIC] DATABASE_URL remains invalid after normalization"
   );
 }
+let teamMembersTableReady = false;
+let marketingLeadsTableReady = false;
+
+async function ensureTeamTables() {
+  if (!db || teamMembersTableReady) return;
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_team_members (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL UNIQUE,
+      display_name TEXT NOT NULL,
+      role TEXT NOT NULL CHECK (role IN ('marketing', 'service_coordinator')),
+      password_hash TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  teamMembersTableReady = true;
+}
+
+async function ensureMarketingLeadsTable() {
+  if (!db || marketingLeadsTableReady) return;
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_marketing_leads (
+      id TEXT PRIMARY KEY,
+      member_id TEXT NOT NULL REFERENCES hormoz_team_members(id),
+      customer_label TEXT NOT NULL DEFAULT '',
+      contact TEXT NOT NULL DEFAULT '',
+      service_interest TEXT NOT NULL,
+      notes TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'interested', 'converted', 'not_interested', 'closed')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  marketingLeadsTableReady = true;
+}
+
+function hashMemberPassword(password: string, salt = crypto.randomBytes(16).toString("hex")) {
+  return `${salt}:${crypto.scryptSync(password, salt, 64).toString("hex")}`;
+}
+
+function verifyMemberPassword(password: string, stored: string) {
+  const [salt, expectedHex] = stored.split(":");
+  if (!salt || !expectedHex || !/^[a-f0-9]{32}$/.test(salt) || !/^[a-f0-9]{128}$/.test(expectedHex)) return false;
+  const actual = crypto.scryptSync(password, salt, 64);
+  const expected = Buffer.from(expectedHex, "hex");
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+function loginIsBlocked(key: string) {
+  const record = loginFailures.get(key);
+  if (!record) return false;
+  if (record.blockedUntil <= Date.now()) {
+    loginFailures.delete(key);
+    return false;
+  }
+  return record.count >= 5;
+}
+
+function noteLoginFailure(key: string) {
+  const current = loginFailures.get(key);
+  if (!current || current.blockedUntil <= Date.now()) {
+    loginFailures.set(key, { count: 1, blockedUntil: Date.now() + 15 * 60 * 1000 });
+    return;
+  }
+  current.count += 1;
+  if (current.count >= 5) current.blockedUntil = Date.now() + 15 * 60 * 1000;
+}
+
+function clearLoginFailures(key: string) {
+  loginFailures.delete(key);
+}
+
 let opportunitiesTableReady = false;
 
 async function ensureOpportunitiesTable() {
@@ -269,15 +352,28 @@ export async function recordPublicVisit() {
 
 function getSession(request: any) {
   const auth = request.headers.authorization ?? "";
+  return auth.startsWith("Bearer ") ? auth.slice(7) : "";
+}
 
-  return auth.startsWith("Bearer ")
-    ? auth.slice(7)
-    : "";
+function getSessionInfo(request: any): SessionInfo | null {
+  const token = getSession(request);
+  if (!token) return null;
+  const info = sessions.get(token);
+  if (!info) return null;
+  if (info.expiresAt <= Date.now()) {
+    sessions.delete(token);
+    return null;
+  }
+  return info;
 }
 
 function isAdmin(request: any) {
-  const session = getSession(request);
-  return sessions.has(session);
+  return getSessionInfo(request)?.role === "admin";
+}
+
+function isServiceCoordinator(request: any) {
+  const role = getSessionInfo(request)?.role;
+  return role === "admin" || role === "service_coordinator";
 }
 
 async function persistToGitHub(
@@ -438,11 +534,18 @@ export async function adminRoutes(app: FastifyInstance) {
 
     const session = crypto.randomBytes(32).toString("hex");
 
-    sessions.add(session);
+    sessions.set(session, {
+      role: "admin",
+      displayName: "مدیر اصلی",
+      expiresAt: Date.now() + SESSION_TTL_MS
+    });
     touchActivity();
 
     return {
-      token: session
+      token: session,
+      role: "admin",
+      displayName: "مدیر اصلی",
+      expiresInSeconds: SESSION_TTL_MS / 1000
     };
   });
 
