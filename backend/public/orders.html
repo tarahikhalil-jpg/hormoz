@@ -41,6 +41,13 @@ main{max-width:850px;margin:20px auto}.top{display:flex;align-items:center;gap:1
 </main>
 <script>
 const form = document.getElementById("serviceOrderForm");
+// Carry the selected directory listing into the request so the customer can name the provider.
+const selectedProvider = new URLSearchParams(window.location.search).get("provider");
+if (selectedProvider) {
+  const detailsField = document.getElementById("details");
+  detailsField.value = "ارائه‌دهنده موردنظر: " + selectedProvider.slice(0, 160) + "\\n\\n";
+  detailsField.focus();
+}
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const button = document.getElementById("submitOrder");
