@@ -87,6 +87,29 @@ async function ensureOpportunitiesTable() {
 }
 
 
+
+let serviceOrdersTableReady = false;
+
+async function ensureServiceOrdersTable() {
+  if (!db || serviceOrdersTableReady) return;
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_service_orders (
+      id TEXT PRIMARY KEY,
+      order_number TEXT NOT NULL UNIQUE,
+      service_type TEXT NOT NULL,
+      customer_label TEXT NOT NULL DEFAULT '',
+      contact TEXT NOT NULL DEFAULT '',
+      language TEXT NOT NULL DEFAULT 'fa',
+      details JSONB NOT NULL DEFAULT '{}'::jsonb,
+      status TEXT NOT NULL DEFAULT 'submitted',
+      status_history JSONB NOT NULL DEFAULT '[]'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  serviceOrdersTableReady = true;
+}
+
 let financeTableReady = false;
 
 async function ensureFinanceTable() {
@@ -697,6 +720,100 @@ export async function adminRoutes(app: FastifyInstance) {
       });
     }
   });
+
+
+  /*
+   * درخواست خدمات مرکزی هرمز؛ ثبت درخواست به معنی رزرو یا پرداخت قطعی نیست.
+   */
+  const orderStatuses = new Set([
+    "submitted", "awaiting_provider", "quoted", "confirmed",
+    "payment_pending", "payment_confirmed", "in_progress",
+    "completed", "cancelled", "refund_pending", "refunded"
+  ]);
+
+  app.post("/api/v1/orders", async (request, reply) => {
+    if (!db) return reply.code(503).send({ ok: false, message: "ثبت دائمی سفارش هنوز آماده نیست؛ لطفاً بعداً دوباره تلاش کنید." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const serviceType = String(body.serviceType ?? "").trim().slice(0, 60);
+    const customerLabel = String(body.customerLabel ?? "").trim().slice(0, 100);
+    const contact = String(body.contact ?? "").trim().slice(0, 160);
+    const language = body.language === "en" ? "en" : "fa";
+    const detailsInput = body.details;
+    if (!serviceType || !detailsInput || typeof detailsInput !== "object" || Array.isArray(detailsInput) || body.consent !== true) {
+      return reply.code(400).send({ ok: false, message: "نوع خدمت، جزئیات درخواست و رضایت برای ثبت لازم است." });
+    }
+    const details: Record<string, string> = {};
+    for (const [key, value] of Object.entries(detailsInput as Record<string, unknown>).slice(0, 12)) {
+      details[String(key).slice(0, 50)] = String(value ?? "").trim().slice(0, 700);
+    }
+    if (!Object.values(details).some(Boolean)) return reply.code(400).send({ ok: false, message: "لطفاً جزئیات درخواست را بنویسید." });
+    const id = crypto.randomBytes(8).toString("hex").toUpperCase();
+    const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+    const orderNumber = `HZ-SVC-${day}-${id.slice(0, 6)}`;
+    const history = [{ status: "submitted", at: new Date().toISOString(), note: "درخواست اولیه ثبت شد؛ هنوز رزرو یا پرداخت تأیید نشده است." }];
+    try {
+      await ensureServiceOrdersTable();
+      await db.query(
+        `INSERT INTO hormoz_service_orders
+          (id, order_number, service_type, customer_label, contact, language, details, status, status_history)
+         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,'submitted',$8::jsonb)`,
+        [id, orderNumber, serviceType, customerLabel, contact, language, JSON.stringify(details), JSON.stringify(history)]
+      );
+      touchActivity();
+      return reply.code(201).send({ ok: true, orderNumber, status: "submitted", message: language === "en" ? "Your request was recorded. This is not a confirmed booking or payment." : "درخواست شما ثبت شد؛ این شماره به‌تنهایی تأیید رزرو یا پرداخت نیست." });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ ok: false, message: "ذخیره دائمی درخواست ناموفق بود؛ هیچ رزرو یا پرداختی انجام نشده است." });
+    }
+  });
+
+  app.get("/api/v1/admin/orders", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "نیاز به ورود مدیر دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده روی سرور تنظیم نشده است." });
+    try {
+      await ensureServiceOrdersTable();
+      const result = await db.query(
+        "SELECT id, order_number, service_type, customer_label, contact, language, details, status, status_history, created_at, updated_at FROM hormoz_service_orders ORDER BY created_at DESC LIMIT 200"
+      );
+      return { count: result.rows.length, orders: result.rows.map(row => ({
+        id: String(row.id), orderNumber: String(row.order_number), serviceType: String(row.service_type),
+        customerLabel: String(row.customer_label ?? ""), contact: String(row.contact ?? ""),
+        language: String(row.language ?? "fa"), details: row.details && typeof row.details === "object" ? row.details : {},
+        status: String(row.status), statusHistory: Array.isArray(row.status_history) ? row.status_history : [],
+        createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString()
+      })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "خواندن سفارش‌ها ناموفق بود." });
+    }
+  });
+
+  app.patch("/api/v1/admin/orders/:id/status", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "نیاز به ورود مدیر دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده روی سرور تنظیم نشده است." });
+    const params = request.params as { id?: string };
+    const body = (request.body ?? {}) as { status?: string; note?: string };
+    const status = String(body.status ?? "");
+    const note = String(body.note ?? "").trim().slice(0, 400);
+    if (!params.id || !orderStatuses.has(status)) return reply.code(400).send({ message: "وضعیت سفارش معتبر نیست." });
+    try {
+      await ensureServiceOrdersTable();
+      const found = await db.query("SELECT status_history FROM hormoz_service_orders WHERE id = $1", [params.id]);
+      if (!found.rows.length) return reply.code(404).send({ message: "سفارش پیدا نشد." });
+      const oldHistory = Array.isArray(found.rows[0].status_history) ? found.rows[0].status_history : [];
+      const history = [...oldHistory, { status, at: new Date().toISOString(), note }].slice(-100);
+      const updated = await db.query(
+        "UPDATE hormoz_service_orders SET status = $2, status_history = $3::jsonb, updated_at = NOW() WHERE id = $1 RETURNING order_number, status, updated_at",
+        [params.id, status, JSON.stringify(history)]
+      );
+      touchActivity();
+      return { ok: true, orderNumber: String(updated.rows[0].order_number), status: String(updated.rows[0].status), updatedAt: new Date(updated.rows[0].updated_at).toISOString(), message: "وضعیت سفارش ثبت شد. این تغییر به‌تنهایی پرداخت بانکی را تأیید نمی‌کند." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "به‌روزرسانی وضعیت سفارش ناموفق بود." });
+    }
+  });
+
 
   /*
    * حسابداری خدمات و پیش‌فاکتور داخلی هرمز
