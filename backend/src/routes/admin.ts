@@ -1715,7 +1715,7 @@ export async function adminRoutes(app: FastifyInstance) {
       await ensureServiceOrdersTable();
       const order = await db.query("SELECT id FROM hormoz_service_orders WHERE id = $1 OR order_number = $1 LIMIT 1", [orderId]);
       if (!order.rows[0]) return reply.code(404).send({ ok: false, message: "سفارش خدماتی پیدا نشد؛ ابتدا سفارش واقعی ثبت شود." });
-      const id = crypto.randomUUID();
+      const id = `pay_${crypto.createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 32)}`;
       const record = await createPaymentIntent(db, {
         id,
         orderId: String(order.rows[0].id),
