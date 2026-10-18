@@ -45,7 +45,7 @@ const form = document.getElementById("serviceOrderForm");
 const selectedProvider = new URLSearchParams(window.location.search).get("provider");
 if (selectedProvider) {
   const detailsField = document.getElementById("details");
-  detailsField.value = "ارائه‌دهنده موردنظر: " + selectedProvider.slice(0, 160) + "\\n\\n";
+  detailsField.value = "ارائه‌دهنده موردنظر: " + selectedProvider.slice(0, 160) + "\n\n";
   detailsField.focus();
 }
 form.addEventListener("submit", async (event) => {
