@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071522">
+<meta name="description" content="درخواست همکاری ارائه‌دهندگان خدمات با هوش هرمز؛ کارمزد شفاف و توافقی.">
+<title>همکاری با هوش هرمز | ارائه‌دهندگان خدمات</title>
+<style>
+:root{color-scheme:dark;--bg:#071522;--panel:#10283b;--gold:#ffd782;--text:#f6f8fc;--muted:#c2d1df;--line:#29465c}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#102a3b,#071522 70%);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.9}.wrap{width:min(720px,92%);margin:24px auto}.card{background:#10283b;border:1px solid #29465c;border-radius:22px;padding:clamp(18px,4vw,30px);box-shadow:0 18px 45px #0004}h1{font-size:clamp(1.5rem,5vw,2.1rem);color:var(--gold);margin-top:0}.intro{color:var(--muted)}label{display:block;margin:13px 0 5px;font-size:.93rem}input,select,textarea{width:100%;padding:12px;border-radius:11px;border:1px solid #496174;background:#071522;color:white;font:inherit}textarea{min-height:100px;resize:vertical}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.check{display:flex;align-items:flex-start;gap:9px;margin:15px 0}.check input{width:auto;margin-top:8px}.btn{width:100%;padding:13px;border:0;border-radius:12px;background:linear-gradient(145deg,#fff0bc,#dba84e);color:#142333;font:inherit;font-weight:bold}.note{border:1px solid #b88c3d55;background:#b88c3d12;color:#f3dba2;padding:12px;border-radius:12px;font-size:.86rem}.result{margin-top:14px;white-space:pre-wrap}.success{color:#70df9a}.error{color:#ff7777}@media(max-width:540px){.grid{grid-template-columns:1fr}.wrap{margin:12px auto}}
+</style>
+</head>
+<body><main class="wrap"><section class="card">
+<h1>🤝 همکاری با هوش هرمز</h1>
+<p class="intro">اگر صاحب اقامتگاه، وسیله نقلیه، رستوران، قایق یا مهارت تخصصی هستید، درخواست همکاری ثبت کنید. هرمز برای معرفی و ارتباط، فقط کارمزد شفاف و توافق‌شده دریافت می‌کند.</p>
+<div class="note">این فرم فقط درخواست همکاری است؛ ثبت آن به معنی تأیید کسب‌وکار، دریافت سفارش یا فعال شدن پرداخت نیست. کارمزد نهایی پس از توافق ثبت می‌شود. برای امنیت، شماره کامل کارت، CVV2، رمز یا کد یک‌بارمصرف وارد نکنید؛ در این مرحله فقط چهار رقم پایانی اختیاری قابل ثبت است.</div>
+<form id="providerForm">
+<label for="providerName">نام و نام خانوادگی / مسئول کسب‌وکار *</label><input id="providerName" maxlength="120" required autocomplete="name">
+<label for="businessName">نام کسب‌وکار (اختیاری)</label><input id="businessName" maxlength="160">
+<div class="grid"><div><label for="serviceType">نوع خدمت *</label><select id="serviceType" required><option value="">انتخاب کنید</option><option>اقامتگاه و سوئیت</option><option>راننده و خودرو</option><option>قایق و شناور</option><option>رستوران و غذا</option><option>راهنمای گردشگری</option><option>بلیت و سفر</option><option>تعمیرکار و برق‌کار</option><option>مهارت و خدمات تخصصی</option><option>سایر</option></select></div><div><label for="city">شهر / منطقه</label><input id="city" maxlength="100" placeholder="مثلاً جزیره هرمز"></div></div>
+<label for="contact">راه تماس برای پیگیری درخواست *</label><input id="contact" maxlength="160" required placeholder="شماره تماس یا ایمیل کاری">
+<label for="description">توضیح خدمت و شرایط همکاری</label><textarea id="description" maxlength="1000" placeholder="خدمت، محدوده فعالیت و نکته‌های مهم"></textarea>
+<div class="grid"><div><label for="proposedCommissionRate">کارمزد پیشنهادی شما (%) — اختیاری</label><input id="proposedCommissionRate" type="number" min="0" max="100" step="0.1" inputmode="decimal" placeholder="بعداً توافق می‌کنیم"></div><div><label for="payoutMethod">روش تسویه ترجیحی</label><select id="payoutMethod"><option value="not_decided">هنوز مشخص نیست</option><option value="bank_transfer">انتقال بانکی</option><option value="card_to_card">کارت‌به‌کارت</option></select></div></div>
+<label for="payoutHint">چهار رقم پایانی کارت (اختیاری)</label><input id="payoutHint" inputmode="numeric" maxlength="4" pattern="[0-9]{0,4}" placeholder="فقط ۴ رقم آخر؛ بدون شماره کامل">
+<label class="check"><input id="consent" type="checkbox" required><span>با ثبت این درخواست موافقم که اطلاعات بالا برای بررسی همکاری و تماس با من استفاده شود. اطلاعات بانکی کامل در این فرم دریافت نمی‌شود.</span></label>
+<button class="btn" type="submit">ثبت درخواست همکاری</button><div id="result" class="result" role="status" aria-live="polite"></div>
+</form><p class="intro"><a href="/">بازگشت به صفحه اصلی هوش هرمز</a></p>
+</section></main>
+<script>
+const form=document.getElementById("providerForm"),result=document.getElementById("result");
+form.addEventListener("submit",async event=>{
+ event.preventDefault();result.className="result";result.textContent="در حال ثبت درخواست…";
+ const proposed=document.getElementById("proposedCommissionRate").value;
+ const body={providerName:document.getElementById("providerName").value.trim(),businessName:document.getElementById("businessName").value.trim(),serviceType:document.getElementById("serviceType").value,city:document.getElementById("city").value.trim(),contact:document.getElementById("contact").value.trim(),description:document.getElementById("description").value.trim(),proposedCommissionRate:proposed,payoutMethod:document.getElementById("payoutMethod").value,payoutHint:document.getElementById("payoutHint").value,consent:document.getElementById("consent").checked};
+ try{const response=await fetch("/api/v1/providers",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.message||"ثبت درخواست ناموفق بود.");result.className="result success";result.textContent="✅ "+data.message+"\nشماره پیگیری: "+data.providerNumber;form.reset();}
+ catch(error){result.className="result error";result.textContent="❌ "+(error.message||"ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.");}
+});
+</script></body></html>
