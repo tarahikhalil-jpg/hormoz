@@ -1,0 +1,31 @@
+name: Backend TypeScript build
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-build.yml"
+  push:
+    branches:
+      - main
+      - "feature/**"
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-build.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install backend dependencies without the stale lockfile
+        working-directory: backend
+        run: npm install --package-lock=false
+      - name: Build TypeScript backend
+        working-directory: backend
+        run: npm run build
