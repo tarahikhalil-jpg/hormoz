@@ -1598,10 +1598,10 @@ footer {
     </div>
 
     <div class="voice-controls" aria-label="گفت‌وگوی صوتی با نوا">
-      <button class="voice-button" id="speechButton" type="button" aria-pressed="false">🎙️ صحبت با نوا</button>
+      <button class="voice-button" id="speechButton" type="button" aria-pressed="false">🎙️ شروع مکالمه صوتی پیوسته</button>
       <button class="voice-button" id="voiceReplyButton" type="button" aria-pressed="true">🔊 پاسخ صوتی: روشن</button>
     </div>
-    <p class="voice-status" id="voiceStatus" role="status" aria-live="polite">برای گفتن پیام، دکمه «صحبت با نوا» را بزن و اجازه میکروفون را بده. پاسخ نوا می‌تواند با صدا خوانده شود.</p>
+    <p class="voice-status" id="voiceStatus" role="status" aria-live="polite">برای شروع مکالمه، دکمه را بزن و اجازه میکروفون را بده. نوا گوش می‌دهد، پاسخ می‌دهد و پس از پاسخ دوباره گوش می‌دهد.</p>
 
   </div>
 
