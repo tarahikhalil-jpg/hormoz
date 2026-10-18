@@ -879,14 +879,14 @@ export async function adminRoutes(app: FastifyInstance) {
     try {
       await ensureProvidersTable();
       const result = await db.query(
-        "SELECT provider_number, business_name, service_type, city, description, starting_price, price_unit, updated_at FROM hormoz_service_providers WHERE status = 'approved' AND public_listing = TRUE AND business_name <> '' ORDER BY updated_at DESC LIMIT 200"
+        "SELECT provider_number, provider_name, business_name, service_type, city, description, starting_price, price_unit, updated_at FROM hormoz_service_providers WHERE status = 'approved' AND public_listing = TRUE AND (business_name <> '' OR provider_name <> '') ORDER BY updated_at DESC LIMIT 200"
       );
       return {
         ok: true,
         count: result.rows.length,
         providers: result.rows.map(row => ({
           providerNumber: String(row.provider_number),
-          businessName: String(row.business_name),
+          businessName: String(row.business_name || row.provider_name || ""),
           serviceType: String(row.service_type),
           city: String(row.city ?? ""),
           description: String(row.description ?? ""),
