@@ -549,6 +549,205 @@ export async function adminRoutes(app: FastifyInstance) {
     };
   });
 
+  // Member login and role-scoped team APIs.
+  app.post("/api/v1/team/login", async (request, reply) => {
+    const ipKey = `team:${String(request.ip ?? "unknown")}`;
+    if (loginIsBlocked(ipKey)) return reply.code(429).send({ message: "تلاش‌های ورود زیاد بوده است؛ ۱۵ دقیقه دیگر دوباره تلاش کنید." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده برای ورود اعضا آماده نیست." });
+    const body = (request.body ?? {}) as { username?: string; password?: string };
+    const username = String(body.username ?? "").trim().toLowerCase().slice(0, 60);
+    const password = String(body.password ?? "");
+    try {
+      await ensureTeamTables();
+      const result = await db.query("SELECT id, username, display_name, role, password_hash, active FROM hormoz_team_members WHERE username = $1 LIMIT 1", [username]);
+      const member = result.rows[0];
+      if (!member || member.active !== true || password.length > 200 || !verifyMemberPassword(password, String(member.password_hash))) {
+        noteLoginFailure(ipKey);
+        return reply.code(401).send({ message: "نام کاربری یا رمز عبور نادرست است." });
+      }
+      clearLoginFailures(ipKey);
+      const token = crypto.randomBytes(32).toString("hex");
+      const role = String(member.role) as "marketing" | "service_coordinator";
+      sessions.set(token, { role, memberId: String(member.id), username: String(member.username), displayName: String(member.display_name), expiresAt: Date.now() + SESSION_TTL_MS });
+      return { token, role, displayName: String(member.display_name), expiresInSeconds: SESSION_TTL_MS / 1000 };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "ورود اعضا موقتاً ناموفق است." });
+    }
+  });
+
+  app.get("/api/v1/team/me", async (request, reply) => {
+    const session = getSessionInfo(request);
+    if (!session) return reply.code(401).send({ message: "نشست معتبر نیست؛ دوباره وارد شوید." });
+    return { role: session.role, displayName: session.displayName, username: session.username ?? "", expiresAt: new Date(session.expiresAt).toISOString() };
+  });
+
+  app.post("/api/v1/team/logout", async (request, reply) => {
+    const token = getSession(request);
+    if (token) sessions.delete(token);
+    return { ok: true };
+  });
+
+  app.get("/api/v1/admin/members", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "فقط مدیر اصلی اجازه مدیریت اعضا را دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTeamTables();
+      const result = await db.query("SELECT id, username, display_name, role, active, created_at, updated_at FROM hormoz_team_members ORDER BY created_at DESC");
+      return { members: result.rows.map(row => ({ id: String(row.id), username: String(row.username), displayName: String(row.display_name), role: String(row.role), active: row.active === true, createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "دریافت اعضا ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/admin/members", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "فقط مدیر اصلی اجازه ساخت حساب دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const body = (request.body ?? {}) as { username?: string; displayName?: string; role?: string };
+    const username = String(body.username ?? "").trim().toLowerCase();
+    const displayName = String(body.displayName ?? "").trim().slice(0, 100);
+    const role = body.role === "marketing" || body.role === "service_coordinator" ? body.role : "";
+    if (!/^[a-z0-9][a-z0-9._-]{2,39}$/.test(username) || !displayName || !role) return reply.code(400).send({ message: "نام کاربری باید ۳ تا ۴۰ نویسه انگلیسی/عدد و نام نمایشی و نقش معتبر باشد." });
+    const temporaryPassword = crypto.randomBytes(12).toString("base64url");
+    const id = crypto.randomBytes(12).toString("hex");
+    try {
+      await ensureTeamTables();
+      await db.query("INSERT INTO hormoz_team_members (id, username, display_name, role, password_hash) VALUES ($1,$2,$3,$4,$5)", [id, username, displayName, role, hashMemberPassword(temporaryPassword)]);
+      return reply.code(201).send({ ok: true, member: { id, username, displayName, role, active: true }, temporaryPassword, message: "حساب ساخته شد. رمز موقت فقط همین یک بار نمایش داده می‌شود؛ آن را خصوصی به عضو تحویل دهید." });
+    } catch (error: any) {
+      if (error?.code === "23505") return reply.code(409).send({ message: "این نام کاربری قبلاً ثبت شده است." });
+      request.log.error(error);
+      return reply.code(503).send({ message: "ساخت حساب عضو ناموفق بود." });
+    }
+  });
+
+  app.patch("/api/v1/admin/members/:id", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "فقط مدیر اصلی اجازه تغییر دسترسی اعضا را دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const params = request.params as { id?: string };
+    const body = (request.body ?? {}) as { active?: boolean };
+    if (!params.id || typeof body.active !== "boolean") return reply.code(400).send({ message: "وضعیت فعال/غیرفعال معتبر نیست." });
+    try {
+      await ensureTeamTables();
+      const result = await db.query("UPDATE hormoz_team_members SET active = $2, updated_at = NOW() WHERE id = $1 RETURNING id, username, active", [params.id, body.active]);
+      if (!result.rows.length) return reply.code(404).send({ message: "عضو پیدا نشد." });
+      if (!body.active) for (const [token, session] of sessions) if (session.memberId === params.id) sessions.delete(token);
+      return { ok: true, member: { id: String(result.rows[0].id), username: String(result.rows[0].username), active: result.rows[0].active === true }, message: body.active ? "دسترسی عضو فعال شد." : "دسترسی عضو غیرفعال شد و نشست‌های فعال او بسته شد." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "به‌روزرسانی دسترسی عضو ناموفق بود." });
+    }
+  });
+
+  app.get("/api/v1/team/providers", async (request, reply) => {
+    const session = getSessionInfo(request);
+    if (!session || (session.role !== "marketing" && session.role !== "admin")) return reply.code(403).send({ message: "این بخش فقط برای بازاریاب‌ها و مدیر اصلی است." });
+    if (!db) return reply.code(503).send({ message: "فهرست خدمات در دسترس نیست." });
+    try {
+      await ensureProvidersTable();
+      const result = await db.query("SELECT provider_number, provider_name, business_name, service_type, city, description, starting_price, price_unit FROM hormoz_service_providers WHERE status = 'approved' AND public_listing = TRUE ORDER BY updated_at DESC LIMIT 200");
+      return { providers: result.rows.map(row => ({ providerNumber: String(row.provider_number), name: String(row.business_name || row.provider_name), serviceType: String(row.service_type), city: String(row.city ?? ""), description: String(row.description ?? ""), startingPrice: Number(row.starting_price ?? 0), priceUnit: String(row.price_unit ?? "") })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "فهرست خدمات موقتاً در دسترس نیست." });
+    }
+  });
+
+  app.get("/api/v1/team/leads", async (request, reply) => {
+    const session = getSessionInfo(request);
+    if (!session || (session.role !== "marketing" && session.role !== "admin")) return reply.code(403).send({ message: "این بخش فقط برای بازاریاب‌ها و مدیر اصلی است." });
+    if (!db) return reply.code(503).send({ message: "ثبت پیگیری در دسترس نیست." });
+    try {
+      await ensureTeamTables(); await ensureMarketingLeadsTable();
+      const result = session.role === "admin"
+        ? await db.query("SELECT l.id, l.member_id, m.display_name AS member_name, l.customer_label, l.contact, l.service_interest, l.notes, l.status, l.created_at, l.updated_at FROM hormoz_marketing_leads l JOIN hormoz_team_members m ON m.id = l.member_id ORDER BY l.created_at DESC LIMIT 200")
+        : await db.query("SELECT id, member_id, customer_label, contact, service_interest, notes, status, created_at, updated_at FROM hormoz_marketing_leads WHERE member_id = $1 ORDER BY created_at DESC LIMIT 100", [session.memberId]);
+      return { leads: result.rows.map(row => ({ id: String(row.id), memberId: String(row.member_id), memberName: String(row.member_name ?? ""), customerLabel: String(row.customer_label ?? ""), contact: String(row.contact ?? ""), serviceInterest: String(row.service_interest), notes: String(row.notes ?? ""), status: String(row.status), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "دریافت پیگیری‌ها ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/team/leads", async (request, reply) => {
+    const session = getSessionInfo(request);
+    if (!session || session.role !== "marketing" || !session.memberId) return reply.code(403).send({ message: "ثبت مشتری فقط برای بازاریاب واردشده مجاز است." });
+    if (!db) return reply.code(503).send({ message: "ثبت پیگیری در دسترس نیست." });
+    const body = (request.body ?? {}) as { customerLabel?: string; contact?: string; serviceInterest?: string; notes?: string };
+    const customerLabel = String(body.customerLabel ?? "").trim().slice(0, 100);
+    const contact = String(body.contact ?? "").trim().slice(0, 160);
+    const serviceInterest = String(body.serviceInterest ?? "").trim().slice(0, 120);
+    const notes = String(body.notes ?? "").trim().slice(0, 600);
+    if (!serviceInterest || (!customerLabel && !contact)) return reply.code(400).send({ message: "نوع خدمت و دست‌کم نام یا راه تماس مشتری لازم است." });
+    try {
+      await ensureTeamTables(); await ensureMarketingLeadsTable();
+      const id = crypto.randomBytes(12).toString("hex");
+      await db.query("INSERT INTO hormoz_marketing_leads (id, member_id, customer_label, contact, service_interest, notes) VALUES ($1,$2,$3,$4,$5,$6)", [id, session.memberId, customerLabel, contact, serviceInterest, notes]);
+      return reply.code(201).send({ ok: true, id, message: "پیگیری مشتری ثبت شد؛ این ثبت به‌تنهایی فروش یا درآمد قطعی نیست." });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "ثبت پیگیری ناموفق بود." });
+    }
+  });
+
+  app.patch("/api/v1/team/leads/:id", async (request, reply) => {
+    const session = getSessionInfo(request);
+    if (!session || session.role !== "marketing" || !session.memberId) return reply.code(403).send({ message: "فقط بازاریاب واردشده می‌تواند پیگیری خودش را به‌روزرسانی کند." });
+    if (!db) return reply.code(503).send({ message: "ثبت پیگیری در دسترس نیست." });
+    const params = request.params as { id?: string };
+    const body = (request.body ?? {}) as { status?: string; notes?: string };
+    const allowed = new Set(["new", "contacted", "interested", "converted", "not_interested", "closed"]);
+    const status = String(body.status ?? "");
+    const notes = String(body.notes ?? "").trim().slice(0, 600);
+    if (!params.id || !allowed.has(status)) return reply.code(400).send({ message: "وضعیت پیگیری معتبر نیست." });
+    try {
+      await ensureTeamTables(); await ensureMarketingLeadsTable();
+      const result = await db.query("UPDATE hormoz_marketing_leads SET status = $3, notes = $4, updated_at = NOW() WHERE id = $1 AND member_id = $2 RETURNING id", [params.id, session.memberId, status, notes]);
+      if (!result.rows.length) return reply.code(404).send({ message: "پیگیری پیدا نشد." });
+      return { ok: true, message: "پیگیری به‌روز شد؛ تبدیل به مشتری هنوز به‌معنای دریافت وجه نیست." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "به‌روزرسانی پیگیری ناموفق بود." });
+    }
+  });
+
+  app.get("/api/v1/team/orders", async (request, reply) => {
+    if (!isServiceCoordinator(request)) return reply.code(403).send({ message: "این بخش فقط برای هماهنگ‌کنندگان خدمات و مدیر اصلی است." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureServiceOrdersTable();
+      const result = await db.query("SELECT id, order_number, service_type, provider_number, customer_label, contact, language, details, status, status_history, created_at, updated_at FROM hormoz_service_orders ORDER BY created_at DESC LIMIT 200");
+      return { orders: result.rows.map(row => ({ id: String(row.id), orderNumber: String(row.order_number), serviceType: String(row.service_type), providerNumber: String(row.provider_number ?? ""), customerLabel: String(row.customer_label ?? ""), contact: String(row.contact ?? ""), language: String(row.language ?? "fa"), details: row.details && typeof row.details === "object" ? row.details : {}, status: String(row.status), statusHistory: Array.isArray(row.status_history) ? row.status_history : [], createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "دریافت سفارش‌ها ناموفق بود." });
+    }
+  });
+
+  app.patch("/api/v1/team/orders/:id/status", async (request, reply) => {
+    if (!isServiceCoordinator(request)) return reply.code(403).send({ message: "این بخش فقط برای هماهنگ‌کنندگان خدمات و مدیر اصلی است." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const params = request.params as { id?: string };
+    const body = (request.body ?? {}) as { status?: string; note?: string };
+    const status = String(body.status ?? "");
+    const note = String(body.note ?? "").trim().slice(0, 400);
+    if (!params.id || !orderStatuses.has(status)) return reply.code(400).send({ message: "وضعیت سفارش معتبر نیست." });
+    try {
+      await ensureServiceOrdersTable();
+      const found = await db.query("SELECT status_history FROM hormoz_service_orders WHERE id = $1", [params.id]);
+      if (!found.rows.length) return reply.code(404).send({ message: "سفارش پیدا نشد." });
+      const session = getSessionInfo(request);
+      const oldHistory = Array.isArray(found.rows[0].status_history) ? found.rows[0].status_history : [];
+      const history = [...oldHistory, { status, at: new Date().toISOString(), note, actor: session?.displayName ?? "عضو تیم", role: session?.role ?? "unknown" }].slice(-100);
+      const updated = await db.query("UPDATE hormoz_service_orders SET status = $2, status_history = $3::jsonb, updated_at = NOW() WHERE id = $1 RETURNING order_number, status, updated_at", [params.id, status, JSON.stringify(history)]);
+      return { ok: true, orderNumber: String(updated.rows[0].order_number), status: String(updated.rows[0].status), updatedAt: new Date(updated.rows[0].updated_at).toISOString(), message: "وضعیت و سابقه پیگیری ثبت شد؛ این تغییر به‌تنهایی رزرو یا پرداخت را تأیید نمی‌کند." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "به‌روزرسانی وضعیت سفارش ناموفق بود." });
+    }
+  });
+
   /*
    * وضعیت سیستم
    */
