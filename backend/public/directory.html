@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071522">
+<meta name="description" content="جست‌وجوی کسب‌وکارها و ارائه‌دهندگان خدمات تأییدشده در هوش هرمز.">
+<title>جست‌وجوی خدمات | هوش هرمز</title>
+<style>
+:root{color-scheme:dark;--bg:#071522;--panel:#10283b;--gold:#ffd782;--teal:#70f1e6;--text:#f6f8fc;--muted:#c2d1df;--line:#35566c}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#214a60 0,transparent 42%),linear-gradient(180deg,#071522,#08121e);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.9;padding:14px}
+main{max-width:980px;margin:18px auto}.top{display:flex;align-items:center;gap:14px;margin-bottom:18px}.logo{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:linear-gradient(145deg,#fff0bc,#c88b2f);color:#142333;font-weight:900;font-size:20px;flex-shrink:0}.sub,p{color:var(--muted)}h1,h2{color:var(--gold)}h1{margin:0;font-size:clamp(1.5rem,4vw,2.2rem)}.panel{background:linear-gradient(145deg,#122d40,#0a1a29);border:1px solid var(--line);border-radius:22px;padding:clamp(16px,3vw,26px);box-shadow:0 18px 45px #0003;margin-bottom:16px}.filters{display:grid;grid-template-columns:2fr 1fr;gap:12px}input,select{width:100%;padding:12px;border:1px solid #47667a;border-radius:11px;background:#071522;color:var(--text);font:inherit}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}.provider{border:1px solid var(--line);border-radius:17px;padding:17px;background:#0b1d2b}.badge{display:inline-block;border:1px solid #70f1e655;color:var(--teal);border-radius:999px;padding:2px 10px;font-size:.82rem}.provider h3{margin:8px 0;color:#fff}.muted{color:var(--muted);font-size:.92rem}.btn{display:inline-flex;justify-content:center;align-items:center;padding:11px 16px;border:0;border-radius:12px;background:linear-gradient(145deg,#fff0bc,#c88b2f);color:#142333;font-weight:bold;font:inherit;text-decoration:none;cursor:pointer}.secondary{border:1px solid var(--line);background:transparent;color:var(--text)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.notice{border:1px solid #ffd78255;background:#ffd7820b;border-radius:14px;padding:13px;color:#f3dba2}.state{text-align:center;padding:26px;color:var(--muted)}footer{text-align:center;color:var(--muted);padding:20px;font-size:.9rem}@media(max-width:600px){body{padding:9px}.filters{grid-template-columns:1fr}.top{align-items:flex-start}}
+</style>
+</head>
+<body><main>
+<header class="top"><div class="logo">۷۷۷</div><div><h1>جست‌وجوی خدمات هرمز</h1><div class="sub">گزینه‌های تأییدشده را پیدا کن؛ انتخاب نهایی با خودت است.</div></div></header>
+<section class="panel">
+<p>این فهرست فقط کسب‌وکارهایی را نمایش می‌دهد که هرمز تأیید کرده و اجازه انتشار عمومی داده‌اند. پیش از هر توافق، قیمت، زمان دسترسی و شرایط خدمت را مستقیماً تأیید کنید؛ این صفحه رزرو یا پرداخت قطعی انجام نمی‌دهد.</p>
+<div class="filters"><input id="search" type="search" placeholder="جست‌وجو: نام کسب‌وکار، خدمت یا شهر" aria-label="جست‌وجوی خدمات"><select id="type" aria-label="فیلتر نوع خدمت"><option value="">همه خدمات</option><option>اقامتگاه و سوئیت</option><option>راننده و خودرو</option><option>قایق و شناور</option><option>رستوران و غذا</option><option>راهنمای گردشگری</option><option>تعمیرکار و برق‌کار</option><option>مهارت و خدمات تخصصی</option></select></div>
+<div id="state" class="state" role="status" aria-live="polite">در حال دریافت فهرست خدمات…</div>
+<div id="results" class="grid"></div>
+<div class="actions"><a class="btn secondary" href="/orders.html">ثبت درخواست خدمت</a><a class="btn" href="/providers.html">ثبت کسب‌وکار و همکاری</a><a class="btn secondary" href="/">صفحه اصلی هرمز</a></div>
+</section>
+<section class="notice">🔐 برای حفاظت از حریم خصوصی، راه تماس خصوصی ارائه‌دهندگان در این فهرست نمایش داده نمی‌شود. درخواست همکاری فقط پس از بررسی و تأیید هرمز در فهرست قرار می‌گیرد.</section>
+<footer>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.<br>چراغ ۷۷۷ برای خاموش شدن ساخته نشده ❤️</footer>
+</main>
+<script>
+const state=document.getElementById("state"),results=document.getElementById("results"),search=document.getElementById("search"),typeFilter=document.getElementById("type");
+let providers=[];
+function render(){
+ const q=search.value.trim().toLocaleLowerCase();
+ const type=typeFilter.value;
+ const list=providers.filter(p=>(!type||p.serviceType===type)&&(!q||[p.businessName,p.serviceType,p.city,p.description].join(" ").toLocaleLowerCase().includes(q)));
+ results.replaceChildren();
+ if(!list.length){state.style.display="block";state.textContent=providers.length?"موردی با این جست‌وجو پیدا نشد. فیلتر را تغییر بده یا درخواست خدمت ثبت کن.":"هنوز کسب‌وکار تأییدشده‌ای برای نمایش عمومی در فهرست ثبت نشده است. ارائه‌دهندگان می‌توانند از بخش «ثبت کسب‌وکار و همکاری» درخواست بدهند؛ پس از بررسی و اجازه انتشار، در اینجا دیده می‌شوند.";return;}
+ state.style.display="none";
+ for(const p of list){
+  const card=document.createElement("article");card.className="provider";
+  const badge=document.createElement("span");badge.className="badge";badge.textContent=p.serviceType;
+  const title=document.createElement("h3");title.textContent=p.businessName;
+  const city=document.createElement("div");city.className="muted";city.textContent=p.city||"محدوده فعالیت اعلام نشده";
+  const desc=document.createElement("p");desc.textContent=p.description||"توضیح بیشتری ثبت نشده است.";
+  const link=document.createElement("a");link.className="btn";link.href="/orders.html?provider="+encodeURIComponent(p.businessName);link.textContent="ثبت درخواست درباره این خدمت";
+  card.append(badge,title,city,desc,link);results.append(card);
+ }
+}
+search.addEventListener("input",render);typeFilter.addEventListener("change",render);
+fetch("/api/v1/providers",{headers:{Accept:"application/json"}}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.message||"فهرست خدمات در دسترس نیست.");providers=Array.isArray(d.providers)?d.providers:[];render();}).catch(e=>{state.style.display="block";state.textContent="فهرست خدمات اکنون از سرور دریافت نشد. "+(e.message||"لطفاً بعداً دوباره تلاش کنید.");});
+</script></body></html>
