@@ -148,6 +148,115 @@ function addMessage(text, type) {
   messages.scrollTop = messages.scrollHeight;
 }
 
+/* VOICE CHAT: browser speech recognition + speech synthesis */
+const speechButton = document.getElementById("speechButton");
+const voiceReplyButton = document.getElementById("voiceReplyButton");
+const voiceStatus = document.getElementById("voiceStatus");
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let listening = false;
+let voiceReplyEnabled = true;
+
+function setVoiceStatus(message) {
+  if (voiceStatus) voiceStatus.textContent = message;
+}
+
+function speakNava(text) {
+  if (!voiceReplyEnabled || !("speechSynthesis" in window) || !text) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "fa-IR";
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const persianVoice = voices.find((voice) => /^fa([_-]|$)/i.test(voice.lang));
+    if (persianVoice) utterance.voice = persianVoice;
+    utterance.onerror = () => setVoiceStatus("پاسخ متنی آماده است؛ خواندن صوتی در این گوشی در دسترس نیست.");
+    window.speechSynthesis.speak(utterance);
+  } catch (error) {
+    console.error("Nava speech output failed:", error);
+    setVoiceStatus("پاسخ متنی آماده است؛ صدای فارسی در این مرورگر پشتیبانی نشد.");
+  }
+}
+
+if (voiceReplyButton) {
+  voiceReplyButton.addEventListener("click", () => {
+    voiceReplyEnabled = !voiceReplyEnabled;
+    voiceReplyButton.setAttribute("aria-pressed", String(voiceReplyEnabled));
+    voiceReplyButton.textContent = voiceReplyEnabled ? "🔊 پاسخ صوتی: روشن" : "🔇 پاسخ صوتی: خاموش";
+    if (!voiceReplyEnabled && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    setVoiceStatus(voiceReplyEnabled ? "پاسخ‌های نوا پس از دریافت، با صدا خوانده می‌شوند." : "پاسخ صوتی خاموش شد؛ پاسخ‌ها به‌صورت متن نمایش داده می‌شوند.");
+  });
+}
+
+if (speechButton) {
+  if (!SpeechRecognitionAPI) {
+    speechButton.disabled = true;
+    speechButton.textContent = "🎙️ گفتار در این مرورگر پشتیبانی نمی‌شود";
+    speechButton.style.opacity = "0.65";
+    setVoiceStatus("تشخیص گفتار در این مرورگر در دسترس نیست. در صورت امکان صفحه را با Chrome به‌روز باز کن؛ تایپ با میکروفون صفحه‌کلید هم می‌تواند کمک کند.");
+  } else {
+    recognition = new SpeechRecognitionAPI();
+    recognition.lang = "fa-IR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      listening = true;
+      speechButton.setAttribute("aria-pressed", "true");
+      speechButton.textContent = "🛑 پایان صحبت";
+      setVoiceStatus("نوا گوش می‌دهد… حالا نیازت را به فارسی بگو.");
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results || [])
+        .map((result) => result[0] && result[0].transcript ? result[0].transcript : "")
+        .join(" ")
+        .trim();
+      if (!transcript) {
+        setVoiceStatus("صدایی به متن تبدیل نشد؛ دوباره امتحان کن.");
+        return;
+      }
+      if (input) input.value = transcript;
+      setVoiceStatus("شنیدم: «" + transcript + "» — در حال فرستادن برای نوا…");
+      sendMessage();
+    };
+
+    recognition.onerror = (event) => {
+      const messages = {
+        "not-allowed": "اجازه میکروفون داده نشد. مجوز میکروفون سایت را در تنظیمات مرورگر بررسی کن.",
+        "service-not-allowed": "سرویس تشخیص گفتار در این مرورگر یا شبکه در دسترس نیست.",
+        "no-speech": "صدایی نشنیدم؛ دوباره دکمه را بزن و نزدیک‌تر صحبت کن.",
+        "network": "تشخیص گفتار به اتصال شبکه نیاز دارد و فعلاً برقرار نشد.",
+        "audio-capture": "میکروفون پیدا نشد یا برنامه دیگری از آن استفاده می‌کند."
+      };
+      setVoiceStatus(messages[event.error] || "تشخیص صدا ناموفق بود. دوباره امتحان کن یا از میکروفون صفحه‌کلید استفاده کن.");
+    };
+
+    recognition.onend = () => {
+      listening = false;
+      speechButton.setAttribute("aria-pressed", "false");
+      speechButton.textContent = "🎙️ صحبت با نوا";
+    };
+
+    speechButton.addEventListener("click", () => {
+      if (listening) {
+        recognition.stop();
+        return;
+      }
+      try {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        recognition.start();
+      } catch (error) {
+        console.error("Nava speech recognition failed:", error);
+        setVoiceStatus("شروع میکروفون ممکن نشد؛ چند لحظه صبر کن و دوباره بزن.");
+      }
+    });
+  }
+}
+
 async function sendMessage() {
   if (!input || !sendButton || !messages) {
     return;
@@ -186,10 +295,12 @@ async function sendMessage() {
 
     const answer = getResponseText(data);
 
-    addMessage(
-      answer || "نوا پاسخی دریافت نکرد.",
-      "nava"
-    );
+    const spokenAnswer = answer || "نوا پاسخی دریافت نکرد.";
+    addMessage(spokenAnswer, "nava");
+    speakNava(spokenAnswer);
+    if (voiceReplyEnabled) {
+      setVoiceStatus("پاسخ نوا آماده شد؛ اگر صدای فارسی گوشی پشتیبانی شود، پاسخ خوانده می‌شود.");
+    }
 
   } catch (error) {
 
