@@ -92,11 +92,13 @@ async function ensureTeamTables() {
       display_name TEXT NOT NULL,
       role TEXT NOT NULL CHECK (role IN ('marketing', 'service_coordinator')),
       password_hash TEXT NOT NULL,
+      must_change_password BOOLEAN NOT NULL DEFAULT TRUE,
       active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await db.query(`ALTER TABLE hormoz_team_members ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT TRUE`);
   teamMembersTableReady = true;
 }
 
@@ -559,7 +561,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const password = String(body.password ?? "");
     try {
       await ensureTeamTables();
-      const result = await db.query("SELECT id, username, display_name, role, password_hash, active FROM hormoz_team_members WHERE username = $1 LIMIT 1", [username]);
+      const result = await db.query("SELECT id, username, display_name, role, password_hash, active, must_change_password FROM hormoz_team_members WHERE username = $1 LIMIT 1", [username]);
       const member = result.rows[0];
       if (!member || member.active !== true || password.length > 200 || !verifyMemberPassword(password, String(member.password_hash))) {
         noteLoginFailure(ipKey);
@@ -569,7 +571,7 @@ export async function adminRoutes(app: FastifyInstance) {
       const token = crypto.randomBytes(32).toString("hex");
       const role = String(member.role) as "marketing" | "service_coordinator";
       sessions.set(token, { role, memberId: String(member.id), username: String(member.username), displayName: String(member.display_name), expiresAt: Date.now() + SESSION_TTL_MS });
-      return { token, role, displayName: String(member.display_name), expiresInSeconds: SESSION_TTL_MS / 1000 };
+      return { token, role, displayName: String(member.display_name), mustChangePassword: member.must_change_password === true, expiresInSeconds: SESSION_TTL_MS / 1000 };
     } catch (error) {
       request.log.error(error);
       return reply.code(503).send({ message: "ورود اعضا موقتاً ناموفق است." });
@@ -579,7 +581,40 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get("/api/v1/team/me", async (request, reply) => {
     const session = getSessionInfo(request);
     if (!session) return reply.code(401).send({ message: "نشست معتبر نیست؛ دوباره وارد شوید." });
-    return { role: session.role, displayName: session.displayName, username: session.username ?? "", expiresAt: new Date(session.expiresAt).toISOString() };
+    let mustChangePassword = false;
+    if (session.memberId && db) {
+      try {
+        await ensureTeamTables();
+        const result = await db.query("SELECT must_change_password FROM hormoz_team_members WHERE id = $1 AND active = TRUE", [session.memberId]);
+        if (!result.rows.length) {
+          for (const [token, activeSession] of sessions) if (activeSession.memberId === session.memberId) sessions.delete(token);
+          return reply.code(401).send({ message: "حساب عضو غیرفعال است؛ دوباره وارد شوید." });
+        }
+        mustChangePassword = result.rows[0].must_change_password === true;
+      } catch (error) {
+        request.log.error(error);
+        return reply.code(503).send({ message: "بررسی وضعیت حساب ناموفق بود." });
+      }
+    }
+    return { role: session.role, displayName: session.displayName, username: session.username ?? "", mustChangePassword, expiresAt: new Date(session.expiresAt).toISOString() };
+  });
+
+  app.post("/api/v1/team/change-password", async (request, reply) => {
+    const session = getSessionInfo(request);
+    if (!session || !session.memberId || !db) return reply.code(401).send({ message: "تغییر رمز فقط برای عضو واردشده مجاز است." });
+    const body = (request.body ?? {}) as { newPassword?: string };
+    const newPassword = String(body.newPassword ?? "");
+    if (newPassword.length < 12 || newPassword.length > 200) return reply.code(400).send({ message: "رمز جدید باید دست‌کم ۱۲ نویسه داشته باشد." });
+    try {
+      await ensureTeamTables();
+      const result = await db.query("UPDATE hormoz_team_members SET password_hash = $2, must_change_password = FALSE, updated_at = NOW() WHERE id = $1 AND active = TRUE RETURNING id", [session.memberId, hashMemberPassword(newPassword)]);
+      if (!result.rows.length) return reply.code(401).send({ message: "حساب عضو فعال نیست." });
+      touchActivity();
+      return { ok: true, message: "رمز عبور تغییر کرد؛ رمز جدید را خصوصی نگه دارید." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "تغییر رمز ناموفق بود." });
+    }
   });
 
   app.post("/api/v1/team/logout", async (request, reply) => {
