@@ -412,6 +412,15 @@
 
 
 
+
+    <!-- CENTRAL SERVICE ORDERS -->
+    <section class="card" id="serviceOrdersPanel">
+      <h2>🧭 سفارش‌های خدمات هرمز</h2>
+      <p class="subtitle">درخواست‌های ثبت‌شده برای سفر، اقامت، راننده، غذا، تعمیرکار و سایر خدمات. تغییر وضعیت در این بخش به‌تنهایی پرداخت را تأیید نمی‌کند.</p>
+      <button type="button" onclick="loadServiceOrders()">🔄 دریافت سفارش‌ها</button>
+      <div id="serviceOrdersList" class="result">برای دریافت سفارش‌ها دکمه را بزنید.</div>
+    </section>
+
     <!-- FINANCE -->
     <section class="card" id="financePanel">
       <h2>🧾 حسابداری و سهم خدمات</h2>
@@ -1029,6 +1038,76 @@ function escapeHtml(
 
 
 
+
+const orderStatusLabels = {
+  submitted: "درخواست ثبت شد",
+  awaiting_provider: "در انتظار پاسخ ارائه‌دهنده",
+  quoted: "قیمت اعلام شد",
+  confirmed: "سفارش تأیید شد",
+  payment_pending: "در انتظار پرداخت",
+  payment_confirmed: "پرداخت تأییدشده",
+  in_progress: "در حال انجام",
+  completed: "انجام‌شده",
+  cancelled: "لغوشده",
+  refund_pending: "در انتظار بازپرداخت",
+  refunded: "بازپرداخت‌شده"
+};
+
+async function loadServiceOrders() {
+  const holder = document.getElementById("serviceOrdersList");
+  holder.textContent = "در حال دریافت سفارش‌ها…";
+  try {
+    const data = await api("/api/v1/admin/orders");
+    if (!data.orders || !data.orders.length) {
+      holder.innerHTML = '<div class="empty">هنوز درخواست خدماتی ثبت نشده است.</div>';
+      return;
+    }
+    holder.innerHTML = data.orders.map(order => {
+      const details = Object.entries(order.details || {}).map(([key, value]) =>
+        '<div><strong>' + escapeHtml(key) + ':</strong> ' + escapeHtml(value) + '</div>'
+      ).join("");
+      const options = Object.entries(orderStatusLabels).map(([value, label]) =>
+        '<option value="' + value + '"' + (order.status === value ? ' selected' : '') + '>' + label + '</option>'
+      ).join("");
+      return '<article style="border:1px solid #35566c;border-radius:14px;padding:14px;margin:12px 0;background:#0b1b29">' +
+        '<strong>' + escapeHtml(order.orderNumber) + '</strong> · ' + escapeHtml(order.serviceType) +
+        '<div style="color:#c2d1df;font-size:.9rem">ثبت: ' + escapeHtml(formatTime(order.createdAt)) +
+        ' · وضعیت: ' + escapeHtml(orderStatusLabels[order.status] || order.status) + '</div>' +
+        '<div style="margin-top:8px">مشتری: ' + (escapeHtml(order.customerLabel) || 'ثبت نشده') +
+        ' · راه تماس: ' + (escapeHtml(order.contact) || 'ثبت نشده') + ' · زبان: ' + escapeHtml(order.language) + '</div>' +
+        '<div style="margin:8px 0">' + details + '</div>' +
+        '<label for="order-status-' + escapeHtml(order.id) + '">وضعیت سفارش</label>' +
+        '<select id="order-status-' + escapeHtml(order.id) + '" style="width:100%;padding:10px;margin:6px 0;background:#101318;color:#fff;border-radius:8px">' + options + '</select>' +
+        '<input id="order-note-' + escapeHtml(order.id) + '" maxlength="400" placeholder="یادداشت تغییر وضعیت (اختیاری)" style="width:100%;padding:10px;margin:6px 0;background:#101318;color:#fff;border:1px solid #35566c;border-radius:8px">' +
+        '<button type="button" onclick="updateServiceOrderStatus(\'' + escapeHtml(order.id) + '\')">ثبت وضعیت</button>' +
+        '<div id="order-result-' + escapeHtml(order.id) + '" class="result"></div></article>';
+    }).join("");
+  } catch (error) {
+    holder.textContent = error.message || "دریافت سفارش‌ها ناموفق بود.";
+  }
+}
+
+async function updateServiceOrderStatus(id) {
+  const result = document.getElementById("order-result-" + id);
+  const status = document.getElementById("order-status-" + id).value;
+  const note = document.getElementById("order-note-" + id).value.trim();
+  result.textContent = "در حال ذخیره…";
+  try {
+    const data = await api("/api/v1/admin/orders/" + encodeURIComponent(id) + "/status", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, note })
+    });
+    result.textContent = data.message + " (" + (orderStatusLabels[data.status] || data.status) + ")";
+    result.className = "result success";
+    await loadServiceOrders();
+  } catch (error) {
+    result.textContent = error.message || "ذخیره وضعیت ناموفق بود.";
+    result.className = "result error";
+  }
+}
+
+
 function addFinanceRow() {
   const holder = document.getElementById("financeItems");
   if (holder.querySelectorAll(".finance-row").length >= 20) {
@@ -1138,6 +1217,7 @@ async function loadAll() {
     loadStatus(),
     loadFeedback(),
     loadOpportunities(),
+    loadServiceOrders(),
     loadFinanceInvoices()
   ]);
 }
