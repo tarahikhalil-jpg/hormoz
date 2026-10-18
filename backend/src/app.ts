@@ -566,6 +566,35 @@ input:focus {
   cursor: wait;
 }
 
+.voice-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.voice-button {
+  flex: 1 1 180px;
+  min-height: 50px;
+  border: 1px solid rgba(92,231,224,.38);
+  border-radius: 14px;
+  padding: 12px 15px;
+  background: rgba(8,127,140,.22);
+  color: #fff;
+  font: inherit;
+  font-weight: bold;
+}
+.voice-button[aria-pressed="true"] {
+  background: rgba(8,127,140,.42);
+  border-color: #5ce7e0;
+}
+.voice-status {
+  min-height: 28px;
+  margin: 8px 2px 0;
+  color: #b8e9e7;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
 /* ===== ADMIN ===== */
 
 textarea {
@@ -1567,6 +1596,12 @@ footer {
       </button>
 
     </div>
+
+    <div class="voice-controls" aria-label="گفت‌وگوی صوتی با نوا">
+      <button class="voice-button" id="speechButton" type="button" aria-pressed="false">🎙️ صحبت با نوا</button>
+      <button class="voice-button" id="voiceReplyButton" type="button" aria-pressed="true">🔊 پاسخ صوتی: روشن</button>
+    </div>
+    <p class="voice-status" id="voiceStatus" role="status" aria-live="polite">برای گفتن پیام، دکمه «صحبت با نوا» را بزن و اجازه میکروفون را بده. پاسخ نوا می‌تواند با صدا خوانده شود.</p>
 
   </div>
 
