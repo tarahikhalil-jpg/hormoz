@@ -217,87 +217,82 @@ function speakNava(text, onDone) {
     return;
   }
 
-  // Android browsers can fail on long utterances or immediately after cancel().
-  // Split the answer into short, natural chunks and start after cancel has settled.
-  try {
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    speaking = false;
-    const voices = synth.getVoices();
-    const persianVoice = voices.find((voice) => /^fa([_-]|$)/i.test(voice.lang));
-    const cleaned = String(text).replace(/\s+/g, " ").trim();
-    const chunks = [];
-    let remaining = cleaned;
-    while (remaining.length > 0) {
-      if (remaining.length <= 180) {
-        chunks.push(remaining);
-        break;
-      }
-      let cut = remaining.lastIndexOf(" ", 180);
-      if (cut < 80) cut = 180;
-      chunks.push(remaining.slice(0, cut).trim());
-      remaining = remaining.slice(cut).trim();
+  const synth = window.speechSynthesis;
+  const cleaned = String(text).replace(/\s+/g, " ").trim();
+  if (!cleaned) {
+    if (typeof onDone === "function") onDone();
+    return;
+  }
+
+  let finished = false;
+  let started = false;
+  let watchdog = null;
+  let index = 0;
+  const chunks = [];
+  let remaining = cleaned;
+  while (remaining.length) {
+    if (remaining.length <= 140) {
+      chunks.push(remaining);
+      break;
     }
+    let cut = remaining.lastIndexOf(" ", 140);
+    if (cut < 60) cut = 140;
+    chunks.push(remaining.slice(0, cut).trim());
+    remaining = remaining.slice(cut).trim();
+  }
 
-    let index = 0;
-    let finished = false;
-    const finish = (errorMessage) => {
-      if (finished) return;
-      finished = true;
-      speaking = false;
-      if (errorMessage) setVoiceStatus(errorMessage);
-      if (typeof onDone === "function") onDone();
-    };
-    const startNext = () => {
-      if (finished) return;
-      if (index >= chunks.length) {
-        finish();
-        return;
-      }
-      const utterance = new SpeechSynthesisUtterance(chunks[index++]);
-      utterance.lang = "fa-IR";
-      utterance.rate = 0.88;
-      utterance.pitch = 1;
-      if (persianVoice) utterance.voice = persianVoice;
-      utterance.onstart = () => {
-        speaking = true;
-        setVoiceStatus("نوا در حال خواندن پاسخ است…");
-      };
-      utterance.onend = () => {
-        if (index < chunks.length) {
-          setTimeout(startNext, 120);
-        } else {
-          finish();
-        }
-      };
-      utterance.onerror = (event) => {
-        console.warn("Nava speech output error:", event && event.error);
-        finish("خواندن صوتی در گوشی اجرا نشد. احتمالاً موتور گفتار فارسی گوشی در دسترس نیست؛ پاسخ متنی همچنان آماده است.");
-      };
-      synth.speak(utterance);
-    };
+  const finish = (message) => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(watchdog);
+    speaking = false;
+    if (message) setVoiceStatus(message);
+    if (typeof onDone === "function") onDone();
+  };
 
+  const startNext = () => {
+    if (finished) return;
+    if (index >= chunks.length) {
+      finish();
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(chunks[index++]);
+    utterance.lang = "fa-IR";
+    utterance.rate = 0.88;
+    utterance.pitch = 1;
+    const persianVoice = synth.getVoices().find((voice) => /^fa([_-]|$)/i.test(voice.lang));
+    if (persianVoice) utterance.voice = persianVoice;
+
+    utterance.onstart = () => {
+      started = true;
+      speaking = true;
+      setVoiceStatus("نوا در حال خواندن پاسخ است…");
+    };
+    utterance.onend = () => {
+      if (index < chunks.length) setTimeout(startNext, 100);
+      else finish();
+    };
+    utterance.onerror = (event) => {
+      console.warn("Nava speech output error:", event && event.error);
+      finish("مرورگر نتوانست صدای نوا را پخش کند؛ پاسخ متنی آماده است. دوباره «شنیدن پاسخ نوا» را بزن.");
+    };
+    synth.speak(utterance);
+  };
+
+  try {
     setVoiceStatus("در حال آماده‌سازی صدای نوا…");
-    setTimeout(() => {
-      try {
-        if (synth.paused) synth.resume();
-        startNext();
-        // Detect cases where Android never starts speech at all.
-        setTimeout(() => {
-          if (!finished && !speaking && index === 1) {
-            finish("صدای نوا در گوشی شروع نشد؛ احتمالاً موتور خواندن متن گوشی فعال یا نصب نیست.");
-          }
-        }, 5000);
-      } catch (error) {
-        console.error("Nava speech start failed:", error);
-        finish("خواندن صوتی شروع نشد؛ موتور گفتار گوشی در دسترس نیست.");
+    // Do not call cancel() before speak: on some Android browsers it can suppress speech.
+    if (synth.paused) synth.resume();
+    startNext();
+
+    watchdog = setTimeout(() => {
+      if (!finished && !started) {
+        finish("مرورگر صدای نوا را شروع نکرد. دکمه «شنیدن پاسخ نوا» را لمس کن تا پخش با اقدام مستقیم شروع شود.");
       }
-    }, 180);
+    }, 8000);
   } catch (error) {
     console.error("Nava speech output failed:", error);
-    speaking = false;
-    setVoiceStatus("پاسخ متنی آماده است؛ خواندن صوتی در گوشی اجرا نشد.");
-    if (typeof onDone === "function") onDone();
+    finish("پخش صوتی مرورگر با خطا روبه‌رو شد؛ پاسخ متنی آماده است.");
   }
 }
 
