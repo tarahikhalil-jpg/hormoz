@@ -36,6 +36,26 @@
 <label>یادداشت پیگیری</label><textarea id="leadNotes" maxlength="600" rows="3" placeholder="فقط اطلاعات لازم، بدون اطلاعات بانکی یا رمزها"></textarea>
 <button onclick="createLead()">ثبت پیگیری</button><div id="leadMessage" class="result"></div><button onclick="loadLeads()">تازه‌سازی پیگیری‌ها</button><div id="leadsList"></div></section>
 <section id="ordersSection" class="card hidden"><h2>🧭 درخواست‌های خدمات</h2><p class="muted">اطلاعات تماس مشتری فقط برای هماهنگی مجاز است. تغییر وضعیت، رزرو یا پرداخت را به‌تنهایی قطعی نمی‌کند.</p><button onclick="loadOrders()">تازه‌سازی درخواست‌ها</button><div id="ordersList"></div></section>
+
+<section id="workSection" class="card">
+<h2>💡 فرصت‌های کاری و کارکرد ماهانه</h2>
+<p class="muted">کارهای تازه، خدمات، بازاریابی، پیگیری سفارش‌ها و ایده‌های خلاقانه در این بخش ثبت می‌شوند. پاداش فقط پس از بررسی و تأیید کارکرد به جمع ماهانه اضافه می‌شود.</p>
+<section id="workCreateSection" class="item hidden">
+<h3>＋ تعریف کار یا فرصت جدید</h3>
+<label>عنوان کار</label><input id="workTitle" maxlength="140" placeholder="مثلاً جذب آگهی برای کسب‌وکارهای محلی">
+<div class="grid"><div><label>دسته‌بندی</label><input id="workCategory" maxlength="80" placeholder="بازاریابی، خدمات، خلاقیت..."></div><div><label>پاداش پیشنهادی (تومان)</label><input id="workReward" type="number" min="0" step="1" inputmode="numeric" value="0"></div></div>
+<label>شرح کار و معیار انجام موفق</label><textarea id="workDescription" maxlength="1200" rows="3" placeholder="چه کاری باید انجام شود و مدیر بر چه اساسی آن را تأیید می‌کند؟"></textarea>
+<button onclick="createWork()">ثبت فرصت کاری</button><div id="workCreateMessage" class="result"></div>
+</section>
+<div class="row"><button onclick="loadWork()">تازه‌سازی فرصت‌ها و گزارش‌ها</button></div>
+<div id="workList"></div>
+<section id="payrollSection" class="item hidden">
+<h3>🧾 کارکرد و تسویه ماهانه اعضا</h3>
+<p class="muted">این گزارش، پاداش کارهای تأییدشده در همین بخش را محاسبه می‌کند. درآمد جذب مشتری یا سفارش تا زمانی که قواعد مالی آن جداگانه ثبت نشود، در این جمع نیست.</p>
+<label>ماه گزارش</label><input id="payrollMonth" type="month">
+<button onclick="loadPayroll()">محاسبه فیش‌های ماهانه</button><div id="payrollList"></div>
+</section>
+</section>
 </main><footer class="muted" style="text-align:center;padding:24px">چراغ ۷۷۷ برای خاموش شدن ساخته نشده ❤️</footer>
 </div>
 <script>
@@ -45,7 +65,7 @@ const statuses={submitted:"درخواست ثبت شد",awaiting_provider:"در �
 $("loginType").addEventListener("change",()=>{$("usernameWrap").classList.toggle("hidden",$("loginType").value==="admin")});
 async function login(){const message=$("loginMessage");message.textContent="در حال بررسی...";try{const admin=$("loginType").value==="admin";const response=await fetch(admin?"/api/v1/admin/login":"/api/v1/team/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(admin?{password:$("password").value}:{username:$("username").value,password:$("password").value})});const data=await response.json();if(!response.ok)throw Error(data.message||"ورود ناموفق بود.");localStorage.setItem(KEY,data.token);await openApp(data.role,data.displayName,data.mustChangePassword)}catch(e){message.textContent=e.message;message.className="result bad"}}
 async function api(url,options={}){const response=await fetch(url,{...options,headers:{...(options.headers||{}),Authorization:"Bearer "+(localStorage.getItem(KEY)||"")}});let data={};try{data=await response.json()}catch{}if(response.status===401){localStorage.removeItem(KEY);location.reload();throw Error("نشست منقضی شده است؛ دوباره وارد شوید.")}if(!response.ok)throw Error(data.message||"خطای سرور");return data}
-async function openApp(role,name,mustChangePassword=false){currentRole=role||"admin";$("login").classList.add("hidden");if(mustChangePassword){$("passwordChangeSection").classList.remove("hidden");$("app").classList.add("hidden");$("welcome").textContent=name||"عضو هرمز";return}$("passwordChangeSection").classList.add("hidden");$("app").classList.remove("hidden");$("welcome").textContent=name||"عضو هرمز";$("roleLabel").textContent=roles[currentRole]||"عضو تیم";$("membersSection").classList.toggle("hidden",currentRole!=="admin");$("providersSection").classList.toggle("hidden",!["admin","marketing"].includes(currentRole));$("leadsSection").classList.toggle("hidden",!["admin","marketing"].includes(currentRole));$("ordersSection").classList.toggle("hidden",!["admin","service_coordinator"].includes(currentRole));if(currentRole==="admin")loadMembers();if(["admin","marketing"].includes(currentRole)){loadProviders();loadLeads()}if(["admin","service_coordinator"].includes(currentRole))loadOrders()}
+async function openApp(role,name,mustChangePassword=false){currentRole=role||"admin";$("login").classList.add("hidden");if(mustChangePassword){$("passwordChangeSection").classList.remove("hidden");$("app").classList.add("hidden");$("welcome").textContent=name||"عضو هرمز";return}$("passwordChangeSection").classList.add("hidden");$("app").classList.remove("hidden");$("welcome").textContent=name||"عضو هرمز";$("roleLabel").textContent=roles[currentRole]||"عضو تیم";$("membersSection").classList.toggle("hidden",currentRole!=="admin");$("providersSection").classList.toggle("hidden",!["admin","marketing"].includes(currentRole));$("leadsSection").classList.toggle("hidden",!["admin","marketing"].includes(currentRole));$("ordersSection").classList.toggle("hidden",!["admin","service_coordinator"].includes(currentRole));if(currentRole==="admin")loadMembers();if(["admin","marketing"].includes(currentRole)){loadProviders();loadLeads()}if(["admin","service_coordinator"].includes(currentRole))loadOrders();$("workCreateSection").classList.toggle("hidden",currentRole!=="admin");$("payrollSection").classList.toggle("hidden",currentRole!=="admin");loadWork();if(currentRole==="admin")loadPayroll()}
 async function logout(){try{await api("/api/v1/team/logout",{method:"POST"})}catch{}localStorage.removeItem(KEY);location.reload()}
 function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
 function when(v){try{return new Date(v).toLocaleString("fa-IR")}catch{return "—"}}
@@ -74,6 +94,69 @@ async function saveLead(id){
 }
 async function loadOrders(){const box=$("ordersList");box.textContent="در حال دریافت درخواست‌ها...";try{const d=await api("/api/v1/team/orders");box.innerHTML=(d.orders||[]).map(o=>'<div class="item"><strong>'+esc(o.orderNumber)+'</strong> · '+esc(o.serviceType)+'<br>ثبت: '+esc(when(o.createdAt))+'<br>مشتری: '+esc(o.customerLabel||"ثبت نشده")+' · تماس: '+esc(o.contact||"ثبت نشده")+'<br>ارائه‌دهنده: '+esc(o.providerNumber||"هنوز تعیین نشده")+'<br>جزئیات: '+esc(Object.entries(o.details||{}).map(([k,v])=>k+": "+v).join(" | "))+'<br><label>وضعیت</label><select id="st-'+esc(o.id)+'">'+Object.entries(statuses).map(([v,l])=>'<option value="'+v+'" '+(o.status===v?'selected':'')+'>'+l+'</option>').join("")+'</select><input id="note-'+esc(o.id)+'" maxlength="400" placeholder="یادداشت پیگیری، اختیاری"><button onclick="saveOrder(\''+esc(o.id)+'\')">ثبت وضعیت و سابقه</button></div>').join("")||'<p class="muted">درخواست جدیدی وجود ندارد.</p>'}catch(e){box.textContent=e.message}}
 async function saveOrder(id){try{const d=await api("/api/v1/team/orders/"+encodeURIComponent(id)+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:$("st-"+id).value,note:$("note-"+id).value})});alert(d.message);await loadOrders()}catch(e){alert(e.message)}}
+
+const workStatusLabels={open:"باز",closed:"بسته",submitted:"در انتظار بررسی",approved:"تأییدشده",rejected:"ردشده"};
+function toman(v){return new Intl.NumberFormat("fa-IR").format(Number(v)||0)+" تومان"}
+async function createWork(){
+ const box=$("workCreateMessage");box.textContent="در حال ثبت...";
+ const reward=Number($("workReward").value);
+ if(!Number.isSafeInteger(reward)||reward<0){box.textContent="پاداش باید عدد صحیح صفر یا بیشتر باشد.";box.className="result bad";return}
+ try{
+  const d=await api("/api/v1/admin/work",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:$("workTitle").value,category:$("workCategory").value,description:$("workDescription").value,rewardAmount:reward})});
+  box.textContent=d.message;box.className="result good";$("workTitle").value="";$("workDescription").value="";await loadWork();
+ }catch(e){box.textContent=e.message;box.className="result bad"}
+}
+async function loadWork(){
+ const box=$("workList");box.textContent="در حال دریافت فرصت‌های کاری...";
+ try{
+  const d=await api("/api/v1/team/work");
+  const submissions=d.submissions||[],tasks=d.tasks||[];
+  const mineByWork=new Map(submissions.map(s=>[s.workId,s]));
+  let taskHtml=tasks.map(t=>{
+   const own=mineByWork.get(t.id);
+   let action="";
+   if(currentRole==="admin"){
+    const related=submissions.filter(s=>s.workId===t.id);
+    action=related.length?related.map(s=>'<div class="item"><strong>'+esc(s.memberName||"عضو تیم")+'</strong> · '+esc(workStatusLabels[s.status]||s.status)+'<br><small>گزارش: '+esc(when(s.createdAt))+' · پاداش فعلی: '+esc(toman(s.rewardAmount))+'</small><p>'+esc(s.notes)+'</p>'+(s.status==="submitted"?'<label>پاداش نهایی (تومان)</label><input id="work-reward-'+esc(s.id)+'" type="number" min="0" step="1" value="'+esc(t.rewardAmount)+'"><button onclick="reviewWork(\''+esc(s.id)+'\',\'approved\')">تأیید کار و ثبت پاداش</button> <button class="danger" onclick="reviewWork(\''+esc(s.id)+'\',\'rejected\')">رد گزارش</button>':'')+(s.paidAt?'<br><small class="good">پرداخت ثبت شده: '+esc(when(s.paidAt))+'</small>':'')+'</div>').join(""):'<p class="muted">هنوز گزارشی ثبت نشده است.</p>';
+   }else if(own){
+    action='<p>وضعیت گزارش شما: <strong>'+esc(workStatusLabels[own.status]||own.status)+'</strong></p><p>'+esc(own.notes)+'</p><p>پاداش تأییدشده: <strong>'+esc(toman(own.rewardAmount))+'</strong></p>'+(own.paidAt?'<p class="good">پرداخت ثبت شده است.</p>':'');
+   }else if(t.status==="open"){
+    action='<label>گزارش نتیجه کار</label><textarea id="work-notes-'+esc(t.id)+'" maxlength="1200" rows="3" placeholder="نتیجه، لینک یا توضیح کار انجام‌شده را بنویسید."></textarea><button onclick="submitWork(\''+esc(t.id)+'\')">ارسال گزارش برای بررسی</button>';
+   }
+   return '<div class="item"><strong>'+esc(t.title)+'</strong><br><small>'+esc(t.category)+' · '+esc(when(t.createdAt))+' · '+esc(workStatusLabels[t.status]||t.status)+'</small><p>'+esc(t.description)+'</p><p>پاداش اعلام‌شده: <strong>'+esc(toman(t.rewardAmount))+'</strong></p>'+action+'</div>';
+  }).join("");
+  if(currentRole==="admin"){
+   const unassigned=submissions.filter(s=>s.status==="submitted").length;
+   taskHtml='<p class="muted">فرصت‌ها: '+tasks.length+' · گزارش‌های منتظر بررسی: '+unassigned+'</p>'+taskHtml;
+  }
+  box.innerHTML=taskHtml||'<p class="muted">فعلاً فرصتی ثبت نشده است.</p>';
+ }catch(e){box.textContent=e.message}
+}
+async function submitWork(id){
+ const notes=$("work-notes-"+id).value.trim();if(!notes){alert("لطفاً نتیجه کار را بنویسید.");return}
+ try{const d=await api("/api/v1/team/work/"+encodeURIComponent(id)+"/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({notes})});alert(d.message);await loadWork()}catch(e){alert(e.message)}
+}
+async function reviewWork(id,status){
+ let rewardAmount=0;
+ if(status==="approved"){rewardAmount=Number($("work-reward-"+id).value);if(!Number.isSafeInteger(rewardAmount)||rewardAmount<0){alert("مبلغ پاداش معتبر نیست.");return}}
+ if(!confirm(status==="approved"?"این گزارش تأیید و پاداش به کارکرد ماهانه اضافه شود؟":"این گزارش رد شود؟"))return;
+ try{const d=await api("/api/v1/admin/work/submissions/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status,rewardAmount})});alert(d.message);await loadWork();await loadPayroll()}catch(e){alert(e.message)}
+}
+async function loadPayroll(){
+ const holder=$("payrollList");if(!$("payrollMonth").value)$("payrollMonth").value=new Date().toISOString().slice(0,7);
+ const month=$("payrollMonth").value;if(!/^\d{4}-\d{2}$/.test(month)){holder.textContent="ماه را انتخاب کنید.";return}
+ holder.textContent="در حال محاسبه...";
+ try{
+  const d=await api("/api/v1/admin/payroll?month="+encodeURIComponent(month));
+  holder.innerHTML=(d.payroll||[]).map(p=>'<div class="item"><strong>'+esc(p.displayName)+'</strong> · '+esc(p.username)+'<br>کارهای تأییدشده: '+esc(p.approvedTasks)+'<br>جمع کارکرد: <strong>'+esc(toman(p.totalAmount))+'</strong><br>پرداخت ثبت‌شده: '+esc(toman(p.paidAmount))+'<br>مانده قابل پرداخت: <strong>'+esc(toman(p.unpaidAmount))+'</strong>'+(p.unpaidAmount>0?'<label>رسید یا شناسه پرداخت واقعی</label><input id="payref-'+esc(p.memberId)+'" maxlength="120" placeholder="پس از انتقال واقعی وجه وارد شود"><button onclick="markPayrollPaid(\''+esc(p.memberId)+'\')">ثبت پرداخت انجام‌شده</button>':'')+'</div>').join("")||'<p class="muted">عضوی ثبت نشده است.</p>';
+ }catch(e){holder.textContent=e.message}
+}
+async function markPayrollPaid(memberId){
+ const reference=$("payref-"+memberId).value.trim();if(!reference){alert("پس از پرداخت واقعی، شماره رسید یا یادداشت پرداخت را وارد کنید.");return}
+ if(!confirm("آیا مبلغ مانده این عضو برای ماه انتخاب‌شده واقعاً پرداخت شده است؟ این دکمه پولی واریز نمی‌کند؛ فقط سابقه پرداخت را ثبت می‌کند."))return;
+ try{const d=await api("/api/v1/admin/payroll/mark-paid",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({memberId,month:$("payrollMonth").value,paymentReference:reference})});alert(d.message);await loadPayroll();await loadWork()}catch(e){alert(e.message)}
+}
+
 async function changePassword(){const message=$("passwordMessage");const password=$("newPassword").value;const confirmation=$("confirmPassword").value;if(password.length<12){message.textContent="رمز جدید باید دست‌کم ۱۲ نویسه باشد.";message.className="result bad";return}if(password!==confirmation){message.textContent="دو رمز واردشده یکسان نیستند.";message.className="result bad";return}try{const d=await api("/api/v1/team/change-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({newPassword:password})});message.textContent=d.message;message.className="result good";$("newPassword").value="";$("confirmPassword").value="";await openApp(currentRole,$("welcome").textContent,false)}catch(e){message.textContent=e.message;message.className="result bad"}}
 (async()=>{const t=localStorage.getItem(KEY);if(!t)return;try{const d=await api("/api/v1/team/me");await openApp(d.role,d.displayName,d.mustChangePassword)}catch{localStorage.removeItem(KEY)}})();
 </script></body></html>
