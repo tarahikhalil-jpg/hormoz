@@ -86,6 +86,27 @@ async function ensureOpportunitiesTable() {
   opportunitiesTableReady = true;
 }
 
+
+let financeTableReady = false;
+
+async function ensureFinanceTable() {
+  if (!db || financeTableReady) return;
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_finance_invoices (
+      id TEXT PRIMARY KEY,
+      invoice_number TEXT NOT NULL UNIQUE,
+      customer_label TEXT NOT NULL DEFAULT '',
+      items JSONB NOT NULL,
+      total_amount BIGINT NOT NULL,
+      hormoz_share BIGINT NOT NULL,
+      provider_share BIGINT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  financeTableReady = true;
+}
+
 let feedbackTableReady = false;
 
 async function ensureFeedbackTable() {
@@ -676,4 +697,111 @@ export async function adminRoutes(app: FastifyInstance) {
       });
     }
   });
+
+  /*
+   * حسابداری خدمات و پیش‌فاکتور داخلی هرمز
+   * مبلغ‌ها به تومان هستند؛ این بخش به‌تنهایی پرداخت یا تسویه انجام نمی‌دهد.
+   */
+  app.get("/api/v1/admin/finance/invoices", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "نیاز به ورود مدیر دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده برای ثبت دائمی فاکتورها تنظیم نشده است." });
+    try {
+      await ensureFinanceTable();
+      const result = await db.query(
+        "SELECT id, invoice_number, customer_label, items, total_amount, hormoz_share, provider_share, status, created_at FROM hormoz_finance_invoices ORDER BY created_at DESC LIMIT 100"
+      );
+      return {
+        count: result.rows.length,
+        invoices: result.rows.map(row => ({
+          id: String(row.id),
+          invoiceNumber: String(row.invoice_number),
+          customerLabel: String(row.customer_label ?? ""),
+          items: Array.isArray(row.items) ? row.items : [],
+          totalAmount: Number(row.total_amount),
+          hormozShare: Number(row.hormoz_share),
+          providerShare: Number(row.provider_share),
+          status: String(row.status),
+          createdAt: new Date(row.created_at).toISOString()
+        }))
+      };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "خواندن فاکتورها ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/admin/finance/invoices", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "نیاز به ورود مدیر دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده برای ثبت دائمی فاکتورها تنظیم نشده است." });
+
+    const body = (request.body ?? {}) as {
+      customerLabel?: unknown;
+      items?: unknown;
+    };
+    const customerLabel = String(body.customerLabel ?? "").trim().slice(0, 120);
+    if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 20) {
+      return reply.code(400).send({ message: "هر فاکتور باید بین ۱ تا ۲۰ ردیف خدمت داشته باشد." });
+    }
+
+    const items: Array<{
+      service: string;
+      provider: string;
+      amount: number;
+      commissionRate: number;
+      hormozShare: number;
+      providerShare: number;
+    }> = [];
+
+    for (const raw of body.items) {
+      const item = (raw ?? {}) as Record<string, unknown>;
+      const service = String(item.service ?? "").trim().slice(0, 120);
+      const provider = String(item.provider ?? "").trim().slice(0, 120);
+      const amount = Number(item.amount);
+      const commissionRate = Number(item.commissionRate);
+      if (!service || !provider || !Number.isSafeInteger(amount) || amount <= 0 ||
+          !Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 100) {
+        return reply.code(400).send({ message: "نام خدمت، ارائه‌دهنده، مبلغ مثبت و درصد بین صفر تا ۱۰۰ لازم است." });
+      }
+      const hormozShare = Math.round(amount * commissionRate / 100);
+      items.push({
+        service,
+        provider,
+        amount,
+        commissionRate,
+        hormozShare,
+        providerShare: amount - hormozShare
+      });
+    }
+
+    const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+    const hormozShare = items.reduce((sum, item) => sum + item.hormozShare, 0);
+    const providerShare = items.reduce((sum, item) => sum + item.providerShare, 0);
+    if (![totalAmount, hormozShare, providerShare].every(Number.isSafeInteger)) {
+      return reply.code(400).send({ message: "مجموع مبلغ از حد مجاز بیشتر است." });
+    }
+
+    const id = crypto.randomBytes(8).toString("hex").toUpperCase();
+    const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+    const invoiceNumber = `HZ-${day}-${id.slice(0, 6)}`;
+
+    try {
+      await ensureFinanceTable();
+      await db.query(
+        `INSERT INTO hormoz_finance_invoices
+          (id, invoice_number, customer_label, items, total_amount, hormoz_share, provider_share, status)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, 'draft')`,
+        [id, invoiceNumber, customerLabel, JSON.stringify(items), totalAmount, hormozShare, providerShare]
+      );
+      touchActivity();
+      return reply.code(201).send({
+        ok: true,
+        invoice: { id, invoiceNumber, customerLabel, items, totalAmount, hormozShare, providerShare, status: "draft" },
+        message: "پیش‌فاکتور داخلی ذخیره شد. پرداخت و تسویه هنوز به درگاه یا ارائه‌دهنده متصل نیست."
+      });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "ذخیره دائمی پیش‌فاکتور ناموفق بود." });
+    }
+  });
+
 }
