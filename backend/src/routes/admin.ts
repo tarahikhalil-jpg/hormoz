@@ -3,6 +3,8 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
+import { ensurePaymentLedgerTables, createPaymentIntent } from "../payments/ledger.js";
+import { listPaymentGatewayCapabilities, resolvePaymentMode } from "../payments/gateway.js";
 
 type SessionInfo = {
   role: "admin" | "marketing" | "service_coordinator";
@@ -1649,6 +1651,88 @@ export async function adminRoutes(app: FastifyInstance) {
     } catch (error) {
       request.log.error(error);
       return reply.code(503).send({ message: "ثبت سابقه پرداخت ناموفق بود." });
+    }
+  });
+
+
+  // Payment infrastructure diagnostics and a protected audit ledger.
+  // These routes do not charge customers or move money.
+  app.get("/api/v1/admin/payments/status", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ ok: false, message: "فقط مدیر اصلی به وضعیت مالی دسترسی دارد." });
+    return {
+      ok: true,
+      paymentMode: resolvePaymentMode(),
+      livePaymentsEnabled: false,
+      note: "این بخش زیرساخت و وضعیت را نشان می‌دهد؛ دریافت وجه تا اتصال و آزمایش درگاه غیرفعال است.",
+      providers: listPaymentGatewayCapabilities()
+    };
+  });
+
+  app.get("/api/v1/admin/payments/ledger", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ ok: false, message: "فقط مدیر اصلی به دفتر مالی دسترسی دارد." });
+    if (!db) return reply.code(503).send({ ok: false, message: "پایگاه داده تنظیم نشده است." });
+    try {
+      await ensurePaymentLedgerTables(db);
+      const result = await db.query(
+        `SELECT id, order_id, provider, provider_transaction_id, amount_toman,
+                currency, status, provider_reference, created_at, verified_at
+         FROM hormoz_payment_transactions
+         ORDER BY created_at DESC LIMIT 200`
+      );
+      return {
+        ok: true,
+        count: result.rows.length,
+        payments: result.rows.map(row => ({
+          id: String(row.id),
+          orderId: String(row.order_id),
+          provider: String(row.provider),
+          providerTransactionId: row.provider_transaction_id == null ? null : String(row.provider_transaction_id),
+          amountToman: Number(row.amount_toman),
+          currency: String(row.currency),
+          status: String(row.status),
+          providerReference: row.provider_reference == null ? null : String(row.provider_reference),
+          createdAt: new Date(row.created_at).toISOString(),
+          verifiedAt: row.verified_at == null ? null : new Date(row.verified_at).toISOString()
+        }))
+      };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ ok: false, message: "خواندن دفتر مالی ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/admin/payments/intents", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ ok: false, message: "فقط مدیر اصلی می‌تواند پیش‌فاکتور پرداخت ایجاد کند." });
+    if (!db) return reply.code(503).send({ ok: false, message: "پایگاه داده تنظیم نشده است." });
+    const body = (request.body ?? {}) as { orderId?: unknown; amountToman?: unknown; idempotencyKey?: unknown };
+    const orderId = String(body.orderId ?? "").trim().slice(0, 100);
+    const amountToman = Number(body.amountToman);
+    const idempotencyKey = String(body.idempotencyKey ?? "").trim().slice(0, 120);
+    if (!orderId || !idempotencyKey || !Number.isSafeInteger(amountToman) || amountToman <= 0 || amountToman > 1_000_000_000_000) {
+      return reply.code(400).send({ ok: false, message: "شناسه سفارش، مبلغ صحیح به تومان و کلید یکتای درخواست لازم است." });
+    }
+    try {
+      await ensureServiceOrdersTable();
+      const order = await db.query("SELECT id FROM hormoz_service_orders WHERE id = $1 OR order_number = $1 LIMIT 1", [orderId]);
+      if (!order.rows[0]) return reply.code(404).send({ ok: false, message: "سفارش خدماتی پیدا نشد؛ ابتدا سفارش واقعی ثبت شود." });
+      const id = crypto.randomUUID();
+      const record = await createPaymentIntent(db, {
+        id,
+        orderId: String(order.rows[0].id),
+        provider: "unconfigured",
+        amountToman,
+        currency: "IRT",
+        idempotencyKey
+      });
+      return reply.code(201).send({
+        ok: true,
+        payment: record,
+        checkoutAvailable: false,
+        message: "رکورد پرداخت در دفتر مالی ثبت شد؛ این ثبت به معنی دریافت وجه نیست و درگاه هنوز متصل نیست."
+      });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(409).send({ ok: false, message: "ثبت رکورد پرداخت انجام نشد؛ کلید تکراری یا خطای پایگاه داده را بررسی کنید." });
     }
   });
 
