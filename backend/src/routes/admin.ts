@@ -1212,7 +1212,8 @@ export async function adminRoutes(app: FastifyInstance) {
       const found = await db.query("SELECT status_history FROM hormoz_service_orders WHERE id = $1", [params.id]);
       if (!found.rows.length) return reply.code(404).send({ message: "سفارش پیدا نشد." });
       const oldHistory = Array.isArray(found.rows[0].status_history) ? found.rows[0].status_history : [];
-      const actor = getSessionInfo(request);\n      const history = [...oldHistory, { status, at: new Date().toISOString(), note, actor: actor?.displayName ?? "مدیر اصلی", role: actor?.role ?? "admin" }].slice(-100);
+      const actor = getSessionInfo(request);
+      const history = [...oldHistory, { status, at: new Date().toISOString(), note, actor: actor?.displayName ?? "مدیر اصلی", role: actor?.role ?? "admin" }].slice(-100);
       const updated = await db.query(
         "UPDATE hormoz_service_orders SET status = $2, status_history = $3::jsonb, updated_at = NOW() WHERE id = $1 RETURNING order_number, status, updated_at",
         [params.id, status, JSON.stringify(history)]
