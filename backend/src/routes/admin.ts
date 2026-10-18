@@ -97,6 +97,7 @@ async function ensureServiceOrdersTable() {
       id TEXT PRIMARY KEY,
       order_number TEXT NOT NULL UNIQUE,
       service_type TEXT NOT NULL,
+      provider_number TEXT NOT NULL DEFAULT '',
       customer_label TEXT NOT NULL DEFAULT '',
       contact TEXT NOT NULL DEFAULT '',
       language TEXT NOT NULL DEFAULT 'fa',
@@ -107,6 +108,7 @@ async function ensureServiceOrdersTable() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await db.query(`ALTER TABLE hormoz_service_orders ADD COLUMN IF NOT EXISTS provider_number TEXT NOT NULL DEFAULT ''`);
   serviceOrdersTableReady = true;
 }
 
@@ -125,6 +127,8 @@ async function ensureProvidersTable() {
       city TEXT NOT NULL DEFAULT '',
       contact TEXT NOT NULL,
       description TEXT NOT NULL DEFAULT '',
+      starting_price BIGINT NOT NULL DEFAULT 0,
+      price_unit TEXT NOT NULL DEFAULT 'برای قیمت تماس بگیرید',
       proposed_commission_rate NUMERIC(5,2),
       agreed_commission_rate NUMERIC(5,2),
       payout_method TEXT NOT NULL DEFAULT 'pending_secure_setup',
@@ -138,6 +142,8 @@ async function ensureProvidersTable() {
   `);
   // Safe migration for existing databases: public display requires explicit consent.
   await db.query(`ALTER TABLE hormoz_service_providers ADD COLUMN IF NOT EXISTS public_listing BOOLEAN NOT NULL DEFAULT FALSE`);
+  await db.query(`ALTER TABLE hormoz_service_providers ADD COLUMN IF NOT EXISTS starting_price BIGINT NOT NULL DEFAULT 0`);
+  await db.query(`ALTER TABLE hormoz_service_providers ADD COLUMN IF NOT EXISTS price_unit TEXT NOT NULL DEFAULT 'برای قیمت تماس بگیرید'`);
   providersTableReady = true;
 }
 
@@ -766,6 +772,22 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!db) return reply.code(503).send({ ok: false, message: "ثبت دائمی سفارش هنوز آماده نیست؛ لطفاً بعداً دوباره تلاش کنید." });
     const body = (request.body ?? {}) as Record<string, unknown>;
     const serviceType = String(body.serviceType ?? "").trim().slice(0, 60);
+    const providerNumber = String(body.providerNumber ?? "").trim().slice(0, 80);
+    let selectedProviderName = "";
+    if (providerNumber) {
+      try {
+        await ensureProvidersTable();
+        const providerResult = await db.query(
+          "SELECT business_name, provider_name FROM hormoz_service_providers WHERE provider_number = $1 AND status = 'approved' AND public_listing = TRUE LIMIT 1",
+          [providerNumber]
+        );
+        if (!providerResult.rows.length) return reply.code(400).send({ ok: false, message: "این ارائه‌دهنده دیگر در فهرست عمومی فعال نیست؛ لطفاً فهرست را تازه کنید." });
+        selectedProviderName = String(providerResult.rows[0].business_name || providerResult.rows[0].provider_name || "");
+      } catch (error) {
+        request.log.error(error);
+        return reply.code(503).send({ ok: false, message: "بررسی ارائه‌دهنده انتخاب‌شده موقتاً ناموفق بود." });
+      }
+    }
     const customerLabel = String(body.customerLabel ?? "").trim().slice(0, 100);
     const contact = String(body.contact ?? "").trim().slice(0, 160);
     const language = body.language === "en" ? "en" : "fa";
@@ -778,6 +800,7 @@ export async function adminRoutes(app: FastifyInstance) {
       details[String(key).slice(0, 50)] = String(value ?? "").trim().slice(0, 700);
     }
     if (!Object.values(details).some(Boolean)) return reply.code(400).send({ ok: false, message: "لطفاً جزئیات درخواست را بنویسید." });
+    if (providerNumber) details.providerName = selectedProviderName;
     const id = crypto.randomBytes(8).toString("hex").toUpperCase();
     const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
     const orderNumber = `HZ-SVC-${day}-${id.slice(0, 6)}`;
@@ -786,9 +809,9 @@ export async function adminRoutes(app: FastifyInstance) {
       await ensureServiceOrdersTable();
       await db.query(
         `INSERT INTO hormoz_service_orders
-          (id, order_number, service_type, customer_label, contact, language, details, status, status_history)
-         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,'submitted',$8::jsonb)`,
-        [id, orderNumber, serviceType, customerLabel, contact, language, JSON.stringify(details), JSON.stringify(history)]
+          (id, order_number, service_type, provider_number, customer_label, contact, language, details, status, status_history)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,'submitted',$9::jsonb)`,
+        [id, orderNumber, serviceType, providerNumber, customerLabel, contact, language, JSON.stringify(details), JSON.stringify(history)]
       );
       touchActivity();
       return reply.code(201).send({ ok: true, orderNumber, status: "submitted", message: language === "en" ? "Your request was recorded. This is not a confirmed booking or payment." : "درخواست شما ثبت شد؛ این شماره به‌تنهایی تأیید رزرو یا پرداخت نیست." });
@@ -804,11 +827,11 @@ export async function adminRoutes(app: FastifyInstance) {
     try {
       await ensureServiceOrdersTable();
       const result = await db.query(
-        "SELECT id, order_number, service_type, customer_label, contact, language, details, status, status_history, created_at, updated_at FROM hormoz_service_orders ORDER BY created_at DESC LIMIT 200"
+        "SELECT id, order_number, service_type, provider_number, customer_label, contact, language, details, status, status_history, created_at, updated_at FROM hormoz_service_orders ORDER BY created_at DESC LIMIT 200"
       );
       return { count: result.rows.length, orders: result.rows.map(row => ({
         id: String(row.id), orderNumber: String(row.order_number), serviceType: String(row.service_type),
-        customerLabel: String(row.customer_label ?? ""), contact: String(row.contact ?? ""),
+        providerNumber: String(row.provider_number ?? ""), customerLabel: String(row.customer_label ?? ""), contact: String(row.contact ?? ""),
         language: String(row.language ?? "fa"), details: row.details && typeof row.details === "object" ? row.details : {},
         status: String(row.status), statusHistory: Array.isArray(row.status_history) ? row.status_history : [],
         createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString()
@@ -856,7 +879,7 @@ export async function adminRoutes(app: FastifyInstance) {
     try {
       await ensureProvidersTable();
       const result = await db.query(
-        "SELECT provider_number, business_name, service_type, city, description, updated_at FROM hormoz_service_providers WHERE status = 'approved' AND public_listing = TRUE AND business_name <> '' ORDER BY updated_at DESC LIMIT 200"
+        "SELECT provider_number, business_name, service_type, city, description, starting_price, price_unit, updated_at FROM hormoz_service_providers WHERE status = 'approved' AND public_listing = TRUE AND business_name <> '' ORDER BY updated_at DESC LIMIT 200"
       );
       return {
         ok: true,
@@ -867,6 +890,8 @@ export async function adminRoutes(app: FastifyInstance) {
           serviceType: String(row.service_type),
           city: String(row.city ?? ""),
           description: String(row.description ?? ""),
+          startingPrice: Number(row.starting_price ?? 0),
+          priceUnit: String(row.price_unit ?? "برای قیمت تماس بگیرید"),
           updatedAt: new Date(row.updated_at).toISOString()
         }))
       };
@@ -889,6 +914,10 @@ export async function adminRoutes(app: FastifyInstance) {
     const city = String(body.city ?? "").trim().slice(0, 100);
     const contact = String(body.contact ?? "").trim().slice(0, 160);
     const description = String(body.description ?? "").trim().slice(0, 1000);
+    const startingPriceRaw = body.startingPrice;
+    const startingPrice = Number(startingPriceRaw);
+    const priceUnits = new Set(["هر ساعت", "هر مسیر", "هر سفر", "هر شب", "هر نفر", "هر وعده", "هر خدمت", "قیمت پایه"]);
+    const priceUnit = String(body.priceUnit ?? "").trim().slice(0, 50);
     const proposedRateRaw = body.proposedCommissionRate;
     const proposedRate = proposedRateRaw === "" || proposedRateRaw === null || proposedRateRaw === undefined ? null : Number(proposedRateRaw);
     const payoutMethod = ["bank_transfer", "card_to_card", "not_decided"].includes(String(body.payoutMethod)) ? String(body.payoutMethod) : "not_decided";
@@ -896,6 +925,9 @@ export async function adminRoutes(app: FastifyInstance) {
     const publicListing = body.publicListingConsent === true;
     if (!providerName || !serviceType || !contact || body.consent !== true) {
       return reply.code(400).send({ ok: false, message: "نام، نوع خدمت، راه تماس و رضایت برای ثبت لازم است." });
+    }
+    if (!Number.isSafeInteger(startingPrice) || startingPrice < 1 || startingPrice > 1000000000000 || !priceUnits.has(priceUnit)) {
+      return reply.code(400).send({ ok: false, message: "قیمت پایه باید عدد صحیح مثبت به تومان و واحد قیمت معتبر باشد." });
     }
     if (proposedRate !== null && (!Number.isFinite(proposedRate) || proposedRate < 0 || proposedRate > 100)) {
       return reply.code(400).send({ ok: false, message: "درصد پیشنهادی کارمزد باید بین صفر تا صد باشد." });
@@ -907,9 +939,9 @@ export async function adminRoutes(app: FastifyInstance) {
       await ensureProvidersTable();
       await db.query(
         `INSERT INTO hormoz_service_providers
-          (id, provider_number, provider_name, business_name, service_type, city, contact, description, proposed_commission_rate, payout_method, payout_hint, status, public_listing)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending_review',$12)`,
-        [id, providerNumber, providerName, businessName, serviceType, city, contact, description, proposedRate, payoutMethod, payoutHint, publicListing]
+          (id, provider_number, provider_name, business_name, service_type, city, contact, description, starting_price, price_unit, proposed_commission_rate, payout_method, payout_hint, status, public_listing)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending_review',$14)`,
+        [id, providerNumber, providerName, businessName, serviceType, city, contact, description, startingPrice, priceUnit, proposedRate, payoutMethod, payoutHint, publicListing]
       );
       touchActivity();
       return reply.code(201).send({ ok: true, providerNumber, status: "pending_review", message: "درخواست همکاری ثبت شد و پس از بررسی با شما تماس گرفته می‌شود. هنوز هیچ حسابی برای تسویه فعال نشده است." });
@@ -925,12 +957,13 @@ export async function adminRoutes(app: FastifyInstance) {
     try {
       await ensureProvidersTable();
       const result = await db.query(
-        "SELECT id, provider_number, provider_name, business_name, service_type, city, contact, description, proposed_commission_rate, agreed_commission_rate, payout_method, payout_hint, status, admin_note, created_at, updated_at FROM hormoz_service_providers ORDER BY created_at DESC LIMIT 200"
+        "SELECT id, provider_number, provider_name, business_name, service_type, city, contact, description, starting_price, price_unit, proposed_commission_rate, agreed_commission_rate, payout_method, payout_hint, status, admin_note, created_at, updated_at FROM hormoz_service_providers ORDER BY created_at DESC LIMIT 200"
       );
       return { count: result.rows.length, providers: result.rows.map(row => ({
         id: String(row.id), providerNumber: String(row.provider_number), providerName: String(row.provider_name),
         businessName: String(row.business_name ?? ""), serviceType: String(row.service_type), city: String(row.city ?? ""),
         contact: String(row.contact), description: String(row.description ?? ""),
+        startingPrice: Number(row.starting_price ?? 0), priceUnit: String(row.price_unit ?? "برای قیمت تماس بگیرید"),
         proposedCommissionRate: row.proposed_commission_rate === null ? null : Number(row.proposed_commission_rate),
         agreedCommissionRate: row.agreed_commission_rate === null ? null : Number(row.agreed_commission_rate),
         payoutMethod: String(row.payout_method), payoutHint: String(row.payout_hint ?? ""), status: String(row.status),
