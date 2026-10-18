@@ -212,12 +212,11 @@ function resumeVoiceListening() {
 }
 
 function speakNava(text, onDone) {
-  if (!voiceReplyEnabled || !("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined" || !text) {
+  if (!text) {
     if (typeof onDone === "function") onDone();
     return;
   }
 
-  const synth = window.speechSynthesis;
   const cleaned = String(text).replace(/\s+/g, " ").trim();
   if (!cleaned) {
     if (typeof onDone === "function") onDone();
@@ -225,18 +224,19 @@ function speakNava(text, onDone) {
   }
 
   let finished = false;
-  let started = false;
+  let browserStarted = false;
   let watchdog = null;
   let index = 0;
+  let fallbackAudio = null;
   const chunks = [];
   let remaining = cleaned;
   while (remaining.length) {
-    if (remaining.length <= 140) {
+    if (remaining.length <= 170) {
       chunks.push(remaining);
       break;
     }
-    let cut = remaining.lastIndexOf(" ", 140);
-    if (cut < 60) cut = 140;
+    let cut = remaining.lastIndexOf(" ", 170);
+    if (cut < 70) cut = 170;
     chunks.push(remaining.slice(0, cut).trim());
     remaining = remaining.slice(cut).trim();
   }
@@ -250,6 +250,49 @@ function speakNava(text, onDone) {
     if (typeof onDone === "function") onDone();
   };
 
+  // Fallback audio does not depend on the phone's installed speech engine.
+  const playOnlinePersianAudio = () => {
+    if (finished) return;
+    if (fallbackAudio) {
+      try { fallbackAudio.pause(); } catch (_) {}
+    }
+    fallbackAudio = new Audio();
+    fallbackAudio.preload = "auto";
+    let audioIndex = 0;
+    const playNextAudioChunk = () => {
+      if (finished) return;
+      if (audioIndex >= chunks.length) {
+        finish("پاسخ صوتی نوا پخش شد.");
+        return;
+      }
+      const params = new URLSearchParams({
+        ie: "UTF-8",
+        q: chunks[audioIndex++],
+        tl: "fa",
+        client: "tw-ob"
+      });
+      fallbackAudio.src = "https://translate.google.com/translate_tts?" + params.toString();
+      fallbackAudio.onended = playNextAudioChunk;
+      fallbackAudio.onerror = () => finish("صدای آنلاین نوا هم در این اتصال در دسترس نیست؛ پاسخ متنی آماده است.");
+      const playPromise = fallbackAudio.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch((error) => {
+          console.warn("Nava online audio fallback failed:", error);
+          finish("پخش صوتی مسدود شد؛ پاسخ متنی آماده است. یک بار دیگر دکمه شنیدن را لمس کن.");
+        });
+      }
+    };
+    setVoiceStatus("موتور صدای گوشی شروع نشد؛ دارم صدای فارسی آنلاین نوا را امتحان می‌کنم…");
+    playNextAudioChunk();
+  };
+
+  const synthAvailable = ("speechSynthesis" in window) && typeof SpeechSynthesisUtterance !== "undefined";
+  if (!synthAvailable) {
+    playOnlinePersianAudio();
+    return;
+  }
+
+  const synth = window.speechSynthesis;
   const startNext = () => {
     if (finished) return;
     if (index >= chunks.length) {
@@ -264,7 +307,7 @@ function speakNava(text, onDone) {
     if (persianVoice) utterance.voice = persianVoice;
 
     utterance.onstart = () => {
-      started = true;
+      browserStarted = true;
       speaking = true;
       setVoiceStatus("نوا در حال خواندن پاسخ است…");
     };
@@ -274,25 +317,30 @@ function speakNava(text, onDone) {
     };
     utterance.onerror = (event) => {
       console.warn("Nava speech output error:", event && event.error);
-      finish("مرورگر نتوانست صدای نوا را پخش کند؛ پاسخ متنی آماده است. دوباره «شنیدن پاسخ نوا» را بزن.");
+      if (!browserStarted) {
+        try { synth.cancel(); } catch (_) {}
+        playOnlinePersianAudio();
+      } else {
+        finish("خواندن پاسخ در مرورگر متوقف شد؛ دوباره «شنیدن پاسخ نوا» را بزن.");
+      }
     };
     synth.speak(utterance);
   };
 
   try {
     setVoiceStatus("در حال آماده‌سازی صدای نوا…");
-    // Do not call cancel() before speak: on some Android browsers it can suppress speech.
     if (synth.paused) synth.resume();
     startNext();
-
     watchdog = setTimeout(() => {
-      if (!finished && !started) {
-        finish("مرورگر صدای نوا را شروع نکرد. دکمه «شنیدن پاسخ نوا» را لمس کن تا پخش با اقدام مستقیم شروع شود.");
+      if (!finished && !browserStarted) {
+        try { synth.cancel(); } catch (_) {}
+        speaking = false;
+        playOnlinePersianAudio();
       }
-    }, 8000);
+    }, 2500);
   } catch (error) {
     console.error("Nava speech output failed:", error);
-    finish("پخش صوتی مرورگر با خطا روبه‌رو شد؛ پاسخ متنی آماده است.");
+    playOnlinePersianAudio();
   }
 }
 
