@@ -252,6 +252,42 @@ async function ensureFinanceTable() {
   financeTableReady = true;
 }
 
+
+let teamWorkTablesReady = false;
+async function ensureTeamWorkTables() {
+  if (!db || teamWorkTablesReady) return;
+  await ensureTeamTables();
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_team_work_items (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'عمومی',
+      description TEXT NOT NULL DEFAULT '',
+      reward_amount BIGINT NOT NULL DEFAULT 0 CHECK (reward_amount >= 0),
+      status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed')),
+      created_by TEXT NOT NULL DEFAULT 'admin',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_team_work_submissions (
+      id TEXT PRIMARY KEY,
+      work_id TEXT NOT NULL REFERENCES hormoz_team_work_items(id),
+      member_id TEXT NOT NULL REFERENCES hormoz_team_members(id),
+      notes TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'approved', 'rejected')),
+      reward_amount BIGINT NOT NULL DEFAULT 0 CHECK (reward_amount >= 0),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      reviewed_at TIMESTAMPTZ,
+      paid_at TIMESTAMPTZ,
+      payment_reference TEXT NOT NULL DEFAULT '',
+      UNIQUE (work_id, member_id)
+    )
+  `);
+  teamWorkTablesReady = true;
+}
+
 let feedbackTableReady = false;
 
 async function ensureFeedbackTable() {
@@ -1465,5 +1501,156 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.code(503).send({ message: "ذخیره دائمی پیش‌فاکتور ناموفق بود." });
     }
   });
+
+
+  // Work opportunities and monthly work-based earnings. Transfers are recorded only after a real payment.
+  app.get("/api/v1/team/work", async (request, reply) => {
+    const session = getSessionInfo(request);
+    if (!session || !session.memberId && session.role !== "admin") return reply.code(401).send({ message: "ابتدا وارد پنل شوید." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده برای ثبت کارکرد آماده نیست." });
+    try {
+      await ensureTeamWorkTables();
+      const tasks = session.role === "admin"
+        ? await db.query("SELECT id, title, category, description, reward_amount, status, created_at FROM hormoz_team_work_items ORDER BY created_at DESC LIMIT 200")
+        : await db.query("SELECT w.id, w.title, w.category, w.description, w.reward_amount, w.status, w.created_at FROM hormoz_team_work_items w WHERE w.status='open' OR EXISTS (SELECT 1 FROM hormoz_team_work_submissions s WHERE s.work_id=w.id AND s.member_id=$1) ORDER BY w.created_at DESC LIMIT 100", [session.memberId]);
+      const submissions = session.role === "admin"
+        ? await db.query("SELECT s.id, s.work_id, s.member_id, m.display_name, w.title AS work_title, s.notes, s.status, s.reward_amount, s.created_at, s.reviewed_at, s.paid_at, s.payment_reference FROM hormoz_team_work_submissions s JOIN hormoz_team_members m ON m.id=s.member_id JOIN hormoz_team_work_items w ON w.id=s.work_id ORDER BY s.created_at DESC LIMIT 300")
+        : await db.query("SELECT s.id, s.work_id, s.member_id, w.title AS work_title, s.notes, s.status, s.reward_amount, s.created_at, s.reviewed_at, s.paid_at FROM hormoz_team_work_submissions s JOIN hormoz_team_work_items w ON w.id=s.work_id WHERE s.member_id=$1 ORDER BY s.created_at DESC LIMIT 100", [session.memberId]);
+      return {
+        tasks: tasks.rows.map(row => ({ id: String(row.id), title: String(row.title), category: String(row.category), description: String(row.description ?? ""), rewardAmount: Number(row.reward_amount), status: String(row.status), createdAt: new Date(row.created_at).toISOString() })),
+        submissions: submissions.rows.map(row => ({ id: String(row.id), workId: String(row.work_id), memberId: String(row.member_id), memberName: String(row.display_name ?? ""), workTitle: String(row.work_title), notes: String(row.notes ?? ""), status: String(row.status), rewardAmount: Number(row.reward_amount), createdAt: new Date(row.created_at).toISOString(), reviewedAt: row.reviewed_at ? new Date(row.reviewed_at).toISOString() : null, paidAt: row.paid_at ? new Date(row.paid_at).toISOString() : null, paymentReference: String(row.payment_reference ?? "") }))
+      };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "دریافت فرصت‌های کاری ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/admin/work", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند فرصت کاری تعریف کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const body = (request.body ?? {}) as { title?: unknown; category?: unknown; description?: unknown; rewardAmount?: unknown };
+    const title = String(body.title ?? "").trim().slice(0, 140);
+    const category = String(body.category ?? "عمومی").trim().slice(0, 80) || "عمومی";
+    const description = String(body.description ?? "").trim().slice(0, 1200);
+    const rewardAmount = Number(body.rewardAmount ?? 0);
+    if (!title || !description || !Number.isSafeInteger(rewardAmount) || rewardAmount < 0 || rewardAmount > 1000000000000) {
+      return reply.code(400).send({ message: "عنوان و شرح کار لازم است؛ پاداش باید عدد صحیح صفر یا بیشتر به تومان باشد." });
+    }
+    try {
+      await ensureTeamWorkTables();
+      const id = crypto.randomBytes(10).toString("hex").toUpperCase();
+      await db.query("INSERT INTO hormoz_team_work_items (id,title,category,description,reward_amount,created_by) VALUES ($1,$2,$3,$4,$5,'admin')", [id,title,category,description,rewardAmount]);
+      touchActivity();
+      return reply.code(201).send({ ok: true, message: "فرصت کاری جدید ثبت شد.", id });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "ثبت فرصت کاری ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/team/work/:id/submit", async (request, reply) => {
+    const session = getSessionInfo(request);
+    if (!session?.memberId || !["marketing", "service_coordinator"].includes(session.role)) return reply.code(403).send({ message: "فقط عضو واردشده می‌تواند گزارش انجام کار ثبت کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const params = request.params as { id?: string };
+    const body = (request.body ?? {}) as { notes?: unknown };
+    const notes = String(body.notes ?? "").trim().slice(0, 1200);
+    if (!params.id || !notes) return reply.code(400).send({ message: "شرح نتیجه کار لازم است." });
+    try {
+      await ensureTeamWorkTables();
+      const task = await db.query("SELECT id,status FROM hormoz_team_work_items WHERE id=$1", [params.id]);
+      if (!task.rows.length || task.rows[0].status !== "open") return reply.code(404).send({ message: "این فرصت کاری پیدا نشد یا بسته شده است." });
+      const id = crypto.randomBytes(10).toString("hex").toUpperCase();
+      await db.query("INSERT INTO hormoz_team_work_submissions (id,work_id,member_id,notes) VALUES ($1,$2,$3,$4)", [id,params.id,session.memberId,notes]);
+      touchActivity();
+      return reply.code(201).send({ ok: true, message: "گزارش کار ثبت شد و برای بررسی مدیر ارسال شد." });
+    } catch (error: any) {
+      if (error?.code === "23505") return reply.code(409).send({ message: "برای این کار قبلاً گزارشی ثبت کرده‌اید." });
+      request.log.error(error);
+      return reply.code(503).send({ message: "ثبت گزارش کار ناموفق بود." });
+    }
+  });
+
+  app.patch("/api/v1/admin/work/submissions/:id", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند گزارش کار را بررسی کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const params = request.params as { id?: string };
+    const body = (request.body ?? {}) as { status?: unknown; rewardAmount?: unknown };
+    const status = String(body.status ?? "");
+    const rewardAmount = Number(body.rewardAmount ?? 0);
+    if (!params.id || !["approved", "rejected"].includes(status) || !Number.isSafeInteger(rewardAmount) || rewardAmount < 0 || rewardAmount > 1000000000000) {
+      return reply.code(400).send({ message: "وضعیت یا مبلغ پاداش معتبر نیست." });
+    }
+    try {
+      await ensureTeamWorkTables();
+      const result = await db.query(
+        "UPDATE hormoz_team_work_submissions SET status=$2, reward_amount=$3, reviewed_at=NOW() WHERE id=$1 AND status='submitted' RETURNING id",
+        [params.id,status,status === "approved" ? rewardAmount : 0]
+      );
+      if (!result.rows.length) return reply.code(404).send({ message: "گزارش پیدا نشد یا قبلاً بررسی شده است." });
+      touchActivity();
+      return { ok: true, message: status === "approved" ? "گزارش تأیید شد و پاداش به کارکرد ثبت‌شده اضافه شد." : "گزارش رد شد؛ مبلغی به کارکرد اضافه نشد." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "بررسی گزارش کار ناموفق بود." });
+    }
+  });
+
+  app.get("/api/v1/admin/payroll", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند گزارش کارکرد ماهانه را ببیند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const query = request.query as { month?: string };
+    const month = String(query?.month ?? "");
+    if (!/^\d{4}-\d{2}$/.test(month)) return reply.code(400).send({ message: "ماه را با قالب YYYY-MM بفرستید." });
+    try {
+      await ensureTeamWorkTables();
+      const result = await db.query(
+        `SELECT m.id AS member_id, m.display_name, m.username,
+          COUNT(s.id)::int AS approved_tasks,
+          COALESCE(SUM(s.reward_amount),0)::bigint AS total_amount,
+          COALESCE(SUM(CASE WHEN s.paid_at IS NOT NULL THEN s.reward_amount ELSE 0 END),0)::bigint AS paid_amount,
+          COALESCE(SUM(CASE WHEN s.paid_at IS NULL THEN s.reward_amount ELSE 0 END),0)::bigint AS unpaid_amount
+         FROM hormoz_team_members m
+         LEFT JOIN hormoz_team_work_submissions s ON s.member_id=m.id AND s.status='approved'
+           AND s.reviewed_at >= ($1 || '-01')::date
+           AND s.reviewed_at < (($1 || '-01')::date + INTERVAL '1 month')
+         GROUP BY m.id,m.display_name,m.username
+         ORDER BY m.display_name`,
+        [month]
+      );
+      return { month, payroll: result.rows.map(row => ({ memberId: String(row.member_id), displayName: String(row.display_name), username: String(row.username), approvedTasks: Number(row.approved_tasks), totalAmount: Number(row.total_amount), paidAmount: Number(row.paid_amount), unpaidAmount: Number(row.unpaid_amount) })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "محاسبه کارکرد ماهانه ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/admin/payroll/mark-paid", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند پرداخت را ثبت کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const body = (request.body ?? {}) as { memberId?: unknown; month?: unknown; paymentReference?: unknown };
+    const memberId = String(body.memberId ?? "");
+    const month = String(body.month ?? "");
+    const paymentReference = String(body.paymentReference ?? "").trim().slice(0, 120);
+    if (!memberId || !/^\d{4}-\d{2}$/.test(month) || !paymentReference) return reply.code(400).send({ message: "عضو، ماه و شناسه/یادداشت پرداخت لازم است." });
+    try {
+      await ensureTeamWorkTables();
+      const result = await db.query(
+        `UPDATE hormoz_team_work_submissions SET paid_at=NOW(), payment_reference=$3
+         WHERE member_id=$1 AND status='approved' AND paid_at IS NULL
+           AND reviewed_at >= ($2 || '-01')::date
+           AND reviewed_at < (($2 || '-01')::date + INTERVAL '1 month')
+         RETURNING id`,
+        [memberId,month,paymentReference]
+      );
+      touchActivity();
+      return { ok: true, markedCount: result.rowCount ?? 0, message: "وضعیت پرداخت ثبت شد. این عملیات فقط سابقه پرداخت واقعی را ثبت می‌کند و پولی جابه‌جا نمی‌کند." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "ثبت سابقه پرداخت ناموفق بود." });
+    }
+  });
+
 
 }
