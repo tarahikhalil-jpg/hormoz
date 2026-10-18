@@ -150,10 +150,8 @@ function addMessage(text, type) {
     speakButton.textContent = "🔊 شنیدن پاسخ نوا";
     speakButton.style.cssText = "margin-top:10px;padding:9px 12px;font-size:13px;border-radius:10px;background:rgba(255,255,255,.12);color:inherit;border:1px solid rgba(255,255,255,.3);cursor:pointer;";
     speakButton.addEventListener("click", () => {
-      if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
-        setVoiceStatus("خواندن صوتی در این مرورگر پشتیبانی نمی‌شود؛ لطفاً Chrome را امتحان کن.");
-        return;
-      }
+      // Let speakNava choose browser speech or its online Persian-audio fallback.
+      // Do not block fallback audio just because SpeechSynthesis is unavailable.
       voiceReplyEnabled = true;
       if (voiceReplyButton) {
         voiceReplyButton.setAttribute("aria-pressed", "true");
