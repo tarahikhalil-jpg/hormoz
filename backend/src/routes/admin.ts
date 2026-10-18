@@ -778,10 +778,26 @@ export async function adminRoutes(app: FastifyInstance) {
       try {
         await ensureProvidersTable();
         const providerResult = await db.query(
-          "SELECT business_name, provider_name FROM hormoz_service_providers WHERE provider_number = $1 AND status = 'approved' AND public_listing = TRUE LIMIT 1",
+          "SELECT business_name, provider_name, service_type FROM hormoz_service_providers WHERE provider_number = $1 AND status = 'approved' AND public_listing = TRUE LIMIT 1",
           [providerNumber]
         );
         if (!providerResult.rows.length) return reply.code(400).send({ ok: false, message: "این ارائه‌دهنده دیگر در فهرست عمومی فعال نیست؛ لطفاً فهرست را تازه کنید." });
+        const providerServiceType = String(providerResult.rows[0].service_type ?? "");
+        const providerOrderTypes: Record<string, string> = {
+          "اقامتگاه و سوئیت": "stay",
+          "راننده و خودرو": "driver",
+          "قایق و شناور": "boat",
+          "رستوران و غذا": "food",
+          "راهنمای گردشگری": "tourism",
+          "بلیت و سفر": "other",
+          "تعمیرکار و برق‌کار": "repair",
+          "مهارت و خدمات تخصصی": "skill",
+          "سایر": "other"
+        };
+        const expectedOrderType = providerOrderTypes[providerServiceType] ?? "other";
+        if (serviceType !== expectedOrderType) {
+          return reply.code(400).send({ ok: false, message: "نوع درخواست با خدمت ارائه‌دهنده انتخاب‌شده هماهنگ نیست؛ لطفاً فهرست را تازه کنید و دوباره انتخاب کنید." });
+        }
         selectedProviderName = String(providerResult.rows[0].business_name || providerResult.rows[0].provider_name || "");
       } catch (error) {
         request.log.error(error);
