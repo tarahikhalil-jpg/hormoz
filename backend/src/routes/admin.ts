@@ -110,6 +110,34 @@ async function ensureServiceOrdersTable() {
   serviceOrdersTableReady = true;
 }
 
+
+let providersTableReady = false;
+
+async function ensureProvidersTable() {
+  if (!db || providersTableReady) return;
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS hormoz_service_providers (
+      id TEXT PRIMARY KEY,
+      provider_number TEXT NOT NULL UNIQUE,
+      provider_name TEXT NOT NULL,
+      business_name TEXT NOT NULL DEFAULT '',
+      service_type TEXT NOT NULL,
+      city TEXT NOT NULL DEFAULT '',
+      contact TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      proposed_commission_rate NUMERIC(5,2),
+      agreed_commission_rate NUMERIC(5,2),
+      payout_method TEXT NOT NULL DEFAULT 'pending_secure_setup',
+      payout_hint TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending_review',
+      admin_note TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  providersTableReady = true;
+}
+
 let financeTableReady = false;
 
 async function ensureFinanceTable() {
@@ -814,6 +842,99 @@ export async function adminRoutes(app: FastifyInstance) {
     }
   });
 
+
+
+  /*
+   * ثبت اولیه ارائه‌دهندگان خدمات؛ اطلاعات بانکی کامل در این فرم ذخیره نمی‌شود.
+   */
+  const providerStatuses = new Set(["pending_review", "approved", "needs_changes", "suspended"]);
+  app.post("/api/v1/providers", async (request, reply) => {
+    if (!db) return reply.code(503).send({ ok: false, message: "ثبت دائمی ارائه‌دهندگان هنوز آماده نیست." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const providerName = String(body.providerName ?? "").trim().slice(0, 120);
+    const businessName = String(body.businessName ?? "").trim().slice(0, 160);
+    const serviceType = String(body.serviceType ?? "").trim().slice(0, 80);
+    const city = String(body.city ?? "").trim().slice(0, 100);
+    const contact = String(body.contact ?? "").trim().slice(0, 160);
+    const description = String(body.description ?? "").trim().slice(0, 1000);
+    const proposedRateRaw = body.proposedCommissionRate;
+    const proposedRate = proposedRateRaw === "" || proposedRateRaw === null || proposedRateRaw === undefined ? null : Number(proposedRateRaw);
+    const payoutMethod = ["bank_transfer", "card_to_card", "not_decided"].includes(String(body.payoutMethod)) ? String(body.payoutMethod) : "not_decided";
+    const payoutHint = String(body.payoutHint ?? "").trim().slice(0, 4).replace(/\D/g, "");
+    if (!providerName || !serviceType || !contact || body.consent !== true) {
+      return reply.code(400).send({ ok: false, message: "نام، نوع خدمت، راه تماس و رضایت برای ثبت لازم است." });
+    }
+    if (proposedRate !== null && (!Number.isFinite(proposedRate) || proposedRate < 0 || proposedRate > 100)) {
+      return reply.code(400).send({ ok: false, message: "درصد پیشنهادی کارمزد باید بین صفر تا صد باشد." });
+    }
+    const id = crypto.randomBytes(8).toString("hex").toUpperCase();
+    const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+    const providerNumber = `HZ-PRO-${day}-${id.slice(0, 6)}`;
+    try {
+      await ensureProvidersTable();
+      await db.query(
+        `INSERT INTO hormoz_service_providers
+          (id, provider_number, provider_name, business_name, service_type, city, contact, description, proposed_commission_rate, payout_method, payout_hint, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending_review')`,
+        [id, providerNumber, providerName, businessName, serviceType, city, contact, description, proposedRate, payoutMethod, payoutHint]
+      );
+      touchActivity();
+      return reply.code(201).send({ ok: true, providerNumber, status: "pending_review", message: "درخواست همکاری ثبت شد و پس از بررسی با شما تماس گرفته می‌شود. هنوز هیچ حسابی برای تسویه فعال نشده است." });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ ok: false, message: "ثبت دائمی درخواست همکاری ناموفق بود." });
+    }
+  });
+
+  app.get("/api/v1/admin/providers", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "نیاز به ورود مدیر دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده روی سرور تنظیم نشده است." });
+    try {
+      await ensureProvidersTable();
+      const result = await db.query(
+        "SELECT id, provider_number, provider_name, business_name, service_type, city, contact, description, proposed_commission_rate, agreed_commission_rate, payout_method, payout_hint, status, admin_note, created_at, updated_at FROM hormoz_service_providers ORDER BY created_at DESC LIMIT 200"
+      );
+      return { count: result.rows.length, providers: result.rows.map(row => ({
+        id: String(row.id), providerNumber: String(row.provider_number), providerName: String(row.provider_name),
+        businessName: String(row.business_name ?? ""), serviceType: String(row.service_type), city: String(row.city ?? ""),
+        contact: String(row.contact), description: String(row.description ?? ""),
+        proposedCommissionRate: row.proposed_commission_rate === null ? null : Number(row.proposed_commission_rate),
+        agreedCommissionRate: row.agreed_commission_rate === null ? null : Number(row.agreed_commission_rate),
+        payoutMethod: String(row.payout_method), payoutHint: String(row.payout_hint ?? ""), status: String(row.status),
+        adminNote: String(row.admin_note ?? ""), createdAt: new Date(row.created_at).toISOString(),
+        updatedAt: new Date(row.updated_at).toISOString()
+      })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "خواندن ارائه‌دهندگان ناموفق بود." });
+    }
+  });
+
+  app.patch("/api/v1/admin/providers/:id", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "نیاز به ورود مدیر دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده روی سرور تنظیم نشده است." });
+    const params = request.params as { id?: string };
+    const body = (request.body ?? {}) as { status?: string; agreedCommissionRate?: unknown; adminNote?: string };
+    const status = String(body.status ?? "");
+    const rate = body.agreedCommissionRate === "" || body.agreedCommissionRate === null || body.agreedCommissionRate === undefined ? null : Number(body.agreedCommissionRate);
+    const adminNote = String(body.adminNote ?? "").trim().slice(0, 500);
+    if (!params.id || !providerStatuses.has(status)) return reply.code(400).send({ message: "وضعیت ارائه‌دهنده معتبر نیست." });
+    if (rate !== null && (!Number.isFinite(rate) || rate < 0 || rate > 100)) return reply.code(400).send({ message: "کارمزد توافق‌شده باید بین صفر تا صد باشد." });
+    if (status === "approved" && rate === null) return reply.code(400).send({ message: "برای تأیید همکاری، ابتدا کارمزد توافق‌شده را ثبت کنید." });
+    try {
+      await ensureProvidersTable();
+      const result = await db.query(
+        "UPDATE hormoz_service_providers SET status=$2, agreed_commission_rate=$3, admin_note=$4, updated_at=NOW() WHERE id=$1 RETURNING provider_number, status, agreed_commission_rate",
+        [params.id, status, rate, adminNote]
+      );
+      if (!result.rows.length) return reply.code(404).send({ message: "ارائه‌دهنده پیدا نشد." });
+      touchActivity();
+      return { ok: true, providerNumber: String(result.rows[0].provider_number), status: String(result.rows[0].status), agreedCommissionRate: result.rows[0].agreed_commission_rate === null ? null : Number(result.rows[0].agreed_commission_rate), message: "وضعیت و کارمزد همکاری ثبت شد؛ دریافت وجه و تسویه هنوز به درگاه پرداخت متصل نیست." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "به‌روزرسانی اطلاعات ارائه‌دهنده ناموفق بود." });
+    }
+  });
 
   /*
    * حسابداری خدمات و پیش‌فاکتور داخلی هرمز
