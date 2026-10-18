@@ -507,6 +507,8 @@ export async function adminRoutes(app: FastifyInstance) {
    * ورود مدیر
    */
   app.post("/api/v1/admin/login", async (request, reply) => {
+    const ipKey = `admin:${String(request.ip ?? "unknown")}`;
+    if (loginIsBlocked(ipKey)) return reply.code(429).send({ message: "تلاش‌های ورود زیاد بوده است؛ ۱۵ دقیقه دیگر دوباره تلاش کنید." });
     const body = (request.body ?? {}) as {
       password?: string;
     };
@@ -529,11 +531,13 @@ export async function adminRoutes(app: FastifyInstance) {
       );
 
     if (!valid) {
+      noteLoginFailure(ipKey);
       return reply.code(401).send({
         message: "رمز مدیریت نادرست است."
       });
     }
 
+    clearLoginFailures(ipKey);
     const session = crypto.randomBytes(32).toString("hex");
 
     sessions.set(session, {
@@ -1208,7 +1212,7 @@ export async function adminRoutes(app: FastifyInstance) {
       const found = await db.query("SELECT status_history FROM hormoz_service_orders WHERE id = $1", [params.id]);
       if (!found.rows.length) return reply.code(404).send({ message: "سفارش پیدا نشد." });
       const oldHistory = Array.isArray(found.rows[0].status_history) ? found.rows[0].status_history : [];
-      const history = [...oldHistory, { status, at: new Date().toISOString(), note }].slice(-100);
+      const actor = getSessionInfo(request);\n      const history = [...oldHistory, { status, at: new Date().toISOString(), note, actor: actor?.displayName ?? "مدیر اصلی", role: actor?.role ?? "admin" }].slice(-100);
       const updated = await db.query(
         "UPDATE hormoz_service_orders SET status = $2, status_history = $3::jsonb, updated_at = NOW() WHERE id = $1 RETURNING order_number, status, updated_at",
         [params.id, status, JSON.stringify(history)]
