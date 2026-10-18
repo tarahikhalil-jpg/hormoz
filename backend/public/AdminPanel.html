@@ -1119,7 +1119,7 @@ async function loadFinanceInvoices() {
         escapeHtml(toman(item.providerShare)) + "</small>"
       ).join("<br>");
       return "<tr><td>" + escapeHtml(invoice.invoiceNumber) + "<br><small>" +
-        escapeHtml(formatDate(invoice.createdAt)) + "</small></td><td>" +
+        escapeHtml(formatTime(invoice.createdAt)) + "</small></td><td>" +
         (escapeHtml(invoice.customerLabel) || "—") + "</td><td>" + services +
         "</td><td>" + escapeHtml(toman(invoice.totalAmount)) + "</td><td>" +
         escapeHtml(toman(invoice.hormozShare)) + "</td><td>" +
