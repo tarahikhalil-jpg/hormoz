@@ -148,6 +148,21 @@
       border-bottom: 0;
     }
 
+
+    .finance-note{padding:12px 14px;border:1px solid #b88c3d55;background:#b88c3d12;color:#f3dba2;border-radius:12px;font-size:13px;line-height:1.9;margin:12px 0}
+    .finance-row{display:grid;grid-template-columns:1.2fr 1.2fr .8fr .65fr;gap:8px;margin:10px 0;padding:12px;background:#10151b;border:1px solid #29313a;border-radius:14px}
+    .finance-row label{display:block;color:#aeb6c2;font-size:12px;margin-bottom:5px}
+    .finance-row input,.finance-input{width:100%;min-width:0;padding:10px;border-radius:10px;border:1px solid #39414c;background:#0f1318;color:white;font:inherit}
+    .finance-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+    .finance-summary div{padding:12px;border:1px solid #29313a;background:#10151b;border-radius:12px}
+    .finance-summary small{display:block;color:#aeb6c2}
+    .finance-summary strong{display:block;margin-top:4px;overflow-wrap:anywhere}
+    .finance-table-wrap{overflow-x:auto}
+    .finance-table{width:100%;border-collapse:collapse;min-width:560px;font-size:13px}
+    .finance-table th,.finance-table td{padding:10px;border-bottom:1px solid #29313a;text-align:right;vertical-align:top}
+    .finance-table th{color:#f0d28c}
+    .finance-status{display:inline-block;padding:3px 8px;border-radius:999px;background:#b88c3d1a;color:#f3dba2;font-size:12px}
+
     .feedback {
       background: #10151b;
       border: 1px solid #29313a;
@@ -395,6 +410,41 @@
 
     </section>
 
+
+
+    <!-- FINANCE -->
+    <section class="card" id="financePanel">
+      <h2>🧾 حسابداری و سهم خدمات</h2>
+      <p class="subtitle">ثبت پیش‌فاکتور داخلی برای اقامت، حمل‌ونقل، غذا، بلیت و سایر خدمات؛ هر ردیف سهم هرمز و ارائه‌دهنده را جدا حساب می‌کند.</p>
+      <div class="finance-note">شفافیت مهم است: این نسخه فاکتور داخلی را در پایگاه داده ذخیره می‌کند، اما هنوز پرداخت آنلاین، صدور بلیت، دریافت پول یا تسویه خودکار انجام نمی‌دهد. درصد هر خدمت باید مطابق قرارداد تعیین شود. مبلغ‌ها به تومان هستند.</div>
+      <label for="financeCustomer">نام یا شناسه اختیاری مشتری (اطلاعات حساس وارد نکنید)</label>
+      <input id="financeCustomer" class="finance-input" maxlength="120" placeholder="مثلاً سفارش گردشگری ۰۰۱">
+      <div id="financeItems">
+        <div class="finance-row">
+          <div><label>شرح خدمت</label><input class="f-service" maxlength="120" placeholder="اقامت سوئیت"></div>
+          <div><label>ارائه‌دهنده</label><input class="f-provider" maxlength="120" placeholder="نام سوئیت یا کسب‌وکار"></div>
+          <div><label>مبلغ (تومان)</label><input class="f-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="2000000"></div>
+          <div><label>سهم هرمز %</label><input class="f-rate" type="number" min="0" max="100" step="0.1" value="10" inputmode="decimal"></div>
+        </div>
+      </div>
+      <div class="actions" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" onclick="addFinanceRow()">＋ افزودن خدمت</button>
+        <button type="button" onclick="previewFinance()">محاسبه سهم‌ها</button>
+        <button type="button" onclick="saveFinanceInvoice()">ذخیره پیش‌فاکتور</button>
+      </div>
+      <div id="financePreview" class="finance-summary">
+        <div><small>جمع سفارش</small><strong>—</strong></div>
+        <div><small>سهم هوش هرمز</small><strong>—</strong></div>
+        <div><small>سهم ارائه‌دهندگان</small><strong>—</strong></div>
+      </div>
+      <div id="financeMessage" class="result"></div>
+      <hr style="border:0;border-top:1px solid #29313a;margin:22px 0">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+        <h3 style="margin:0">فاکتورهای ثبت‌شده</h3>
+        <button type="button" onclick="loadFinanceInvoices()">🔄 تازه‌سازی فاکتورها</button>
+      </div>
+      <div id="financeInvoices" class="result">برای دیدن فاکتورها، تازه‌سازی را بزنید.</div>
+    </section>
 
     <!-- SYSTEM -->
 
@@ -978,13 +1028,117 @@ function escapeHtml(
 }
 
 
+
+function addFinanceRow() {
+  const holder = document.getElementById("financeItems");
+  if (holder.querySelectorAll(".finance-row").length >= 20) {
+    document.getElementById("financeMessage").textContent = "حداکثر ۲۰ ردیف برای هر پیش‌فاکتور مجاز است.";
+    return;
+  }
+  const row = document.createElement("div");
+  row.className = "finance-row";
+  row.innerHTML = '<div><label>شرح خدمت</label><input class="f-service" maxlength="120" placeholder="تهیه غذا"></div><div><label>ارائه‌دهنده</label><input class="f-provider" maxlength="120" placeholder="نام کسب‌وکار"></div><div><label>مبلغ (تومان)</label><input class="f-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="400000"></div><div><label>سهم هرمز %</label><input class="f-rate" type="number" min="0" max="100" step="0.1" value="10" inputmode="decimal"></div>';
+  holder.appendChild(row);
+}
+
+function readFinanceItems() {
+  return Array.from(document.querySelectorAll("#financeItems .finance-row")).map(row => ({
+    service: row.querySelector(".f-service").value.trim(),
+    provider: row.querySelector(".f-provider").value.trim(),
+    amount: Number(row.querySelector(".f-amount").value),
+    commissionRate: Number(row.querySelector(".f-rate").value)
+  }));
+}
+
+function toman(value) {
+  return new Intl.NumberFormat("fa-IR").format(Math.round(Number(value) || 0)) + " تومان";
+}
+
+function previewFinance() {
+  const items = readFinanceItems();
+  let total = 0, hormoz = 0, provider = 0;
+  for (const item of items) {
+    if (!item.service || !item.provider || !Number.isSafeInteger(item.amount) || item.amount <= 0 ||
+        !Number.isFinite(item.commissionRate) || item.commissionRate < 0 || item.commissionRate > 100) {
+      document.getElementById("financeMessage").textContent = "لطفاً شرح خدمت، ارائه‌دهنده، مبلغ مثبت و درصد بین صفر تا ۱۰۰ را برای همه ردیف‌ها کامل کنید.";
+      document.getElementById("financeMessage").className = "result error";
+      return;
+    }
+    const share = Math.round(item.amount * item.commissionRate / 100);
+    total += item.amount;
+    hormoz += share;
+    provider += item.amount - share;
+  }
+  document.getElementById("financePreview").innerHTML =
+    '<div><small>جمع سفارش</small><strong>' + escapeHtml(toman(total)) + '</strong></div>' +
+    '<div><small>سهم هوش هرمز</small><strong>' + escapeHtml(toman(hormoz)) + '</strong></div>' +
+    '<div><small>سهم ارائه‌دهندگان</small><strong>' + escapeHtml(toman(provider)) + '</strong></div>';
+  document.getElementById("financeMessage").textContent = "محاسبه انجام شد؛ برای ثبت دائمی، «ذخیره پیش‌فاکتور» را بزنید.";
+  document.getElementById("financeMessage").className = "result success";
+}
+
+async function saveFinanceInvoice() {
+  const message = document.getElementById("financeMessage");
+  const items = readFinanceItems();
+  previewFinance();
+  if (message.classList.contains("error")) return;
+  message.textContent = "در حال ذخیره پیش‌فاکتور…";
+  message.className = "result warning";
+  try {
+    const data = await api("/api/v1/admin/finance/invoices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customerLabel: document.getElementById("financeCustomer").value.trim(),
+        items
+      })
+    });
+    message.textContent = data.message + " شماره: " + data.invoice.invoiceNumber;
+    message.className = "result success";
+    await loadFinanceInvoices();
+  } catch (error) {
+    message.textContent = error.message || "ذخیره پیش‌فاکتور ناموفق بود.";
+    message.className = "result error";
+  }
+}
+
+async function loadFinanceInvoices() {
+  const holder = document.getElementById("financeInvoices");
+  holder.textContent = "در حال دریافت فاکتورها…";
+  try {
+    const data = await api("/api/v1/admin/finance/invoices");
+    if (!data.invoices || !data.invoices.length) {
+      holder.innerHTML = '<div class="empty">هنوز پیش‌فاکتوری ثبت نشده است.</div>';
+      return;
+    }
+    const rows = data.invoices.map(invoice => {
+      const services = (invoice.items || []).map(item =>
+        escapeHtml(item.service) + " — " + escapeHtml(item.provider) +
+        "<br><small>" + escapeHtml(toman(item.amount)) + " · سهم هرمز " +
+        escapeHtml(toman(item.hormozShare)) + " · سهم ارائه‌دهنده " +
+        escapeHtml(toman(item.providerShare)) + "</small>"
+      ).join("<br>");
+      return "<tr><td>" + escapeHtml(invoice.invoiceNumber) + "<br><small>" +
+        escapeHtml(formatDate(invoice.createdAt)) + "</small></td><td>" +
+        (escapeHtml(invoice.customerLabel) || "—") + "</td><td>" + services +
+        "</td><td>" + escapeHtml(toman(invoice.totalAmount)) + "</td><td>" +
+        escapeHtml(toman(invoice.hormozShare)) + "</td><td>" +
+        escapeHtml(toman(invoice.providerShare)) + "</td><td><span class=\"finance-status\">پیش‌فاکتور داخلی</span></td></tr>";
+    }).join("");
+    holder.innerHTML = '<div class="finance-table-wrap"><table class="finance-table"><thead><tr><th>شماره / تاریخ</th><th>شناسه مشتری</th><th>جزئیات خدمات</th><th>جمع</th><th>سهم هرمز</th><th>سهم ارائه‌دهنده</th><th>وضعیت</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  } catch (error) {
+    holder.textContent = error.message || "دریافت فاکتورها ناموفق بود.";
+  }
+}
+
 async function loadAll() {
 
   await Promise.all([
     loadStats(),
     loadStatus(),
     loadFeedback(),
-    loadOpportunities()
+    loadOpportunities(),
+    loadFinanceInvoices()
   ]);
 }
 
