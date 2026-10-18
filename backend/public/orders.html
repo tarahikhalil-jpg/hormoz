@@ -24,6 +24,7 @@ main{max-width:850px;margin:20px auto}.top{display:flex;align-items:center;gap:1
 <option value="">انتخاب کنید</option>
 <option value="flight">هواپیما / Flight</option><option value="train">قطار / Train</option><option value="bus">اتوبوس / Bus</option><option value="stay">هتل، سوئیت یا مهمان‌خانه / Stay</option><option value="boat">شناور یا قایق / Boat</option><option value="driver">راننده و حمل‌ونقل / Driver</option><option value="food">غذا و رستوران / Food</option><option value="electrician">برق‌کار / Electrician</option><option value="repair">تعمیرکار یا نیروی فنی / Repair</option><option value="tourism">گردشگری و راهنما / Tourism</option><option value="skill">معرفی مهارت و اشتغال / Skills & work</option><option value="other">سایر خدمات / Other</option>
 </select></div>
+<div id="providerSelectionHint" class="field full hint" hidden>نوع خدمت بر اساس ارائه‌دهنده‌ای که انتخاب کرده‌اید تنظیم شده و قابل تغییر نیست. پیش از ثبت، جزئیات و شرایط را بررسی کنید.</div>
 <div class="field"><label for="language">زبان پاسخ / Preferred language</label><select id="language"><option value="fa">فارسی</option><option value="en">English</option></select></div>
 <div class="field"><label for="customerLabel">نام یا شناسه دلخواه (اختیاری)</label><input id="customerLabel" maxlength="100" autocomplete="name" placeholder="برای پیگیری راحت‌تر"></div>
 <div class="field"><label for="contact">راه تماس (اختیاری)</label><input id="contact" maxlength="160" autocomplete="off" placeholder="ایمیل یا شماره تماس؛ فقط اگر لازم است"></div>
@@ -50,7 +51,10 @@ if (selectedServiceType) {
   const serviceTypeField = document.getElementById("serviceType");
   if ([...serviceTypeField.options].some(option => option.value === selectedServiceType)) {
     serviceTypeField.value = selectedServiceType;
-    if (selectedProviderNumber) serviceTypeField.disabled = true;
+    if (selectedProviderNumber) {
+      serviceTypeField.disabled = true;
+      document.getElementById("providerSelectionHint").hidden = false;
+    }
   }
 }
 if (selectedProvider) {
