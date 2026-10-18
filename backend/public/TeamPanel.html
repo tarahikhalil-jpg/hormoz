@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>پنل اعضای هوش هرمز</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#07141d;color:#f4f7fa;font:15px Tahoma,Arial,sans-serif;line-height:1.9}.wrap{max-width:950px;margin:auto;padding:16px}header{text-align:center;padding:24px 8px}h1{font-size:25px;margin:0 0 8px}.muted{color:#aebdca;font-size:13px}.card{background:#111f2b;border:1px solid #2b4658;border-radius:16px;padding:16px;margin:14px 0}input,select,textarea{display:block;width:100%;padding:12px;border-radius:10px;border:1px solid #385568;background:#081721;color:#fff;font:inherit;margin:7px 0 12px}button{border:0;border-radius:10px;background:#e7bd58;color:#171717;font:inherit;font-weight:bold;padding:11px 16px;margin:5px 0;cursor:pointer}.danger{background:#d95c5c;color:white}.hidden{display:none!important}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.result{white-space:pre-wrap;overflow-wrap:anywhere}.good{color:#8be2a9}.bad{color:#ff9292}.item{padding:13px;border:1px solid #304a5a;border-radius:12px;margin:10px 0;background:#0a1923}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1;min-width:120px}small{color:#aebdca}@media(max-width:500px){h1{font-size:21px}.wrap{padding:10px}}
+</style></head>
+<body><div class="wrap">
+<header><h1>💡 پنل اعضای هوش هرمز</h1><div class="muted">امنیت و دسترسی بر اساس نقش · نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</div></header>
+<section id="login" class="card">
+<h2>ورود امن اعضا</h2><p class="muted">مدیر اصلی با رمز مدیریت وارد می‌شود؛ بازاریاب و هماهنگ‌کننده با نام کاربری و رمز موقت خودشان.</p>
+<label>نوع ورود</label><select id="loginType"><option value="member">عضو تیم</option><option value="admin">مدیر اصلی</option></select>
+<div id="usernameWrap"><label>نام کاربری</label><input id="username" autocomplete="username" maxlength="40" placeholder="نام کاربری انگلیسی"></div>
+<label>رمز عبور</label><input id="password" type="password" autocomplete="current-password" maxlength="200">
+<button id="loginButton" onclick="login()">ورود</button><div id="loginMessage" class="result"></div>
+</section>
+<section id="passwordChangeSection" class="card hidden">
+<h2>🔐 تغییر رمز موقت</h2><p class="muted">برای حفاظت از حساب، پیش از استفاده از پنل باید رمز موقت را عوض کنید. رمز جدید حداقل ۱۲ نویسه داشته باشد و فقط نزد خودتان بماند.</p>
+<label>رمز جدید</label><input id="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="200">
+<label>تکرار رمز جدید</label><input id="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="200">
+<button onclick="changePassword()">ثبت رمز جدید</button><button class="danger" onclick="logout()">خروج</button><div id="passwordMessage" class="result"></div>
+</section>
+<main id="app" class="hidden">
+<section class="card"><div class="row"><div><strong id="welcome"></strong><div id="roleLabel" class="muted"></div></div><button class="danger" onclick="logout()">خروج امن</button></div></section>
+<section id="membersSection" class="card hidden">
+<h2>👥 مدیریت اعضا</h2><p class="muted">فقط مدیر اصلی می‌تواند حساب بسازد یا دسترسی را غیرفعال کند. رمز موقت فقط یک بار نشان داده می‌شود.</p>
+<div class="grid"><div><label>نام نمایشی</label><input id="newName" maxlength="100" placeholder="مثلاً سارا محمدی"></div><div><label>نام کاربری انگلیسی</label><input id="newUsername" maxlength="40" placeholder="sara.marketing"></div></div>
+<label>نقش</label><select id="newRole"><option value="marketing">بازاریاب</option><option value="service_coordinator">هماهنگ‌کننده خدمات</option></select>
+<button onclick="createMember()">＋ ساخت حساب عضو</button><div id="createMemberResult" class="result"></div><div id="membersList"></div>
+</section>
+<section id="providersSection" class="card hidden"><h2>📣 خدمات تأییدشده برای معرفی</h2><p class="muted">فقط خدماتی نمایش داده می‌شوند که تأیید شده‌اند و اجازه انتشار عمومی دارند. راه تماس خصوصی ارائه‌دهندگان در این فهرست نیست.</p><button onclick="loadProviders()">تازه‌سازی خدمات</button><div id="providersList"></div></section>
+<section id="leadsSection" class="card hidden"><h2>📝 ثبت و پیگیری مشتریان</h2><p class="muted">اطلاعات را فقط با اجازه مشتری ثبت کنید. این پیگیری به‌تنهایی فروش قطعی یا درآمد وصول‌شده محسوب نمی‌شود.</p>
+<div class="grid"><div><label>نام یا شناسه مشتری</label><input id="leadName" maxlength="100" placeholder="اختیاری"></div><div><label>راه تماس با رضایت مشتری</label><input id="leadContact" maxlength="160" placeholder="اختیاری"></div></div>
+<label>خدمت موردنیاز</label><input id="leadService" maxlength="120" placeholder="مثلاً اقامت، قایق، راننده">
+<label>یادداشت پیگیری</label><textarea id="leadNotes" maxlength="600" rows="3" placeholder="فقط اطلاعات لازم، بدون اطلاعات بانکی یا رمزها"></textarea>
+<button onclick="createLead()">ثبت پیگیری</button><div id="leadMessage" class="result"></div><button onclick="loadLeads()">تازه‌سازی پیگیری‌ها</button><div id="leadsList"></div></section>
+<section id="ordersSection" class="card hidden"><h2>🧭 درخواست‌های خدمات</h2><p class="muted">اطلاعات تماس مشتری فقط برای هماهنگی مجاز است. تغییر وضعیت، رزرو یا پرداخت را به‌تنهایی قطعی نمی‌کند.</p><button onclick="loadOrders()">تازه‌سازی درخواست‌ها</button><div id="ordersList"></div></section>
+</main><footer class="muted" style="text-align:center;padding:24px">چراغ ۷۷۷ برای خاموش شدن ساخته نشده ❤️</footer>
+</div>
+<script>
+const KEY="hormoz_team_token";let currentRole="";const $=id=>document.getElementById(id);
+const roles={admin:"مدیر اصلی",marketing:"بازاریاب",service_coordinator:"هماهنگ‌کننده خدمات"};const leadStatuses={new:"جدید",contacted:"تماس گرفته شد",interested:"علاقه‌مند",converted:"معرفی موفق (نیازمند تأیید)",not_interested:"علاقه‌مند نیست",closed:"بسته شد"};
+const statuses={submitted:"درخواست ثبت شد",awaiting_provider:"در انتظار پاسخ ارائه‌دهنده",quoted:"قیمت اعلام شد",confirmed:"سفارش تأیید شد",payment_pending:"در انتظار پرداخت",payment_confirmed:"پرداخت تأییدشده",in_progress:"در حال انجام",completed:"انجام‌شده",cancelled:"لغوشده",refund_pending:"در انتظار بازپرداخت",refunded:"بازپرداخت‌شده"};
+$("loginType").addEventListener("change",()=>{$("usernameWrap").classList.toggle("hidden",$("loginType").value==="admin")});
+async function login(){const message=$("loginMessage");message.textContent="در حال بررسی...";try{const admin=$("loginType").value==="admin";const response=await fetch(admin?"/api/v1/admin/login":"/api/v1/team/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(admin?{password:$("password").value}:{username:$("username").value,password:$("password").value})});const data=await response.json();if(!response.ok)throw Error(data.message||"ورود ناموفق بود.");localStorage.setItem(KEY,data.token);await openApp(data.role,data.displayName,data.mustChangePassword)}catch(e){message.textContent=e.message;message.className="result bad"}}
+async function api(url,options={}){const response=await fetch(url,{...options,headers:{...(options.headers||{}),Authorization:"Bearer "+(localStorage.getItem(KEY)||"")}});let data={};try{data=await response.json()}catch{}if(response.status===401){localStorage.removeItem(KEY);location.reload();throw Error("نشست منقضی شده است؛ دوباره وارد شوید.")}if(!response.ok)throw Error(data.message||"خطای سرور");return data}
+async function openApp(role,name,mustChangePassword=false){currentRole=role||"admin";$("login").classList.add("hidden");if(mustChangePassword){$("passwordChangeSection").classList.remove("hidden");$("app").classList.add("hidden");$("welcome").textContent=name||"عضو هرمز";return}$("passwordChangeSection").classList.add("hidden");$("app").classList.remove("hidden");$("welcome").textContent=name||"عضو هرمز";$("roleLabel").textContent=roles[currentRole]||"عضو تیم";$("membersSection").classList.toggle("hidden",currentRole!=="admin");$("providersSection").classList.toggle("hidden",!["admin","marketing"].includes(currentRole));$("leadsSection").classList.toggle("hidden",!["admin","marketing"].includes(currentRole));$("ordersSection").classList.toggle("hidden",!["admin","service_coordinator"].includes(currentRole));if(currentRole==="admin")loadMembers();if(["admin","marketing"].includes(currentRole)){loadProviders();loadLeads()}if(["admin","service_coordinator"].includes(currentRole))loadOrders()}
+async function logout(){try{await api("/api/v1/team/logout",{method:"POST"})}catch{}localStorage.removeItem(KEY);location.reload()}
+function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+function when(v){try{return new Date(v).toLocaleString("fa-IR")}catch{return "—"}}
+async function loadMembers(){try{const d=await api("/api/v1/admin/members");$("membersList").innerHTML=(d.members||[]).map(m=>'<div class="item"><strong>'+esc(m.displayName)+'</strong> · '+esc(m.username)+'<br><small>'+esc(roles[m.role]||m.role)+' · '+(m.active?'فعال':'غیرفعال')+'</small><br><button class="'+(m.active?'danger':'')+'" onclick="setMemberActive(\''+esc(m.id)+'\','+(!m.active)+')">'+(m.active?'غیرفعال‌کردن دسترسی':'فعال‌کردن دسترسی')+'</button></div>').join("")||'<p class="muted">هنوز عضوی ثبت نشده است.</p>'}catch(e){$("membersList").textContent=e.message}}
+async function createMember(){const box=$("createMemberResult");box.textContent="در حال ساخت حساب...";try{const d=await api("/api/v1/admin/members",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({displayName:$("newName").value,username:$("newUsername").value,role:$("newRole").value})});box.innerHTML='<div class="item"><strong class="good">'+esc(d.message)+'</strong><br>نام کاربری: <strong>'+esc(d.member.username)+'</strong><br>رمز موقت (فقط همین بار نمایش داده می‌شود):<br><input readonly value="'+esc(d.temporaryPassword)+'"><button onclick="copyTemp()">کپی رمز موقت</button><p class="muted">رمز را فقط خصوصی به عضو تحویل بدهید؛ آن را در گروه عمومی نفرستید.</p></div>';$("newName").value="";$("newUsername").value="";await loadMembers()}catch(e){box.textContent=e.message;box.className="result bad"}}
+async function copyTemp(){const input=$("createMemberResult").querySelector("input");try{await navigator.clipboard.writeText(input.value)}catch{input.select();document.execCommand("copy")} }
+async function setMemberActive(id,active){if(!confirm(active?"دسترسی این عضو فعال شود؟":"دسترسی این عضو غیرفعال شود؟ نشست‌های او بسته می‌شود."))return;try{await api("/api/v1/admin/members/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({active})});await loadMembers()}catch(e){alert(e.message)}}
+async function loadProviders(){const box=$("providersList");box.textContent="در حال دریافت...";try{const d=await api("/api/v1/team/providers");box.innerHTML=(d.providers||[]).map(p=>'<div class="item"><strong>'+esc(p.name)+'</strong> · '+esc(p.serviceType)+'<br>'+esc(p.city)+'<br>'+esc(p.description)+'<br>قیمت پایه: '+(p.startingPrice>0?esc(Number(p.startingPrice).toLocaleString("fa-IR")+" تومان · "+p.priceUnit):"برای قیمت تماس بگیرید")+'</div>').join("")||'<p class="muted">فعلاً خدمت تأییدشده‌ای برای نمایش نیست.</p>'}catch(e){box.textContent=e.message}}
+async function createLead(){const box=$("leadMessage");box.textContent="در حال ثبت...";try{const d=await api("/api/v1/team/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerLabel:$("leadName").value,contact:$("leadContact").value,serviceInterest:$("leadService").value,notes:$("leadNotes").value})});box.textContent=d.message;box.className="result good";$("leadName").value="";$("leadContact").value="";$("leadService").value="";$("leadNotes").value="";await loadLeads()}catch(e){box.textContent=e.message;box.className="result bad"}}
+async function loadLeads(){
+  const box=$("leadsList");box.textContent="در حال دریافت پیگیری‌ها...";
+  try{
+    const d=await api("/api/v1/team/leads");
+    box.innerHTML=(d.leads||[]).map(l=>{
+      const editor=currentRole==="marketing";
+      const options=Object.entries(leadStatuses).map(([value,label])=>'<option value="'+value+'" '+(l.status===value?"selected":"")+'>'+label+'</option>').join("");
+      return '<div class="item"><strong>'+esc(l.customerLabel||"مشتری بدون نام")+'</strong> · '+esc(l.serviceInterest)+(currentRole==="admin"?' · بازاریاب: '+esc(l.memberName):'')+'<br>راه تماس: '+esc(l.contact||"ثبت نشده")+'<br>ثبت: '+esc(when(l.createdAt))+'<br>یادداشت: '+esc(l.notes)+'<br>وضعیت: '+esc(leadStatuses[l.status]||l.status)+(editor?'<label>به‌روزرسانی نتیجه پیگیری</label><select id="lead-status-'+esc(l.id)+'">'+options+'</select><textarea id="lead-notes-'+esc(l.id)+'" maxlength="600" rows="2">'+esc(l.notes)+'</textarea><button onclick="saveLead(&quot;'+esc(l.id)+'&quot;)">ثبت نتیجه پیگیری</button>':'')+'</div>';
+    }).join("")||'<p class="muted">هنوز پیگیری ثبت نشده است.</p>';
+  }catch(e){box.textContent=e.message}
+}
+async function saveLead(id){
+  try{
+    const d=await api("/api/v1/team/leads/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:$("lead-status-"+id).value,notes:$("lead-notes-"+id).value})});
+    alert(d.message);await loadLeads();
+  }catch(e){alert(e.message)}
+}
+async function loadOrders(){const box=$("ordersList");box.textContent="در حال دریافت درخواست‌ها...";try{const d=await api("/api/v1/team/orders");box.innerHTML=(d.orders||[]).map(o=>'<div class="item"><strong>'+esc(o.orderNumber)+'</strong> · '+esc(o.serviceType)+'<br>ثبت: '+esc(when(o.createdAt))+'<br>مشتری: '+esc(o.customerLabel||"ثبت نشده")+' · تماس: '+esc(o.contact||"ثبت نشده")+'<br>ارائه‌دهنده: '+esc(o.providerNumber||"هنوز تعیین نشده")+'<br>جزئیات: '+esc(Object.entries(o.details||{}).map(([k,v])=>k+": "+v).join(" | "))+'<br><label>وضعیت</label><select id="st-'+esc(o.id)+'">'+Object.entries(statuses).map(([v,l])=>'<option value="'+v+'" '+(o.status===v?'selected':'')+'>'+l+'</option>').join("")+'</select><input id="note-'+esc(o.id)+'" maxlength="400" placeholder="یادداشت پیگیری، اختیاری"><button onclick="saveOrder(\''+esc(o.id)+'\')">ثبت وضعیت و سابقه</button></div>').join("")||'<p class="muted">درخواست جدیدی وجود ندارد.</p>'}catch(e){box.textContent=e.message}}
+async function saveOrder(id){try{const d=await api("/api/v1/team/orders/"+encodeURIComponent(id)+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:$("st-"+id).value,note:$("note-"+id).value})});alert(d.message);await loadOrders()}catch(e){alert(e.message)}}
+async function changePassword(){const message=$("passwordMessage");const password=$("newPassword").value;const confirmation=$("confirmPassword").value;if(password.length<12){message.textContent="رمز جدید باید دست‌کم ۱۲ نویسه باشد.";message.className="result bad";return}if(password!==confirmation){message.textContent="دو رمز واردشده یکسان نیستند.";message.className="result bad";return}try{const d=await api("/api/v1/team/change-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({newPassword:password})});message.textContent=d.message;message.className="result good";$("newPassword").value="";$("confirmPassword").value="";await openApp(currentRole,$("welcome").textContent,false)}catch(e){message.textContent=e.message;message.className="result bad"}}
+(async()=>{const t=localStorage.getItem(KEY);if(!t)return;try{const d=await api("/api/v1/team/me");await openApp(d.role,d.displayName,d.mustChangePassword)}catch{localStorage.removeItem(KEY)}})();
+</script></body></html>
