@@ -158,9 +158,11 @@ function addMessage(text, type) {
         voiceReplyButton.textContent = "🔊 پاسخ صوتی: روشن";
       }
       speakButton.textContent = "🔊 در حال پخش…";
+      // This is a direct tap: try the online Persian audio immediately so
+      // mobile browsers can honor their user-gesture playback requirement.
       speakNava(text, () => {
         speakButton.textContent = "🔊 شنیدن دوباره پاسخ";
-      });
+      }, true);
     });
     div.appendChild(speakButton);
   }
@@ -209,7 +211,7 @@ function resumeVoiceListening() {
   }, 450);
 }
 
-function speakNava(text, onDone) {
+function speakNava(text, onDone, preferOnlineAudio = false) {
   if (!text) {
     if (typeof onDone === "function") onDone();
     return;
@@ -283,6 +285,14 @@ function speakNava(text, onDone) {
     setVoiceStatus("موتور صدای گوشی شروع نشد؛ دارم صدای فارسی آنلاین نوا را امتحان می‌کنم…");
     playNextAudioChunk();
   };
+
+  // When the user explicitly taps "listen", start the audio fallback now,
+  // within the browser's user gesture. Waiting for the speech engine to fail
+  // first can make mobile browsers reject audio.play() as autoplay.
+  if (preferOnlineAudio) {
+    playOnlinePersianAudio();
+    return;
+  }
 
   const synthAvailable = ("speechSynthesis" in window) && typeof SpeechSynthesisUtterance !== "undefined";
   if (!synthAvailable) {
