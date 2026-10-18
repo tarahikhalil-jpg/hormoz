@@ -131,10 +131,13 @@ async function ensureProvidersTable() {
       payout_hint TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'pending_review',
       admin_note TEXT NOT NULL DEFAULT '',
+      public_listing BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  // Safe migration for existing databases: public display requires explicit consent.
+  await db.query(`ALTER TABLE hormoz_service_providers ADD COLUMN IF NOT EXISTS public_listing BOOLEAN NOT NULL DEFAULT FALSE`);
   providersTableReady = true;
 }
 
@@ -845,6 +848,35 @@ export async function adminRoutes(app: FastifyInstance) {
 
 
   /*
+   * فهرست عمومی فقط کسب‌وکارهای تأییدشده‌ای را نشان می‌دهد که اجازه انتشار داده‌اند.
+   * راه تماس خصوصی و اطلاعات مالی هرگز در این پاسخ عمومی برگردانده نمی‌شود.
+   */
+  app.get("/api/v1/providers", async (_request, reply) => {
+    if (!db) return reply.code(503).send({ ok: false, message: "فهرست خدمات موقتاً در دسترس نیست؛ ذخیره‌سازی دائمی سرور آماده نیست." });
+    try {
+      await ensureProvidersTable();
+      const result = await db.query(
+        "SELECT provider_number, business_name, service_type, city, description, updated_at FROM hormoz_service_providers WHERE status = 'approved' AND public_listing = TRUE AND business_name <> '' ORDER BY updated_at DESC LIMIT 200"
+      );
+      return {
+        ok: true,
+        count: result.rows.length,
+        providers: result.rows.map(row => ({
+          providerNumber: String(row.provider_number),
+          businessName: String(row.business_name),
+          serviceType: String(row.service_type),
+          city: String(row.city ?? ""),
+          description: String(row.description ?? ""),
+          updatedAt: new Date(row.updated_at).toISOString()
+        }))
+      };
+    } catch (error) {
+      reply.log.error(error);
+      return reply.code(503).send({ ok: false, message: "فهرست خدمات موقتاً در دسترس نیست." });
+    }
+  });
+
+  /*
    * ثبت اولیه ارائه‌دهندگان خدمات؛ اطلاعات بانکی کامل در این فرم ذخیره نمی‌شود.
    */
   const providerStatuses = new Set(["pending_review", "approved", "needs_changes", "suspended"]);
@@ -861,6 +893,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const proposedRate = proposedRateRaw === "" || proposedRateRaw === null || proposedRateRaw === undefined ? null : Number(proposedRateRaw);
     const payoutMethod = ["bank_transfer", "card_to_card", "not_decided"].includes(String(body.payoutMethod)) ? String(body.payoutMethod) : "not_decided";
     const payoutHint = String(body.payoutHint ?? "").trim().slice(0, 4).replace(/\D/g, "");
+    const publicListing = body.publicListingConsent === true;
     if (!providerName || !serviceType || !contact || body.consent !== true) {
       return reply.code(400).send({ ok: false, message: "نام، نوع خدمت، راه تماس و رضایت برای ثبت لازم است." });
     }
@@ -874,9 +907,9 @@ export async function adminRoutes(app: FastifyInstance) {
       await ensureProvidersTable();
       await db.query(
         `INSERT INTO hormoz_service_providers
-          (id, provider_number, provider_name, business_name, service_type, city, contact, description, proposed_commission_rate, payout_method, payout_hint, status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending_review')`,
-        [id, providerNumber, providerName, businessName, serviceType, city, contact, description, proposedRate, payoutMethod, payoutHint]
+          (id, provider_number, provider_name, business_name, service_type, city, contact, description, proposed_commission_rate, payout_method, payout_hint, status, public_listing)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending_review',$12)`,
+        [id, providerNumber, providerName, businessName, serviceType, city, contact, description, proposedRate, payoutMethod, payoutHint, publicListing]
       );
       touchActivity();
       return reply.code(201).send({ ok: true, providerNumber, status: "pending_review", message: "درخواست همکاری ثبت شد و پس از بررسی با شما تماس گرفته می‌شود. هنوز هیچ حسابی برای تسویه فعال نشده است." });
