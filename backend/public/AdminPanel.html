@@ -435,6 +435,17 @@
       <div id="serviceOrdersList" class="result">برای دریافت سفارش‌ها دکمه را بزنید.</div>
     </section>
 
+
+    <!-- PAYMENTS INFRASTRUCTURE -->
+    <section class="card" id="paymentsPanel">
+      <h2>🔐 زیرساخت پرداخت و دفتر مالی</h2>
+      <p class="finance-note">این بخش فقط وضعیت زیرساخت را بررسی می‌کند. پرداخت واقعی، دریافت پول و تسویه خودکار هنوز غیرفعال‌اند؛ هیچ مبلغی از این بخش دریافت نمی‌شود.</p>
+      <button type="button" onclick="loadPaymentStatus()">🔄 بررسی وضعیت پرداخت</button>
+      <button type="button" onclick="loadPaymentLedger()">📒 مشاهده دفتر تراکنش‌ها</button>
+      <div id="paymentStatusBox" class="result">برای بررسی وضعیت، دکمه اول را بزنید.</div>
+      <div id="paymentLedgerBox" class="result">دفتر تراکنش‌ها هنوز بارگذاری نشده است.</div>
+    </section>
+
     <!-- FINANCE -->
     <section class="card" id="financePanel">
       <h2>🧾 حسابداری و سهم خدمات</h2>
@@ -1288,6 +1299,62 @@ async function saveProvider(id) {
 }
 
 
+async function loadPaymentStatus() {
+  const box = document.getElementById("paymentStatusBox");
+  box.textContent = "در حال بررسی وضعیت زیرساخت پرداخت…";
+  try {
+    const data = await api("/api/v1/admin/payments/status");
+    const caps = Array.isArray(data.gateways) ? data.gateways : (Array.isArray(data.capabilities) ? data.capabilities : []);
+    const lines = [
+      "<div class='status'><span>حالت پرداخت</span><strong>" + escapeHtml(data.paymentMode || data.mode || "نامشخص") + "</strong></div>",
+      "<div class='status'><span>پرداخت واقعی</span><strong class='warning'>" + (data.livePaymentsEnabled === true ? "فعال اعلام شده" : "غیرفعال") + "</strong></div>"
+    ];
+    if (caps.length) {
+      for (const item of caps) {
+        lines.push("<div class='feedback'><strong>" + escapeHtml(item.name || item.provider || item.id || "درگاه") + "</strong><br><small>" +
+          "ایجاد پرداخت: " + (item.checkout ? "بله" : "خیر") +
+          " · تأیید پرداخت: " + (item.verify ? "بله" : "خیر") +
+          " · بازپرداخت: " + (item.refund ? "بله" : "خیر") +
+          " · تسویه: " + (item.payouts ? "بله" : "خیر") +
+          "</small></div>");
+      }
+    } else {
+      lines.push("<pre style='white-space:pre-wrap;overflow-wrap:anywhere'>" + escapeHtml(JSON.stringify(data, null, 2)) + "</pre>");
+    }
+    box.innerHTML = lines.join("");
+    box.className = "result success";
+  } catch (error) {
+    box.textContent = "بررسی وضعیت ناموفق بود: " + (error.message || "خطای نامشخص");
+    box.className = "result error";
+  }
+}
+
+async function loadPaymentLedger() {
+  const box = document.getElementById("paymentLedgerBox");
+  box.textContent = "در حال دریافت دفتر تراکنش‌ها…";
+  try {
+    const data = await api("/api/v1/admin/payments/ledger");
+    const rows = Array.isArray(data.transactions) ? data.transactions :
+      (Array.isArray(data.ledger) ? data.ledger : []);
+    if (!rows.length) {
+      box.innerHTML = "<div class='empty'>دفتر مالی قابل دسترسی است؛ هنوز تراکنشی ثبت نشده است.</div>";
+      return;
+    }
+    box.innerHTML = "<div class='finance-table-wrap'><table class='finance-table'><thead><tr><th>شناسه</th><th>سفارش</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>" +
+      rows.map(row => "<tr><td>" + escapeHtml(row.id || row.payment_id || "—") +
+      "</td><td>" + escapeHtml(row.order_id || row.orderId || "—") +
+      "</td><td>" + escapeHtml(row.amount_toman ?? row.amountToman ?? row.amount ?? "—") +
+      "</td><td>" + escapeHtml(row.status || "—") +
+      "</td><td>" + escapeHtml(formatTime(row.created_at || row.createdAt)) +
+      "</td></tr>").join("") + "</tbody></table></div>";
+    box.className = "result success";
+  } catch (error) {
+    box.textContent = "دفتر تراکنش‌ها باز نشد: " + (error.message || "خطای نامشخص");
+    box.className = "result error";
+  }
+}
+
+
 async function loadAll() {
 
   await Promise.all([
@@ -1297,7 +1364,8 @@ async function loadAll() {
     loadOpportunities(),
     loadServiceOrders(),
     loadFinanceInvoices(),
-    loadProviders()
+    loadProviders(),
+    loadPaymentStatus()
   ]);
 }
 
