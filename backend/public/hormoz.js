@@ -148,21 +148,51 @@ function addMessage(text, type) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-/* VOICE CHAT: browser speech recognition + speech synthesis */
+/* VOICE CHAT: hands-free turn-taking using browser speech recognition and speech synthesis */
 const speechButton = document.getElementById("speechButton");
 const voiceReplyButton = document.getElementById("voiceReplyButton");
 const voiceStatus = document.getElementById("voiceStatus");
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let listening = false;
+let voiceSessionActive = false;
+let voiceBusy = false;
+let speaking = false;
+let voiceRestartTimer = null;
 let voiceReplyEnabled = true;
 
 function setVoiceStatus(message) {
   if (voiceStatus) voiceStatus.textContent = message;
 }
 
-function speakNava(text) {
-  if (!voiceReplyEnabled || !("speechSynthesis" in window) || !text) return;
+function updateVoiceButton() {
+  if (!speechButton) return;
+  speechButton.setAttribute("aria-pressed", String(voiceSessionActive));
+  speechButton.textContent = voiceSessionActive
+    ? "🛑 پایان مکالمه صوتی"
+    : "🎙️ شروع مکالمه صوتی پیوسته";
+}
+
+function resumeVoiceListening() {
+  if (!voiceSessionActive || !recognition || voiceBusy || speaking) return;
+  clearTimeout(voiceRestartTimer);
+  voiceRestartTimer = setTimeout(() => {
+    if (!voiceSessionActive || voiceBusy || speaking || listening) return;
+    try {
+      recognition.start();
+    } catch (error) {
+      console.warn("Voice recognition restart deferred:", error);
+      clearTimeout(voiceRestartTimer);
+      voiceRestartTimer = setTimeout(resumeVoiceListening, 700);
+    }
+  }, 450);
+}
+
+function speakNava(text, onDone) {
+  if (!voiceReplyEnabled || !("speechSynthesis" in window) || !text) {
+    if (typeof onDone === "function") onDone();
+    return;
+  }
   try {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -172,11 +202,23 @@ function speakNava(text) {
     const voices = window.speechSynthesis.getVoices();
     const persianVoice = voices.find((voice) => /^fa([_-]|$)/i.test(voice.lang));
     if (persianVoice) utterance.voice = persianVoice;
-    utterance.onerror = () => setVoiceStatus("پاسخ متنی آماده است؛ خواندن صوتی در این گوشی در دسترس نیست.");
+    speaking = true;
+    setVoiceStatus("نوا در حال پاسخ‌دادن است… پس از پایان پاسخ، دوباره گوش می‌دهد.");
+    utterance.onend = () => {
+      speaking = false;
+      if (typeof onDone === "function") onDone();
+    };
+    utterance.onerror = () => {
+      speaking = false;
+      setVoiceStatus("پاسخ متنی آماده است؛ خواندن صوتی در این مرورگر انجام نشد.");
+      if (typeof onDone === "function") onDone();
+    };
     window.speechSynthesis.speak(utterance);
   } catch (error) {
     console.error("Nava speech output failed:", error);
+    speaking = false;
     setVoiceStatus("پاسخ متنی آماده است؛ صدای فارسی در این مرورگر پشتیبانی نشد.");
+    if (typeof onDone === "function") onDone();
   }
 }
 
@@ -185,8 +227,13 @@ if (voiceReplyButton) {
     voiceReplyEnabled = !voiceReplyEnabled;
     voiceReplyButton.setAttribute("aria-pressed", String(voiceReplyEnabled));
     voiceReplyButton.textContent = voiceReplyEnabled ? "🔊 پاسخ صوتی: روشن" : "🔇 پاسخ صوتی: خاموش";
-    if (!voiceReplyEnabled && "speechSynthesis" in window) window.speechSynthesis.cancel();
-    setVoiceStatus(voiceReplyEnabled ? "پاسخ‌های نوا پس از دریافت، با صدا خوانده می‌شوند." : "پاسخ صوتی خاموش شد؛ پاسخ‌ها به‌صورت متن نمایش داده می‌شوند.");
+    if (!voiceReplyEnabled && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      speaking = false;
+    }
+    setVoiceStatus(voiceReplyEnabled
+      ? "پاسخ‌های نوا با صدا خوانده می‌شوند."
+      : "پاسخ صوتی خاموش شد؛ مکالمه صوتی می‌تواند ادامه یابد.");
   });
 }
 
@@ -195,7 +242,7 @@ if (speechButton) {
     speechButton.disabled = true;
     speechButton.textContent = "🎙️ گفتار در این مرورگر پشتیبانی نمی‌شود";
     speechButton.style.opacity = "0.65";
-    setVoiceStatus("تشخیص گفتار در این مرورگر در دسترس نیست. در صورت امکان صفحه را با Chrome به‌روز باز کن؛ تایپ با میکروفون صفحه‌کلید هم می‌تواند کمک کند.");
+    setVoiceStatus("تشخیص گفتار در این مرورگر در دسترس نیست. در صورت امکان سایت را با Chrome به‌روز باز کن.");
   } else {
     recognition = new SpeechRecognitionAPI();
     recognition.lang = "fa-IR";
@@ -205,9 +252,8 @@ if (speechButton) {
 
     recognition.onstart = () => {
       listening = true;
-      speechButton.setAttribute("aria-pressed", "true");
-      speechButton.textContent = "🛑 پایان صحبت";
-      setVoiceStatus("نوا گوش می‌دهد… حالا نیازت را به فارسی بگو.");
+      updateVoiceButton();
+      setVoiceStatus("نوا گوش می‌دهد… به فارسی صحبت کن. پس از پاسخ، دوباره خودکار گوش می‌دهد.");
     };
 
     recognition.onresult = (event) => {
@@ -216,48 +262,72 @@ if (speechButton) {
         .join(" ")
         .trim();
       if (!transcript) {
-        setVoiceStatus("صدایی به متن تبدیل نشد؛ دوباره امتحان کن.");
+        setVoiceStatus("صدایی به متن تبدیل نشد؛ دوباره صحبت کن.");
         return;
       }
+      voiceBusy = true;
       if (input) input.value = transcript;
-      setVoiceStatus("شنیدم: «" + transcript + "» — در حال فرستادن برای نوا…");
-      sendMessage();
+      setVoiceStatus("شنیدم: «" + transcript + "» — نوا در حال پاسخ‌گویی است…");
+      try { recognition.stop(); } catch {}
+      sendMessage({ fromVoice: true });
     };
 
     recognition.onerror = (event) => {
-      const messages = {
-        "not-allowed": "اجازه میکروفون داده نشد. مجوز میکروفون سایت را در تنظیمات مرورگر بررسی کن.",
+      const errors = {
+        "not-allowed": "اجازه میکروفون داده نشد؛ مجوز میکروفون سایت را در مرورگر فعال کن.",
         "service-not-allowed": "سرویس تشخیص گفتار در این مرورگر یا شبکه در دسترس نیست.",
-        "no-speech": "صدایی نشنیدم؛ دوباره دکمه را بزن و نزدیک‌تر صحبت کن.",
-        "network": "تشخیص گفتار به اتصال شبکه نیاز دارد و فعلاً برقرار نشد.",
+        "no-speech": "صدایی نشنیدم؛ اگر مکالمه فعال باشد دوباره گوش می‌دهم.",
+        "network": "سرویس تشخیص گفتار به شبکه نیاز دارد و فعلاً وصل نشد.",
         "audio-capture": "میکروفون پیدا نشد یا برنامه دیگری از آن استفاده می‌کند."
       };
-      setVoiceStatus(messages[event.error] || "تشخیص صدا ناموفق بود. دوباره امتحان کن یا از میکروفون صفحه‌کلید استفاده کن.");
+      setVoiceStatus(errors[event.error] || "تشخیص صدا ناموفق بود.");
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        voiceSessionActive = false;
+        voiceBusy = false;
+        updateVoiceButton();
+      }
     };
 
     recognition.onend = () => {
       listening = false;
-      speechButton.setAttribute("aria-pressed", "false");
-      speechButton.textContent = "🎙️ صحبت با نوا";
+      if (voiceSessionActive && !voiceBusy && !speaking) {
+        setVoiceStatus("نوا آماده شنیدن ادامه صحبت توست…");
+        resumeVoiceListening();
+      } else if (!voiceSessionActive) {
+        updateVoiceButton();
+      }
     };
 
     speechButton.addEventListener("click", () => {
-      if (listening) {
-        recognition.stop();
+      if (voiceSessionActive) {
+        voiceSessionActive = false;
+        voiceBusy = false;
+        clearTimeout(voiceRestartTimer);
+        try { recognition.stop(); } catch {}
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        speaking = false;
+        updateVoiceButton();
+        setVoiceStatus("مکالمه صوتی پایان یافت. هر وقت خواستی دوباره شروع کن.");
         return;
       }
+
+      voiceSessionActive = true;
+      voiceBusy = false;
+      updateVoiceButton();
       try {
         if ("speechSynthesis" in window) window.speechSynthesis.cancel();
         recognition.start();
       } catch (error) {
         console.error("Nava speech recognition failed:", error);
+        voiceSessionActive = false;
+        updateVoiceButton();
         setVoiceStatus("شروع میکروفون ممکن نشد؛ چند لحظه صبر کن و دوباره بزن.");
       }
     });
   }
 }
 
-async function sendMessage() {
+async function sendMessage(options = {}) {\n  const fromVoice = options.fromVoice === true;
   if (!input || !sendButton || !messages) {
     return;
   }
@@ -297,9 +367,19 @@ async function sendMessage() {
 
     const spokenAnswer = answer || "نوا پاسخی دریافت نکرد.";
     addMessage(spokenAnswer, "nava");
-    speakNava(spokenAnswer);
-    if (voiceReplyEnabled) {
-      setVoiceStatus("پاسخ نوا آماده شد؛ اگر صدای فارسی گوشی پشتیبانی شود، پاسخ خوانده می‌شود.");
+    if (fromVoice && voiceSessionActive) {
+      speakNava(spokenAnswer, () => {
+        voiceBusy = false;
+        if (voiceSessionActive) {
+          setVoiceStatus("نوا گوش می‌دهد… می‌توانی ادامه بدهی.");
+          resumeVoiceListening();
+        }
+      });
+    } else {
+      speakNava(spokenAnswer);
+      if (voiceReplyEnabled) {
+        setVoiceStatus("پاسخ نوا آماده شد.");
+      }
     }
 
   } catch (error) {
@@ -318,11 +398,16 @@ async function sendMessage() {
       "❌ نوا فعلاً پاسخ نداد.\n" + detail,
       "nava"
     );
+    if (fromVoice && voiceSessionActive) {
+      voiceBusy = false;
+      setVoiceStatus("پاسخ از سرور دریافت نشد؛ دوباره صحبت کن یا اتصال را بررسی کن.");
+      resumeVoiceListening();
+    }
 
   } finally {
 
     sendButton.disabled = false;
-    input.focus();
+    if (!fromVoice) input.focus();
 
   }
 }
