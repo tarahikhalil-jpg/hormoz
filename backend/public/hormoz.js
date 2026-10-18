@@ -144,6 +144,29 @@ function addMessage(text, type) {
   content.textContent = text;
   div.appendChild(content);
 
+  if (type === "nava") {
+    const speakButton = document.createElement("button");
+    speakButton.type = "button";
+    speakButton.textContent = "🔊 شنیدن پاسخ نوا";
+    speakButton.style.cssText = "margin-top:10px;padding:9px 12px;font-size:13px;border-radius:10px;background:rgba(255,255,255,.12);color:inherit;border:1px solid rgba(255,255,255,.3);cursor:pointer;";
+    speakButton.addEventListener("click", () => {
+      if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+        setVoiceStatus("خواندن صوتی در این مرورگر پشتیبانی نمی‌شود؛ لطفاً Chrome را امتحان کن.");
+        return;
+      }
+      voiceReplyEnabled = true;
+      if (voiceReplyButton) {
+        voiceReplyButton.setAttribute("aria-pressed", "true");
+        voiceReplyButton.textContent = "🔊 پاسخ صوتی: روشن";
+      }
+      speakButton.textContent = "🔊 در حال پخش…";
+      speakNava(text, () => {
+        speakButton.textContent = "🔊 شنیدن دوباره پاسخ";
+      });
+    });
+    div.appendChild(speakButton);
+  }
+
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
 }
@@ -202,6 +225,11 @@ function speakNava(text, onDone) {
     const voices = window.speechSynthesis.getVoices();
     const persianVoice = voices.find((voice) => /^fa([_-]|$)/i.test(voice.lang));
     if (persianVoice) utterance.voice = persianVoice;
+    // Android/Chrome may load available voices asynchronously; use the device default if Persian is not listed.
+    utterance.onstart = () => {
+      speaking = true;
+      setVoiceStatus("نوا در حال خواندن پاسخ است…");
+    };
     speaking = true;
     setVoiceStatus("نوا در حال پاسخ‌دادن است… پس از پایان پاسخ، دوباره گوش می‌دهد.");
     utterance.onend = () => {
@@ -378,9 +406,6 @@ async function sendMessage(options = {}) {
       });
     } else {
       speakNava(spokenAnswer);
-      if (voiceReplyEnabled) {
-        setVoiceStatus("پاسخ نوا آماده شد.");
-      }
     }
 
   } catch (error) {
