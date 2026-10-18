@@ -9,14 +9,23 @@
 <style>
 :root{color-scheme:dark;--bg:#071522;--panel:#10283b;--gold:#ffd782;--teal:#70f1e6;--text:#f6f8fc;--muted:#c2d1df;--line:#35566c}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#214a60 0,transparent 42%),linear-gradient(180deg,#071522,#08121e);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.9;padding:14px}
-main{max-width:980px;margin:18px auto}.top{display:flex;align-items:center;gap:14px;margin-bottom:18px}.logo{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:linear-gradient(145deg,#fff0bc,#c88b2f);color:#142333;font-weight:900;font-size:20px;flex-shrink:0}.sub,p{color:var(--muted)}h1,h2{color:var(--gold)}h1{margin:0;font-size:clamp(1.5rem,4vw,2.2rem)}.panel{background:linear-gradient(145deg,#122d40,#0a1a29);border:1px solid var(--line);border-radius:22px;padding:clamp(16px,3vw,26px);box-shadow:0 18px 45px #0003;margin-bottom:16px}.filters{display:grid;grid-template-columns:2fr 1fr;gap:12px}input,select{width:100%;padding:12px;border:1px solid #47667a;border-radius:11px;background:#071522;color:var(--text);font:inherit}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}.provider{border:1px solid var(--line);border-radius:17px;padding:17px;background:#0b1d2b}.badge{display:inline-block;border:1px solid #70f1e655;color:var(--teal);border-radius:999px;padding:2px 10px;font-size:.82rem}.provider h3{margin:8px 0;color:#fff}.muted{color:var(--muted);font-size:.92rem}.btn{display:inline-flex;justify-content:center;align-items:center;padding:11px 16px;border:0;border-radius:12px;background:linear-gradient(145deg,#fff0bc,#c88b2f);color:#142333;font-weight:bold;font:inherit;text-decoration:none;cursor:pointer}.secondary{border:1px solid var(--line);background:transparent;color:var(--text)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.notice{border:1px solid #ffd78255;background:#ffd7820b;border-radius:14px;padding:13px;color:#f3dba2}.state{text-align:center;padding:26px;color:var(--muted)}footer{text-align:center;color:var(--muted);padding:20px;font-size:.9rem}@media(max-width:600px){body{padding:9px}.filters{grid-template-columns:1fr}.top{align-items:flex-start}}
+main{max-width:980px;margin:18px auto}.top{display:flex;align-items:center;gap:14px;margin-bottom:18px}.logo{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:linear-gradient(145deg,#fff0bc,#c88b2f);color:#142333;font-weight:900;font-size:20px;flex-shrink:0}.sub,p{color:var(--muted)}h1,h2{color:var(--gold)}h1{margin:0;font-size:clamp(1.5rem,4vw,2.2rem)}.panel{background:linear-gradient(145deg,#122d40,#0a1a29);border:1px solid var(--line);border-radius:22px;padding:clamp(16px,3vw,26px);box-shadow:0 18px 45px #0003;margin-bottom:16px}.filters{display:grid;grid-template-columns:2fr 1fr;gap:12px}input,select,textarea{width:100%;padding:12px;border:1px solid #47667a;border-radius:11px;background:#071522;color:var(--text);font:inherit}.searchbox{position:relative}.searchbox input{padding-inline-start:48px}.searchicon{position:absolute;inset-inline-start:15px;top:7px;font-size:1.4rem;color:var(--teal)}.chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.chip{border:1px solid var(--line);background:#0b1d2b;color:var(--text);padding:7px 12px;border-radius:999px;cursor:pointer;font:inherit}.chip:focus,.chip:hover{border-color:var(--teal)}.helper{font-size:.9rem;margin:8px 0 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}.provider{border:1px solid var(--line);border-radius:17px;padding:17px;background:#0b1d2b}.badge{display:inline-block;border:1px solid #70f1e655;color:var(--teal);border-radius:999px;padding:2px 10px;font-size:.82rem}.provider h3{margin:8px 0;color:#fff}.muted{color:var(--muted);font-size:.92rem}.btn{display:inline-flex;justify-content:center;align-items:center;padding:11px 16px;border:0;border-radius:12px;background:linear-gradient(145deg,#fff0bc,#c88b2f);color:#142333;font-weight:bold;font:inherit;text-decoration:none;cursor:pointer}.secondary{border:1px solid var(--line);background:transparent;color:var(--text)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.notice{border:1px solid #ffd78255;background:#ffd7820b;border-radius:14px;padding:13px;color:#f3dba2}.state{text-align:center;padding:26px;color:var(--muted)}footer{text-align:center;color:var(--muted);padding:20px;font-size:.9rem}@media(max-width:600px){body{padding:9px}.filters{grid-template-columns:1fr}.top{align-items:flex-start}}
 </style>
 </head>
 <body><main>
 <header class="top"><div class="logo">۷۷۷</div><div><h1>جست‌وجوی خدمات هرمز</h1><div class="sub">گزینه‌های تأییدشده را پیدا کن؛ انتخاب نهایی با خودت است.</div></div></header>
 <section class="panel">
 <p>این فهرست فقط کسب‌وکارهایی را نمایش می‌دهد که هرمز تأیید کرده و اجازه انتشار عمومی داده‌اند. پیش از هر توافق، قیمت، زمان دسترسی و شرایط خدمت را مستقیماً تأیید کنید؛ این صفحه رزرو یا پرداخت قطعی انجام نمی‌دهد.</p>
-<div class="filters"><input id="search" type="search" placeholder="جست‌وجو: نام کسب‌وکار، خدمت یا شهر" aria-label="جست‌وجوی خدمات"><select id="type" aria-label="فیلتر نوع خدمت"><option value="">همه خدمات</option><option>اقامتگاه و سوئیت</option><option>راننده و خودرو</option><option>قایق و شناور</option><option>رستوران و غذا</option><option>راهنمای گردشگری</option><option>تعمیرکار و برق‌کار</option><option>مهارت و خدمات تخصصی</option></select></div>
+<div class="searchbox"><span class="searchicon" aria-hidden="true">⌕</span><input id="search" type="search" autocomplete="off" placeholder="چی لازم داری؟ مثلاً سوئیت در قشم، ماشین با راننده، تعمیر کولر…" aria-label="جست‌وجوی هوشمند خدمات"><p class="helper">با زبان خودت بنویس؛ نام خدمت، شهر یا توضیح نیازت را وارد کن.</p></div>
+<div class="chips" aria-label="جست‌وجوهای سریع">
+<button class="chip" type="button" data-query="اقامتگاه و سوئیت">🏡 سوئیت و اقامتگاه</button>
+<button class="chip" type="button" data-query="راننده و خودرو">🚗 خودرو و راننده</button>
+<button class="chip" type="button" data-query="قایق و شناور">🚤 قایق</button>
+<button class="chip" type="button" data-query="رستوران و غذا">🍽️ غذا</button>
+<button class="chip" type="button" data-query="تعمیرکار و برق‌کار">🧰 تعمیرکار</button>
+<button class="chip" type="button" data-query="راهنمای گردشگری">🧭 راهنمای گردشگری</button>
+</div>
+<div class="filters"><select id="type" aria-label="دسته‌بندی خدمات"><option value="">همه دسته‌ها</option><option>اقامتگاه و سوئیت</option><option>راننده و خودرو</option><option>قایق و شناور</option><option>رستوران و غذا</option><option>راهنمای گردشگری</option><option>تعمیرکار و برق‌کار</option><option>مهارت و خدمات تخصصی</option></select><button id="clearSearch" class="btn secondary" type="button">پاک کردن جست‌وجو</button></div>
 <div id="state" class="state" role="status" aria-live="polite">در حال دریافت فهرست خدمات…</div>
 <div id="results" class="grid"></div>
 <div class="actions"><a class="btn secondary" href="/orders.html">ثبت درخواست خدمت</a><a class="btn" href="/providers.html">ثبت کسب‌وکار و همکاری</a><a class="btn secondary" href="/">صفحه اصلی هرمز</a></div>
@@ -26,13 +35,26 @@ main{max-width:980px;margin:18px auto}.top{display:flex;align-items:center;gap:1
 </main>
 <script>
 const state=document.getElementById("state"),results=document.getElementById("results"),search=document.getElementById("search"),typeFilter=document.getElementById("type");
+const normalize=value=>String(value||"").toLocaleLowerCase("fa").replace(/[\u064B-\u065F\u0670]/g,"").replace(/ي/g,"ی").replace(/ك/g,"ک").replace(/\s+/g," ").trim();
+const synonyms=[
+ [["سوئیت","سوییت","هتل","اقامت","جا برای خواب","شب مانی","شب‌مانی"],"اقامتگاه و سوئیت"],
+ [["ماشین","خودرو","تاکسی","راننده","کرایه","اجاره خودرو"],"راننده و خودرو"],
+ [["قایق","لنج","شناور","دریا","گشت دریایی"],"قایق و شناور"],
+ [["غذا","رستوران","کافه","صبحانه","ناهار","شام"],"رستوران و غذا"],
+ [["تعمیر","تعمیرکار","برقکار","برق‌کار","کولر","لوله کش","لوله‌کش"],"تعمیرکار و برق‌کار"],
+ [["راهنما","گردشگری","تور","جاهای دیدنی","راهنمای محلی"],"راهنمای گردشگری"]
+];
 let providers=[];
+function inferCategory(q){for(const [words,category] of synonyms){if(words.some(word=>q.includes(normalize(word))))return category;}return "";}
 function render(){
- const q=search.value.trim().toLocaleLowerCase();
- const type=typeFilter.value;
- const list=providers.filter(p=>(!type||p.serviceType===type)&&(!q||[p.businessName,p.serviceType,p.city,p.description].join(" ").toLocaleLowerCase().includes(q)));
+ const raw=normalize(search.value),type=typeFilter.value;
+ const inferred=inferCategory(raw);
+ const query=raw.split(" ").filter(word=>word.length>1);
+ const list=providers.map(p=>{const fields=normalize([p.businessName,p.serviceType,p.city,p.description].join(" "));let score=0;if(raw&&fields.includes(raw))score+=8;if(inferred&&p.serviceType===inferred)score+=5;if(type&&p.serviceType===type)score+=10;for(const word of query){if(fields.includes(word))score+=2;}return {p,score};})
+ .filter(x=>(!type||x.p.serviceType===type)&&(!raw||x.score>0))
+ .sort((a,b)=>b.score-a.score).map(x=>x.p);
  results.replaceChildren();
- if(!list.length){state.style.display="block";state.textContent=providers.length?"موردی با این جست‌وجو پیدا نشد. فیلتر را تغییر بده یا درخواست خدمت ثبت کن.":"هنوز کسب‌وکار تأییدشده‌ای برای نمایش عمومی در فهرست ثبت نشده است. ارائه‌دهندگان می‌توانند از بخش «ثبت کسب‌وکار و همکاری» درخواست بدهند؛ پس از بررسی و اجازه انتشار، در اینجا دیده می‌شوند.";return;}
+ if(!list.length){state.style.display="block";state.textContent=providers.length?"موردی دقیق پیدا نشد. عبارت دیگری بنویس، دسته‌بندی را عوض کن یا درخواستت را ثبت کن تا در صورت امکان پیگیری شود.":"هنوز کسب‌وکار تأییدشده‌ای برای نمایش عمومی ثبت نشده است. با ثبت درخواست خدمت می‌توانی نیازت را اعلام کنی؛ ارائه‌دهندگان پس از بررسی و اجازه انتشار اینجا دیده می‌شوند.";return;}
  state.style.display="none";
  for(const p of list){
   const card=document.createElement("article");card.className="provider";
@@ -45,5 +67,7 @@ function render(){
  }
 }
 search.addEventListener("input",render);typeFilter.addEventListener("change",render);
+document.querySelectorAll("[data-query]").forEach(button=>button.addEventListener("click",()=>{const category=button.dataset.query;search.value=category;typeFilter.value="";render();search.focus();}));
+document.getElementById("clearSearch").addEventListener("click",()=>{search.value="";typeFilter.value="";render();search.focus();});
 fetch("/api/v1/providers",{headers:{Accept:"application/json"}}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.message||"فهرست خدمات در دسترس نیست.");providers=Array.isArray(d.providers)?d.providers:[];render();}).catch(e=>{state.style.display="block";state.textContent="فهرست خدمات اکنون از سرور دریافت نشد. "+(e.message||"لطفاً بعداً دوباره تلاش کنید.");});
 </script></body></html>
