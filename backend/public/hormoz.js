@@ -327,7 +327,8 @@ if (speechButton) {
   }
 }
 
-async function sendMessage(options = {}) {\n  const fromVoice = options.fromVoice === true;
+async function sendMessage(options = {}) {
+  const fromVoice = options.fromVoice === true;
   if (!input || !sendButton || !messages) {
     return;
   }
