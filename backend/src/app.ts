@@ -22,6 +22,7 @@ import { MemoryService } from "./modules/memory/service.js";
 import { MockIntelligenceEngine } from "./modules/intelligence/mock-intelligence-engine.js";
 import { OpenRouterIntelligenceProvider } from "./modules/intelligence/openrouter-intelligence-provider.js";
 import { adminRoutes, recordPublicVisit } from "./routes/admin.js";
+import { imageGenerationRoutes } from "./routes/image-generation.js";
 
 export interface AppOptions {
   light?: LightDevice;
@@ -2079,6 +2080,8 @@ return reply.type("application/xml; charset=utf-8").send(content);
   app.register(
     healthRoutes
   );
+
+  app.register(imageGenerationRoutes);
 
 
   app.register(
