@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import crypto from "node:crypto";
+import { InMemoryRateLimiter } from "../utils/rate-limit.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
@@ -174,6 +175,8 @@ async function ensureOpportunitiesTable() {
 }
 
 
+
+const orderTrackingRateLimiter = new InMemoryRateLimiter({ windowMs: 60_000, maxRequests: 30, maxKeys: 10_000 });
 
 let serviceOrdersTableReady = false;
 
@@ -1227,6 +1230,12 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/v1/orders/track/:token", async (request, reply) => {
+    const rateLimit = orderTrackingRateLimiter.check(String(request.ip ?? "unknown"));
+    reply.header("Cache-Control", "no-store");
+    if (!rateLimit.allowed) {
+      reply.header("Retry-After", String(Math.max(1, Math.ceil(rateLimit.retryAfterMs / 1000))));
+      return reply.code(429).send({ ok: false, message: "درخواست‌های پیگیری بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید." });
+    }
     if (!db) return reply.code(503).send({ ok: false, message: "پیگیری سفارش موقتاً در دسترس نیست." });
     const params = request.params as { token?: string };
     const token = String(params.token ?? "");
