@@ -53,10 +53,19 @@ function normalizeDatabaseUrl(value: string | undefined): string | null {
 
 const databaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
 
+const databaseHostname = (() => {
+  try {
+    return databaseUrl ? new URL(databaseUrl).hostname : "";
+  } catch {
+    return "";
+  }
+})();
+const isLocalDatabase = databaseHostname === "localhost" || databaseHostname === "127.0.0.1";
+
 const db = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
-      ssl: { rejectUnauthorized: false },
+      ssl: isLocalDatabase ? false : { rejectUnauthorized: false },
       max: 3
     })
   : null;
