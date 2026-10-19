@@ -4,6 +4,18 @@ const input = document.getElementById("message");
 const sendButton = document.getElementById("sendButton");
 const messages = document.getElementById("messages");
 
+// A service shortcut can open Nava with a suggested question already prepared.
+if (input) {
+  const params = new URLSearchParams(window.location.search);
+  const suggestedPrompt = params.get("prompt");
+  if (suggestedPrompt && !input.value) {
+    input.value = suggestedPrompt;
+    input.focus();
+    const status = document.getElementById("voiceStatus");
+    if (status) status.textContent = "درخواست آماده است؛ برای ارسال، دکمه «ارسال» را بزن.";
+  }
+}
+
 function getResponseText(data) {
   if (!data) return "";
 
