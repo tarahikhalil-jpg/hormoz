@@ -61,6 +61,10 @@ const db = databaseUrl
     })
   : null;
 
+export async function closeAdminDatabaseForTests() {
+  if (db) await db.end();
+}
+
 try {
   if (!databaseUrl) {
     console.info("[HORMOZ_DB_URL_DIAGNOSTIC] DATABASE_URL is not set or empty");
