@@ -26,6 +26,9 @@ main{max-width:980px;margin:18px auto}.top{display:flex;align-items:center;gap:1
 <button class="chip" type="button" data-query="راهنمای گردشگری">🧭 راهنمای گردشگری</button>
 </div>
 <div class="filters"><select id="type" aria-label="دسته‌بندی خدمات"><option value="">همه دسته‌ها</option><option>اقامتگاه و سوئیت</option><option>راننده و خودرو</option><option>قایق و شناور</option><option>رستوران و غذا</option><option>راهنمای گردشگری</option><option>تعمیرکار و برق‌کار</option><option>مهارت و خدمات تخصصی</option></select><button id="clearSearch" class="btn secondary" type="button">پاک کردن جست‌وجو</button></div>
+<h2 style="margin-top:18px">پیدا کردن مسیر در همه بخش‌های هرمز</h2>
+<p class="helper">این جست‌وجو هم خدمات و کسب‌وکارهای تأییدشده را بررسی می‌کند و هم مسیرهای سایت، پیگیری سفارش و راهنمایی امور اداری را پیشنهاد می‌دهد.</p>
+<div id="navigationResults" class="grid" aria-live="polite"></div>
 <div id="state" class="state" role="status" aria-live="polite">در حال دریافت فهرست خدمات…</div>
 <div id="results" class="grid"></div>
 <div class="actions"><a class="btn secondary" href="/orders.html">ثبت درخواست خدمت</a><a class="btn" href="/providers.html">ثبت کسب‌وکار و همکاری</a><a class="btn secondary" href="/">صفحه اصلی هرمز</a></div>
@@ -34,7 +37,7 @@ main{max-width:980px;margin:18px auto}.top{display:flex;align-items:center;gap:1
 <footer>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.<br>چراغ ۷۷۷ برای خاموش شدن ساخته نشده ❤️</footer>
 </main>
 <script>
-const state=document.getElementById("state"),results=document.getElementById("results"),search=document.getElementById("search"),typeFilter=document.getElementById("type");
+const state=document.getElementById("state"),results=document.getElementById("results"),search=document.getElementById("search"),typeFilter=document.getElementById("type"),navigationResults=document.getElementById("navigationResults");
 const normalize=value=>String(value||"").toLocaleLowerCase("fa").replace(/[\u064B-\u065F\u0670]/g,"").replace(/ي/g,"ی").replace(/ك/g,"ک").replace(/\s+/g," ").trim();
 const synonyms=[
  [["سوئیت","سوییت","هتل","اقامت","جا برای خواب","شب مانی","شب‌مانی"],"اقامتگاه و سوئیت"],
@@ -46,8 +49,35 @@ const synonyms=[
 ];
 let providers=[];
 function inferCategory(q){for(const [words,category] of synonyms){if(words.some(word=>q.includes(normalize(word))))return category;}return "";}
+const navigation=[
+ {title:"گفت‌وگو و راهنمایی از نوا",desc:"پرسیدن سؤال، پیدا کردن مسیر مناسب یا روشن‌کردن نیاز",href:"/chat",words:"نوا هوش مصنوعی سؤال راهنمایی کمک پیدا کردن مسیر"},
+ {title:"ثبت درخواست یا سفارش خدمت",desc:"اعلام نیاز به خدمت، محصول یا همکاری",href:"/orders.html",words:"ثبت درخواست سفارش نیاز خدمت محصول همکاری"},
+ {title:"پیگیری سفارش و درخواست",desc:"بررسی وضعیت سفارش با کد رهگیری",href:"/track-order.html",words:"پیگیری سفارش کد رهگیری وضعیت درخواست"},
+ {title:"راهنمای امور اداری",desc:"آماده‌سازی متن درخواست و پیدا کردن مراحل و مرجع رسمی پیگیری؛ نه اتصال مستقیم به اداره‌ها",href:"/chat?prompt="+encodeURIComponent("برای پیگیری یک موضوع اداری کمک می‌خواهم. از من بپرس موضوع، شهر و اداره مربوط چیست؛ سپس مراحل احتمالی، مدارک موردنیاز و راه بررسی مرجع رسمی را توضیح بده و اگر اطلاعات قطعی نیست روشن بگو."),words:"اداره اداری امور اداری فرم مدارک درخواست شکایت مجوز قبض مالیات بیمه ثبت احوال شهرداری نامه"},
+ {title:"ثبت کسب‌وکار یا معرفی خدمت",desc:"معرفی کسب‌وکار و درخواست بررسی برای نمایش عمومی",href:"/providers.html",words:"کسب و کار فروشگاه مغازه معرفی ارائه دهنده ثبت خدمت"},
+ {title:"خدمات و کسب‌وکارهای تأییدشده",desc:"جست‌وجو در فهرست ارائه‌دهندگان تأییدشده",href:"/directory.html",words:"فهرست ارائه دهنده کسب و کار خدمات تأیید شده"},
+ {title:"شماره‌ها و مراکز اضطراری",desc:"دسترسی به اطلاعات اضطراری درج‌شده در سایت",href:"/emergency.html",words:"اورژانس آتش نشانی پلیس اضطراری فوری"},
+ {title:"سرگرمی و خلاقیت",desc:"رفتن به بخش سرگرمی و خلاقیت",href:"/entertainment.html",words:"سرگرمی بازی خلاقیت"},
+ {title:"کارگاه تولید تصویر و ویدئو",desc:"ساخت محتوای تصویری با ابزارهای در دسترس",href:"/creative-studio.html",words:"تصویر عکس پوستر ویدئو فیلم طراحی تولید محتوا"},
+ {title:"صفحه اصلی و همه خدمات",desc:"دیدن دسته‌بندی کامل خدمات هرمز",href:"/",words:"صفحه اصلی همه خدمات خانه"}
+];
+function renderNavigation(raw){
+ navigationResults.replaceChildren();
+ const query=raw.split(" ").filter(word=>word.length>1);
+ const matches=navigation.map(item=>({item,score:query.reduce((score,word)=>score+(normalize(item.title+" "+item.desc+" "+item.words).includes(word)?1:0),0)}))
+ .filter(x=>!raw||x.score>0).sort((a,b)=>b.score-a.score);
+ for(const {item} of matches){
+   const card=document.createElement("article");card.className="provider";
+   const title=document.createElement("h3");title.textContent=item.title;
+   const desc=document.createElement("p");desc.textContent=item.desc;
+   const link=document.createElement("a");link.className="btn";link.href=item.href;link.textContent="رفتن به این بخش";
+   card.append(title,desc,link);navigationResults.append(card);
+ }
+ if(raw&&!matches.length){const note=document.createElement("p");note.className="state";note.textContent="مسیر مشخصی پیدا نشد؛ می‌توانی همین عبارت را از نوا بپرسی.";const link=document.createElement("a");link.className="btn";link.href="/chat?prompt="+encodeURIComponent("در هوش هرمز دنبال این موضوع هستم: "+search.value+" . مسیر مناسب را پیشنهاد بده و اگر نیاز به مراجعه به مرجع رسمی است مشخص کن.");link.textContent="پرسیدن از نوا";navigationResults.append(note,link);}
+}
 function render(){
  const raw=normalize(search.value),type=typeFilter.value;
+ renderNavigation(raw);
  const inferred=inferCategory(raw);
  const query=raw.split(" ").filter(word=>word.length>1);
  const list=providers.map(p=>{const fields=normalize([p.businessName,p.serviceType,p.city,p.description].join(" "));let score=0;if(raw&&fields.includes(raw))score+=8;if(inferred&&p.serviceType===inferred)score+=5;if(type&&p.serviceType===type)score+=10;for(const word of query){if(fields.includes(word))score+=2;}return {p,score};})
@@ -70,5 +100,6 @@ function render(){
 search.addEventListener("input",render);typeFilter.addEventListener("change",render);
 document.querySelectorAll("[data-query]").forEach(button=>button.addEventListener("click",()=>{const category=button.dataset.query;search.value=category;typeFilter.value="";render();search.focus();}));
 document.getElementById("clearSearch").addEventListener("click",()=>{search.value="";typeFilter.value="";render();search.focus();});
+const initialQuery=new URLSearchParams(location.search).get("q");if(initialQuery)search.value=initialQuery;
 fetch("/api/v1/providers",{headers:{Accept:"application/json"}}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.message||"فهرست خدمات در دسترس نیست.");providers=Array.isArray(d.providers)?d.providers:[];render();}).catch(e=>{state.style.display="block";state.textContent="فهرست خدمات اکنون از سرور دریافت نشد. "+(e.message||"لطفاً بعداً دوباره تلاش کنید.");});
 </script></body></html>
