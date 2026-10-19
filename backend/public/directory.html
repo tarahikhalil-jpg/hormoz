@@ -69,17 +69,52 @@ const navigation=[
 ];
 function renderNavigation(raw){
  navigationResults.replaceChildren();
- const query=raw.split(" ").filter(word=>word.length>1);
- const matches=navigation.map(item=>({item,score:query.reduce((score,word)=>score+(normalize(item.title+" "+item.desc+" "+item.words).includes(word)?1:0),0)}))
- .filter(x=>!raw||x.score>0).sort((a,b)=>b.score-a.score);
- for(const {item} of matches){
+ const query=normalize(raw);
+ const words=query.split(" ").filter(word=>word.length>1);
+ const intents=[
+  {keys:["تعمیر کولر","سرویس کولر","کولر","تعمیرکار","برقکار","برق‌کار","برق کار","لوله کش","لوله‌کش","تعمیر موبایل","تعمیر گوشی","تعمیر کامپیوتر","تعمیر رایانه"],title:"تعمیرات و خدمات فنی"},
+  {keys:["دنبال کار","کار میخواهم","کار می‌خواهم","شغل","استخدام","بیکار","فرصت شغلی","درآمد"],title:"کار و فرصت‌های شغلی"},
+  {keys:["امور اداری","کار اداری","اداره","مجوز","مدارک","ثبت احوال","شهرداری","بیمه","مالیات","نامه اداری","شکایت"],title:"راهنمای امور اداری"},
+  {keys:["خدمات خانگی","کار در خانه","کار خانگی","نظافت","خیاطی","شیرینی پزی","آشپزی","صنایع دستی"],title:"خدمات خانگی و تولیدات خانگی"},
+  {keys:["تور گردشگری","گردشگری","تور","راهنمای گردشگری","جاهای دیدنی"],title:"گردشگری، تور و اقامت"},
+  {keys:["سوئیت","سوییت","اقامتگاه","هتل","جای خواب","شب مانی","شب‌مانی","بومگردی"],title:"گردشگری، تور و اقامت"},
+  {keys:["قایق","لنج","شناور","گشت دریایی"],title:"گردشگری، تور و اقامت"},
+  {keys:["راننده","تاکسی","خودرو","ماشین","پیک","ارسال","حمل و نقل","حمل‌ونقل"],title:"حمل‌ونقل، پیک و ارسال"},
+  {keys:["رستوران","غذا","کافه","صبحانه","ناهار","شام"],title:"خدمات خانگی و تولیدات خانگی"},
+  {keys:["آموزش","معلم","کلاس","زبان","یادگیری","مهارت آموزی"],title:"آموزش و مهارت‌آموزی"},
+  {keys:["پوستر","تصویر","عکس","طراحی","ویدئو","ویدیو","گرافیک","تولید محتوا"],title:"کارگاه تولید تصویر و ویدئو"},
+  {keys:["بلیت","بلیط","کنسرت","سینما","تئاتر","سرگرمی","رویداد"],title:"رویداد، سرگرمی و بلیت"},
+  {keys:["پیگیری سفارش","کد رهگیری","پیگیری درخواست"],title:"پیگیری سفارش و درخواست"},
+  {keys:["ثبت کسب و کار","ثبت کسب‌وکار","معرفی مغازه","ثبت خدمت","تبلیغات","آگهی"],title:"ثبت کسب‌وکار یا معرفی خدمت"},
+  {keys:["اورژانس","آتش نشانی","آتش‌نشانی","پلیس","اضطراری"],title:"شماره‌ها و مراکز اضطراری"},
+  {keys:["ثبت درخواست","سفارش خدمت","درخواست خدمت","میخواهم سفارش"],title:"ثبت درخواست یا سفارش خدمت"}
+ ];
+ const intent=intents.find(rule=>rule.keys.some(key=>query.includes(normalize(key))));
+ const ranked=navigation.map(item=>{
+  const haystack=normalize(item.title+" "+item.desc+" "+item.words);
+  let score=words.reduce((total,word)=>total+(haystack.includes(word)?1:0),0);
+  if(intent&&item.title===intent.title)score+=100;
+  if(query&&haystack.includes(query))score+=20;
+  return {item,score};
+ }).filter(entry=>!query||entry.score>0).sort((a,b)=>b.score-a.score);
+ if(query&&intent){
+  const chosen=ranked.find(entry=>entry.item.title===intent.title);
+  if(chosen){ranked.splice(ranked.indexOf(chosen),1);ranked.unshift(chosen);}
+ }
+ const visible=query?ranked.slice(0,5):ranked;
+ for(const {item} of visible){
    const card=document.createElement("article");card.className="provider";
    const title=document.createElement("h3");title.textContent=item.title;
    const desc=document.createElement("p");desc.textContent=item.desc;
-   const link=document.createElement("a");link.className="btn";link.href=item.href;link.textContent="رفتن به این بخش";
+   const link=document.createElement("a");link.className="btn";link.href=item.href;
+   link.textContent=(intent&&item.title===intent.title)?"رفتن مستقیم به بخش مرتبط":"رفتن به این بخش";
    card.append(title,desc,link);navigationResults.append(card);
  }
- if(raw&&!matches.length){const note=document.createElement("p");note.className="state";note.textContent="مسیر مشخصی پیدا نشد؛ می‌توانی همین عبارت را از نوا بپرسی.";const link=document.createElement("a");link.className="btn";link.href="/chat?prompt="+encodeURIComponent("در هوش هرمز دنبال این موضوع هستم: "+search.value+" . مسیر مناسب را پیشنهاد بده و اگر نیاز به مراجعه به مرجع رسمی است مشخص کن.");link.textContent="پرسیدن از نوا";navigationResults.append(note,link);}
+ if(query&&!visible.length){
+  const note=document.createElement("p");note.className="state";note.textContent="مسیر مشخصی پیدا نشد؛ می‌توانی همین عبارت را از نوا بپرسی.";
+  const link=document.createElement("a");link.className="btn";link.href="/chat?prompt="+encodeURIComponent("در هوش هرمز دنبال این موضوع هستم: "+search.value+" . مسیر مناسب را پیشنهاد بده و اگر نیاز به مراجعه به مرجع رسمی است مشخص کن.");
+  link.textContent="پرسیدن از نوا";navigationResults.append(note,link);
+ }
 }
 function render(){
  const raw=normalize(search.value),type=typeFilter.value;
