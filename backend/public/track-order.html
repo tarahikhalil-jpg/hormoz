@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#073b4c">
+<title>پیگیری سفارش | هوش هرمز</title>
+<style>
+:root{font-family:Tahoma,Arial,sans-serif;color:#15313a;background:#f3f8f8}*{box-sizing:border-box}body{margin:0;padding:20px}.wrap{max-width:620px;margin:28px auto}.card{background:#fff;border:1px solid #dbe8e8;border-radius:18px;padding:22px;box-shadow:0 8px 28px #073b4c12}h1{margin-top:0;color:#07566a;font-size:1.55rem}.muted{color:#60747a;line-height:1.9}label{display:block;margin:16px 0 8px;font-weight:bold}input,button{font:inherit;width:100%;padding:13px;border-radius:10px}input{border:1px solid #b8cccc;direction:ltr;text-align:left}button{border:0;background:#087f8c;color:white;margin-top:12px;font-weight:bold;cursor:pointer}button:disabled{opacity:.6}.result{margin-top:18px}.status{padding:12px;background:#e8f7f2;border-radius:10px;margin:12px 0}.history{border-right:3px solid #cde4e6;padding:4px 14px;margin-top:14px}.entry{margin:12px 0}.entry small{display:block;color:#71858a;direction:ltr;text-align:right;margin-top:5px}.error{color:#a22}.hidden{display:none}a{color:#087f8c}
+</style>
+</head>
+<body><main class="wrap"><section class="card">
+<h1>پیگیری سفارش هوش هرمز</h1>
+<p class="muted">کد رهگیری‌ای را که هنگام ثبت درخواست دریافت کرده‌اید وارد کنید. برای حفظ حریم خصوصی، اطلاعات تماس و جزئیات مالی در این صفحه نمایش داده نمی‌شود.</p>
+<form id="trackForm"><label for="trackingCode">کد رهگیری</label><input id="trackingCode" name="trackingCode" autocomplete="off" required minlength="20" maxlength="40" placeholder="کد رهگیری را وارد کنید" dir="ltr"><button id="submitBtn" type="submit">پیگیری سفارش</button></form>
+<div id="result" class="result hidden" aria-live="polite"></div>
+<p class="muted">هوش هرمز | نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p>
+</section></main>
+<script>
+const form=document.getElementById("trackForm"),input=document.getElementById("trackingCode"),button=document.getElementById("submitBtn"),result=document.getElementById("result");
+const statuses={submitted:"درخواست ثبت شده است.",awaiting_provider:"در حال هماهنگی با ارائه‌دهنده خدمت هستیم.",quoted:"قیمت یا پیشنهاد خدمت آماده بررسی است.",confirmed:"سفارش تأیید شده است.",payment_pending:"در انتظار تکمیل پرداخت است.",payment_confirmed:"پرداخت توسط سامانه تأیید شده است.",in_progress:"سفارش در حال انجام است.",completed:"سفارش تکمیل شده است.",cancelled:"سفارش لغو شده است.",refund_pending:"درخواست بازپرداخت در حال بررسی است.",refunded:"بازپرداخت ثبت شده است."};
+function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}
+form.addEventListener("submit",async e=>{e.preventDefault();const token=input.value.trim();result.replaceChildren();result.className="result";button.disabled=true;button.textContent="در حال بررسی…";try{const response=await fetch("/api/v1/orders/track/"+encodeURIComponent(token),{headers:{Accept:"application/json"}});const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.message||"کد رهگیری معتبر نیست یا سفارش پیدا نشد.");result.append(el("h2","", "وضعیت سفارش"));const summary=el("div","status");summary.append(el("strong","", "شماره سفارش: "+data.orderNumber));summary.append(el("p","",statuses[data.status]||data.message||"وضعیت به‌روزرسانی شده است."));result.append(summary);result.append(el("p","muted","نوع خدمت: "+data.serviceType));const hist=el("div","history");hist.append(el("h3","","تاریخچه وضعیت"));for(const item of (data.history||[])){const row=el("div","entry");row.append(el("div","",statuses[item.status]||item.message||"به‌روزرسانی وضعیت"));if(item.at)row.append(el("small","",new Date(item.at).toLocaleString("fa-IR")));hist.append(row)}result.append(hist);result.className="result"}catch(err){result.append(el("p","error",err.message||"ارتباط با سامانه برقرار نشد."));}finally{button.disabled=false;button.textContent="پیگیری سفارش"}});
+const params=new URLSearchParams(location.search);if(params.get("code"))input.value=params.get("code");
+</script></body></html>

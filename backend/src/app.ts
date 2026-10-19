@@ -990,6 +990,13 @@ footer {
 
       <a
         class="chat-button"
+        href="/agency-connect.html"
+      >
+        🏢 اتصال اداره‌ها و سازمان‌ها
+      </a>
+
+      <a
+        class="chat-button"
         href="/opportunities.html"
       >
         🤝 فرصت‌ها و معرفی خدمات
