@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071522"><title>اتصال امن موتور تصویر | هوش هرمز</title>
+<style>body{margin:0;background:#071522;color:#f6f8fc;font:17px/2 Tahoma,Arial,sans-serif;display:grid;place-items:center;min-height:100vh}.box{width:min(620px,90%);background:#10283b;border:1px solid #29465c;border-radius:20px;padding:24px;text-align:center}a{color:#70f1e6}</style></head>
+<body><main class="box"><h1>💡 اتصال امن به هوش هرمز</h1><p id="status">در حال تکمیل اتصال امن حساب...</p><p><a href="/creative-studio.html">بازگشت به کارگاه</a></p></main>
+<script>
+(async()=>{
+ const status=document.getElementById('status'),params=new URLSearchParams(location.search);
+ const code=params.get('code'),returnedState=params.get('state'),error=params.get('error');
+ const verifier=sessionStorage.getItem('hormoz_polli_verifier'),expectedState=sessionStorage.getItem('hormoz_polli_state'),clientId=localStorage.getItem('hormoz_pollinations_app_key');
+ const redirectUri=location.origin+'/pollinations-callback.html';
+ if(error){status.textContent='اتصال لغو شد یا سرویس خطا داد: '+error;return;}
+ if(!code||!returnedState||!verifier||!expectedState||!clientId){status.textContent='اطلاعات اتصال ناقص است یا نشست مرورگر از دست رفته. به کارگاه برگرد و دوباره اتصال را شروع کن.';return;}
+ if(returnedState!==expectedState){status.textContent='بررسی امنیتی اتصال ناموفق بود. برای امنیت، اتصال را دوباره از کارگاه شروع کن.';return;}
+ try{
+  const response=await fetch('https://enter.pollinations.ai/api/oauth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',code,client_id:clientId,redirect_uri:redirectUri,code_verifier:verifier})});
+  const data=await response.json();
+  if(!response.ok||!data.access_token)throw new Error(data.error_description||data.error||'تبادل کد اتصال ناموفق بود.');
+  sessionStorage.setItem('hormoz_pollinations_user_token',data.access_token);
+  sessionStorage.removeItem('hormoz_polli_verifier');sessionStorage.removeItem('hormoz_polli_state');
+  status.textContent='اتصال موفق شد. در حال بازگشت به کارگاه تولید تصویر...';
+  history.replaceState({},'',location.pathname);
+  location.replace('/creative-studio.html?connected=1');
+ }catch(e){status.textContent='اتصال کامل نشد: '+e.message+'؛ به کارگاه برگرد و دوباره تلاش کن.';}
+})();
+</script></body></html>
