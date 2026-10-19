@@ -91,6 +91,15 @@ audio{accent-color:#ffd782}
 
   <section id="portal" aria-labelledby="portal-title">
     <div class="section-head"><h2 id="portal-title">درگاه اصلی هوش هرمز</h2><p>هر فرد از مسیر مناسب خودش وارد شود؛ دسترسی‌ها بر اساس نقش و با رعایت امنیت انجام می‌شود.</p></div>
+    <div class="hormoz-smart-search" style="margin:18px 0 22px;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--surface,rgba(255,255,255,.04))">
+      <label for="hormoz-smart-search-input" style="display:block;font-weight:800;margin-bottom:8px">🔎 جست‌وجوگر هوشمند هوش هرمز</label>
+      <form id="hormoz-smart-search-form" role="search">
+        <input id="hormoz-smart-search-input" type="search" autocomplete="off" placeholder="هرچه می‌خواهی بنویس؛ مثلاً کار در خانه، تعمیر لپ‌تاپ، سوئیت، پیک..." aria-label="جست‌وجو در خدمات هوش هرمز" style="box-sizing:border-box;width:100%;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg,transparent);color:inherit;font:inherit">
+        <div class="actions" style="margin-top:10px"><button class="btn primary" type="submit">پیدا کن</button><button class="btn secondary" id="hormoz-smart-search-clear" type="button">نمایش همه خدمات</button></div>
+      </form>
+      <p id="hormoz-smart-search-status" aria-live="polite" style="margin:10px 0 0;color:var(--muted)">نام خدمت، نیاز، شغل یا حتی یک کلمه را بنویس؛ نتایج همین‌جا نمایش داده می‌شوند.</p>
+      <div id="hormoz-smart-search-fallback" hidden style="margin-top:12px"><p>مورد دقیقی پیدا نشد؟ نوا می‌تواند کمک کند درخواستت را روشن‌تر کنی یا خدمت تازه‌ای پیشنهاد بدهی.</p><a id="hormoz-smart-search-nava" class="btn primary" href="/chat">پرسیدن از نوا</a> <a class="btn secondary" href="/orders.html">ثبت خدمت تازه یا نیازمندی</a></div>
+    </div>
     <div class="grid">
       <article class="card"><div class="icon">💬</div><h3>نوا؛ دستیار هوشمند</h3><p>برای پرسش، راهنمایی، خدمات و روشن‌کردن قدم بعدی.</p><div class="actions"><a class="btn primary" href="/chat">شروع گفت‌وگو</a></div></article>
       <article class="card"><div class="icon">🔐</div><h3>پنل مدیریت</h3><p>ورود مدیر اصلی برای مدیریت خدمات، درخواست‌ها و اعضای تیم.</p><div class="actions"><a class="btn secondary" href="/admin">ورود مدیر</a></div></article>
@@ -206,6 +215,61 @@ document.querySelectorAll("[data-nava-prompt]").forEach((link) => {
   const prompt = link.getAttribute("data-nava-prompt");
   if (prompt) link.href = "/chat?prompt=" + encodeURIComponent(prompt);
 });
+
+  // Smart catalog search: searches service names and descriptions on this page.
+  (() => {
+    const input = document.getElementById("hormoz-smart-search-input");
+    const form = document.getElementById("hormoz-smart-search-form");
+    const clear = document.getElementById("hormoz-smart-search-clear");
+    const status = document.getElementById("hormoz-smart-search-status");
+    const fallback = document.getElementById("hormoz-smart-search-fallback");
+    const nava = document.getElementById("hormoz-smart-search-nava");
+    const section = document.getElementById("hormoz-services");
+    if (!input || !form || !section) return;
+    const cards = Array.from(section.querySelectorAll(".grid > .card"));
+    const normalize = value => String(value || "").toLocaleLowerCase("fa")
+      .replace(/[يى]/g, "ی").replace(/ك/g, "ک")
+      .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+      .replace(/[\u200c\s\-_.،,؛;:!?؟()\[\]{}]+/g, " ").trim();
+    const synonyms = [
+      [/کار|شغل|استخدام|درآمد|حقوق|بیکار|فرصت/, "اشتغال مهارت دورکاری خانگی استخدام کارآموزی"],
+      [/خانه|منزل|خانگی|آشپز|غذا|شیرینی|خیاط|نظافت|اتوکشی/, "اشتغال خدمات خانگی تولیدات سفارش خانگی"],
+      [/رایانه|کامپیوتر|لپ ?تاپ|موبایل|گوشی|تلفن|اینترنت|دوربین|شبکه/, "فناوری تجهیزات تعمیرات اینترنت تلفن"],
+      [/سوئیت|هتل|خانه اجاره|اقامت|بوم ?گردی/, "گردشگری اقامتگاه اجاره خانه"],
+      [/تور|جزیره|قایق|راهنما|طبیعت ?گردی/, "تور گردشگری تجربه محلی"],
+      [/پیک|ارسال|پست|تحویل|جابجایی|حمل ?ونقل/, "پیک موتوری ارسال حمل ونقل"],
+      [/گل|هدیه|جشن|عروسی|مراسم|تولد/, "گل هدیه مراسم رویداد"],
+      [/آموزش|معلم|درس|کلاس|زبان|تدریس/, "آموزش کلاس مهارت آموزی"],
+      [/تعمیر|برق ?کاری|لوله|کولر|فنی/, "تعمیرات نگهداری خدمات فنی"],
+      [/سالمند|کودک|مراقبت|همراه/, "مراقبت دسترس پذیری همراهی"],
+      [/حیوان|سگ|گربه|گیاه|باغچه/, "خدمات حیوانات گیاهان"],
+      [/بلیت|بلیط|کنسرت|سینما|تئاتر|فیلم/, "رویداد کنسرت تئاتر سینما سفر بلیت"],
+      [/آگهی|تبلیغ|فروش|خرید|نیازمندی/, "نیازمندی تبلیغات کسب و کار فروشگاه"],
+      [/ایده|جدید|تازه|اختراع|پیشنهاد|نیست/, "خدمات تازه ایده های نو هر خدمت"]
+    ];
+    function search() {
+      const query = normalize(input.value);
+      let expanded = query;
+      for (const [pattern, words] of synonyms) if (pattern.test(query)) expanded += " " + normalize(words);
+      const terms = expanded.split(" ").filter(Boolean);
+      let count = 0;
+      cards.forEach(card => {
+        const haystack = normalize(card.innerText);
+        const match = !query || terms.some(term => term.length > 1 && haystack.includes(term)) || haystack.includes(query);
+        card.hidden = !match;
+        if (match) count++;
+      });
+      fallback.hidden = !query || count > 0;
+      status.textContent = !query ? "همه خدمات نمایش داده می‌شوند." :
+        count ? count + " مورد مرتبط پیدا شد. اگر نتیجه دقیق نیست، واژه دیگری هم امتحان کن." :
+        "در فهرست فعلی نتیجه‌ای پیدا نشد.";
+      nava.href = "/chat?prompt=" + encodeURIComponent("در سامانه هوش هرمز دنبال این خدمت یا نیاز می‌گردم: " + input.value + " . کمک کن مسیر مناسب را پیدا کنم؛ اگر دسته‌ای وجود ندارد، پیشنهاد ثبت خدمت تازه را بده.");
+    }
+    form.addEventListener("submit", event => { event.preventDefault(); search(); section.scrollIntoView({behavior:"smooth",block:"start"}); });
+    input.addEventListener("input", search);
+    clear.addEventListener("click", () => { input.value = ""; search(); input.focus(); });
+  })();
+
 </script>
 <footer class="footer"><div class="wrap"><strong>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</strong><br>چراغ ۷۷۷ برای خاموش شدن ساخته نشده ✦</div></footer>
 </body>
