@@ -158,11 +158,11 @@ function addMessage(text, type) {
         voiceReplyButton.textContent = "🔊 پاسخ صوتی: روشن";
       }
       speakButton.textContent = "🔊 در حال پخش…";
-      // This is a direct tap: try the online Persian audio immediately so
-      // mobile browsers can honor their user-gesture playback requirement.
+      // Try the phone/browser's Persian speech engine first. If it fails,
+      // speakNava falls back to online Persian audio.
       speakNava(text, () => {
         speakButton.textContent = "🔊 شنیدن دوباره پاسخ";
-      }, true);
+      });
     });
     div.appendChild(speakButton);
   }
