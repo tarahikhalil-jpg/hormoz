@@ -51,7 +51,7 @@ $('connectEngine').addEventListener('click',async()=>{
  const challenge=btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
  const state=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
  sessionStorage.setItem('hormoz_polli_verifier',verifier);sessionStorage.setItem('hormoz_polli_state',state);
- const params=new URLSearchParams({response_type:'code',client_id:typed,redirect_uri:POLLI_CALLBACK,scope:'usage',models:'image,video',budget:'5',expiry:'7',state,code_challenge:challenge,code_challenge_method:'S256'});
+ const params=new URLSearchParams({response_type:'code',client_id:typed,redirect_uri:POLLI_CALLBACK,scope:'usage',models:'flux,bytedance/seedance-2.0-fast,google/veo-3.1-fast,x-ai/grok-imagine-video',budget:'5',expiry:'7',state,code_challenge:challenge,code_challenge_method:'S256'});
  location.href='https://enter.pollinations.ai/authorize?'+params.toString();
 });
 $('disconnectEngine').addEventListener('click',()=>{sessionStorage.removeItem('hormoz_pollinations_user_token');sessionStorage.removeItem('hormoz_polli_verifier');sessionStorage.removeItem('hormoz_polli_state');showEngineStatus();});
@@ -74,20 +74,30 @@ $('generateAIVideo').addEventListener('click',async()=>{
  button.disabled=true;$('aiVideoDownload').hidden=true;$('aiVideoPreview').hidden=true;
  status.textContent='درخواست به موتور ویدئوساز ارسال شد. ممکن است چند دقیقه طول بکشد و از اعتبار حساب متصل هزینه شود...';
  try{
-  const content=[{type:'text',text:'Generate a real '+duration+'-second MP4 video. Follow the user instructions closely. Preserve the identity and key details of the reference image, create visible natural motion, coherent temporal consistency, smooth cinematic camera movement, no sudden scene changes unless requested. User instructions: '+prompt+' Duration: '+duration+' seconds. Output video only.'}];
-  if(file){
+  let videoUrl='';
+  if(!file){
+   const url=new URL('https://gen.pollinations.ai/video/'+encodeURIComponent(prompt));
+   url.searchParams.set('model',model);url.searchParams.set('duration',String(duration));
+   const response=await fetch(url,{headers:{Authorization:'Bearer '+token,Accept:'video/mp4,application/json'}});
+   if(!response.ok){let msg='تولید ویدئو موفق نبود.';try{const d=await response.json();if(response.status===402)msg='اعتبار حساب کافی نیست یا سقف هزینه پر شده است.';else if(response.status===401||response.status===403)msg='کلید متصل اجازه تولید ویدئو ندارد؛ اتصال را دوباره انجام بده و مدل ویدئو را مجاز کن.';else msg=d.error?.message||d.error||msg;}catch{}throw new Error(msg+' (HTTP '+response.status+')');}
+   const blob=await response.blob();
+   if(blob.type.startsWith('video/')){videoUrl=URL.createObjectURL(blob);$('aiVideoDownload').download='hormoz-ai-video.mp4';}
+   else {const body=await blob.text();try{const d=JSON.parse(body);videoUrl=d.url||d.data?.[0]?.url||'';}catch{}if(!videoUrl)throw new Error('سرویس به‌جای فایل ویدئو پاسخ دیگری برگرداند: '+body.slice(0,180));}
+  }else{
    if(file.size>8*1024*1024)throw new Error('عکس مرجع باید کمتر از ۸ مگابایت باشد.');
    const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('خواندن عکس مرجع ناموفق بود.'));reader.readAsDataURL(file);});
-   content.push({type:'image_url',image_url:{url:dataUrl}});
+   const content=[{type:'text',text:'Generate a real MP4 video around '+duration+' seconds long, starting from the provided reference image. Follow the instructions closely and create clearly visible natural motion, temporal consistency and smooth cinematic movement. User instructions: '+prompt+' Requested duration: '+duration+' seconds. Output video only.'},{type:'image_url',image_url:{url:dataUrl}}];
+   const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({model,messages:[{role:'user',content}]})});
+   if(!response.ok){let msg='تولید ویدئو از عکس موفق نبود.';try{const d=await response.json();if(response.status===402)msg='اعتبار حساب کافی نیست یا سقف هزینه پر شده است.';else if(response.status===401||response.status===403)msg='کلید متصل اجازه تولید ویدئو ندارد؛ دوباره وصل شو و مجوز مدل ویدئو را تأیید کن.';else msg=d.error?.message||d.error||msg;}catch{}throw new Error(msg+' (HTTP '+response.status+')');}
+   const data=await response.json(),textOut=data.choices?.[0]?.message?.content;
+   const urls=(String(textOut||'').match(/https?:\/\/[^\s)\]}>"']+/g)||[]).map(u=>u.replace(/[.,;]+$/,''));
+   videoUrl=urls.find(u=>/\.mp4(?:[?#]|$)/i.test(u))||urls.find(u=>/pollinations|video|media|storage/i.test(u))||'';
+   if(!videoUrl)throw new Error('پاسخ موتور، پیوند مستقیم ویدئو نداشت. پاسخ: '+String(textOut||'بدون متن').slice(0,220));
+   $('aiVideoDownload').download='hormoz-ai-video.mp4';
   }
-  const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({model,messages:[{role:'user',content}]})});
-  if(!response.ok){let msg='تولید ویدئو موفق نبود.';try{const d=await response.json();if(response.status===402)msg='اعتبار حساب کافی نیست یا سقف هزینه پر شده است.';else if(response.status===401||response.status===403)msg='کلید متصل اجازه تولید ویدئو ندارد؛ اتصال را دوباره انجام بده و مجوز ویدئو را تأیید کن.';else msg=d.error?.message||d.error||msg;}catch{}throw new Error(msg+' (HTTP '+response.status+')');}
-  const data=await response.json(),textOut=data.choices?.[0]?.message?.content;
-  const urls=(String(textOut||'').match(/https?:\/\/[^\s)\]}>"']+/g)||[]).map(u=>u.replace(/[.,;]+$/,''));
-  const videoUrl=urls.find(u=>/\.mp4(?:[?#]|$)/i.test(u))||urls.find(u=>/pollinations|video|media|storage/i.test(u));
-  if(!videoUrl)throw new Error('پاسخ موتور، پیوند مستقیم ویدئو نداشت. پاسخ: '+String(textOut||'بدون متن').slice(0,220));
   $('aiVideoPreview').src=videoUrl;$('aiVideoPreview').hidden=false;$('aiVideoDownload').href=videoUrl;$('aiVideoDownload').hidden=false;
-  status.textContent='✅ موتور ویدئوساز پیوند ویدئو را برگرداند. پخش را آزمایش کن؛ برای ذخیره ممکن است لازم باشد ویدئو را باز کنی و از منوی مرورگر دانلود کنی.';
+  status.textContent=file?'✅ پیوند ویدئوی ساخته‌شده از عکس آماده است؛ پخش را بررسی کن.':'✅ فایل ویدئوی واقعی دریافت شد؛ پخش و ذخیره را آزمایش کن.';
+
  }catch(e){status.textContent='تولید ویدئوی واقعی انجام نشد: '+e.message;}
  finally{button.disabled=false;}
 });
