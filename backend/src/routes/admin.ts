@@ -183,6 +183,7 @@ async function ensureServiceOrdersTable() {
     CREATE TABLE IF NOT EXISTS hormoz_service_orders (
       id TEXT PRIMARY KEY,
       order_number TEXT NOT NULL UNIQUE,
+      tracking_token TEXT UNIQUE,
       service_type TEXT NOT NULL,
       provider_number TEXT NOT NULL DEFAULT '',
       customer_label TEXT NOT NULL DEFAULT '',
@@ -196,6 +197,14 @@ async function ensureServiceOrdersTable() {
     )
   `);
   await db.query(`ALTER TABLE hormoz_service_orders ADD COLUMN IF NOT EXISTS provider_number TEXT NOT NULL DEFAULT ''`);
+  await db.query(`ALTER TABLE hormoz_service_orders ADD COLUMN IF NOT EXISTS tracking_token TEXT`);
+  // Backfill older orders with non-sequential, unguessable tokens before public lookup is enabled.
+  const missingTokens = await db.query("SELECT id FROM hormoz_service_orders WHERE tracking_token IS NULL");
+  for (const row of missingTokens.rows) {
+    const token = crypto.randomBytes(18).toString("base64url");
+    await db.query("UPDATE hormoz_service_orders SET tracking_token = $2 WHERE id = $1 AND tracking_token IS NULL", [String(row.id), token]);
+  }
+  await db.query("CREATE UNIQUE INDEX IF NOT EXISTS hormoz_service_orders_tracking_token_uidx ON hormoz_service_orders (tracking_token)");
   serviceOrdersTableReady = true;
 }
 
@@ -1199,20 +1208,70 @@ export async function adminRoutes(app: FastifyInstance) {
     const id = crypto.randomBytes(8).toString("hex").toUpperCase();
     const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
     const orderNumber = `HZ-SVC-${day}-${id.slice(0, 6)}`;
+    const trackingToken = crypto.randomBytes(18).toString("base64url");
     const history = [{ status: "submitted", at: new Date().toISOString(), note: "درخواست اولیه ثبت شد؛ هنوز رزرو یا پرداخت تأیید نشده است." }];
     try {
       await ensureServiceOrdersTable();
       await db.query(
         `INSERT INTO hormoz_service_orders
-          (id, order_number, service_type, provider_number, customer_label, contact, language, details, status, status_history)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,'submitted',$9::jsonb)`,
-        [id, orderNumber, serviceType, providerNumber, customerLabel, contact, language, JSON.stringify(details), JSON.stringify(history)]
+          (id, order_number, tracking_token, service_type, provider_number, customer_label, contact, language, details, status, status_history)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,'submitted',$10::jsonb)`,
+        [id, orderNumber, trackingToken, serviceType, providerNumber, customerLabel, contact, language, JSON.stringify(details), JSON.stringify(history)]
       );
       touchActivity();
-      return reply.code(201).send({ ok: true, orderNumber, status: "submitted", message: language === "en" ? "Your request was recorded. This is not a confirmed booking or payment." : "درخواست شما ثبت شد؛ این شماره به‌تنهایی تأیید رزرو یا پرداخت نیست." });
+      touchActivity();
+      return reply.code(201).send({ ok: true, orderNumber, trackingCode: trackingToken, status: "submitted", message: language === "en" ? "Your request was recorded. Keep your tracking code to check status. This is not a confirmed booking or payment." : "درخواست شما ثبت شد. کد رهگیری را برای پیگیری نگه دارید؛ این پیام به‌تنهایی تأیید رزرو یا پرداخت نیست." });
     } catch (error) {
       request.log.error(error);
       return reply.code(503).send({ ok: false, message: "ذخیره دائمی درخواست ناموفق بود؛ هیچ رزرو یا پرداختی انجام نشده است." });
+    }
+  });
+
+  app.get("/api/v1/orders/track/:token", async (request, reply) => {
+    if (!db) return reply.code(503).send({ ok: false, message: "پیگیری سفارش موقتاً در دسترس نیست." });
+    const params = request.params as { token?: string };
+    const token = String(params.token ?? "");
+    if (!/^[A-Za-z0-9_-]{20,40}$/.test(token)) return reply.code(404).send({ ok: false, message: "کد رهگیری معتبر نیست یا سفارش پیدا نشد." });
+    try {
+      await ensureServiceOrdersTable();
+      const result = await db.query(
+        "SELECT order_number, service_type, status, status_history, created_at, updated_at FROM hormoz_service_orders WHERE tracking_token = $1 LIMIT 1",
+        [token]
+      );
+      if (!result.rows.length) return reply.code(404).send({ ok: false, message: "کد رهگیری معتبر نیست یا سفارش پیدا نشد." });
+      const row = result.rows[0];
+      const safeMessages: Record<string, string> = {
+        submitted: "درخواست ثبت شده است.",
+        awaiting_provider: "در حال هماهنگی با ارائه‌دهنده خدمت هستیم.",
+        quoted: "قیمت یا پیشنهاد خدمت آماده بررسی است.",
+        confirmed: "سفارش تأیید شده است.",
+        payment_pending: "در انتظار تکمیل پرداخت است.",
+        payment_confirmed: "پرداخت توسط سامانه تأیید شده است.",
+        in_progress: "سفارش در حال انجام است.",
+        completed: "سفارش تکمیل شده است.",
+        cancelled: "سفارش لغو شده است.",
+        refund_pending: "درخواست بازپرداخت در حال بررسی است.",
+        refunded: "بازپرداخت ثبت شده است."
+      };
+      const rawHistory = Array.isArray(row.status_history) ? row.status_history : [];
+      const history = rawHistory.map((entry: any) => ({
+        status: String(entry?.status ?? ""),
+        at: typeof entry?.at === "string" ? entry.at : null,
+        message: safeMessages[String(entry?.status ?? "")] ?? "وضعیت سفارش به‌روزرسانی شده است."
+      })).filter((entry: any) => entry.status);
+      return {
+        ok: true,
+        orderNumber: String(row.order_number),
+        serviceType: String(row.service_type),
+        status: String(row.status),
+        message: safeMessages[String(row.status)] ?? "وضعیت سفارش به‌روزرسانی شده است.",
+        history,
+        createdAt: new Date(row.created_at).toISOString(),
+        updatedAt: new Date(row.updated_at).toISOString()
+      };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ ok: false, message: "پیگیری سفارش موقتاً ناموفق بود." });
     }
   });
 
