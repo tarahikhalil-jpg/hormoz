@@ -77,7 +77,7 @@ audio{accent-color:#ffd782}
 <body>
 <header class="wrap topbar">
   <a class="brand" href="/" style="text-decoration:none"><span class="mark">۷۷۷</span><span>هوش هرمز<small>رؤیا • تلاش • ادامه</small></span></a>
-  <nav class="nav" aria-label="منوی اصلی"><a href="/chat">گفت‌وگو با نوا</a><a href="/admin">🔐 پنل مدیریت</a><a href="/TeamPanel.html">👥 ورود اعضا</a><a href="/emergency.html">🚨 شماره‌های اضطراری</a><a href="/entertainment.html">🎮 سرگرمی و خلاقیت</a><a href="#service-start">ثبت درخواست</a><a href="#hormoz-services">خدمات</a><a href="#mission">هدف هرمز</a><a href="#transparency">شفافیت مالی</a><a href="#values">ارزش‌ها</a><a href="#music">موسیقی</a><a href="/creative-studio.html">🎨 کارگاه تولید تصویر و ویدئو</a></nav>
+  <nav class="nav" aria-label="منوی اصلی"><a href="/directory.html">🔎 جست‌وجوی همه هرمز</a><a href="/chat">گفت‌وگو با نوا</a><a href="/admin">🔐 پنل مدیریت</a><a href="/TeamPanel.html">👥 ورود اعضا</a><a href="/emergency.html">🚨 شماره‌های اضطراری</a><a href="/entertainment.html">🎮 سرگرمی و خلاقیت</a><a href="#service-start">ثبت درخواست</a><a href="#hormoz-services">خدمات</a><a href="#mission">هدف هرمز</a><a href="#transparency">شفافیت مالی</a><a href="#values">ارزش‌ها</a><a href="#music">موسیقی</a><a href="/creative-studio.html">🎨 کارگاه تولید تصویر و ویدئو</a></nav>
 </header>
 <main class="wrap">
   <section class="hero" aria-labelledby="hero-title">
@@ -267,7 +267,7 @@ document.querySelectorAll("[data-nava-prompt]").forEach((link) => {
         "در فهرست فعلی نتیجه‌ای پیدا نشد.";
       nava.href = "/chat?prompt=" + encodeURIComponent("در سامانه هوش هرمز دنبال این خدمت یا نیاز می‌گردم: " + input.value + " . کمک کن مسیر مناسب را پیدا کنم؛ اگر دسته‌ای وجود ندارد، پیشنهاد ثبت خدمت تازه را بده.");
     }
-    form.addEventListener("submit", event => { event.preventDefault(); search(); section.scrollIntoView({behavior:"smooth",block:"start"}); });
+    form.addEventListener("submit", event => { event.preventDefault(); const query=input.value.trim(); if(query){ window.location.href="/directory.html?q="+encodeURIComponent(query); } else { search(); section.scrollIntoView({behavior:"smooth",block:"start"}); } });
     input.addEventListener("input", search);
     clear.addEventListener("click", () => { input.value = ""; search(); input.focus(); });
   })();
