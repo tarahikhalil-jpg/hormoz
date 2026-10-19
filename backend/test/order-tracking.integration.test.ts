@@ -120,3 +120,20 @@ test("tracking returns not found for malformed and unknown tokens", async () => 
   });
   assert.equal(unknown.statusCode, 404);
 });
+
+test("tracking endpoint rejects requests beyond the per-client limit", async () => {
+  for (let index = 0; index < 26; index += 1) {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/orders/track/" + "Y".repeat(24)
+    });
+    assert.equal(response.statusCode, 404);
+  }
+
+  const limited = await app.inject({
+    method: "GET",
+    url: "/api/v1/orders/track/" + "Y".repeat(24)
+  });
+  assert.equal(limited.statusCode, 429);
+  assert.ok(Number(limited.headers["retry-after"]) >= 1);
+});
