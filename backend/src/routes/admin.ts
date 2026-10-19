@@ -1243,7 +1243,8 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/v1/orders/track/:token", async (request, reply) => {
-    const rateLimit = orderTrackingRateLimiter.check(String(request.ip ?? "unknown"));
+    const clientKey = `${String(request.ip ?? "unknown")}|${String(request.headers["user-agent"] ?? "unknown").slice(0, 120)}`;
+    const rateLimit = orderTrackingRateLimiter.check(clientKey);
     reply.header("Cache-Control", "no-store");
     if (!rateLimit.allowed) {
       reply.header("Retry-After", String(Math.max(1, Math.ceil(rateLimit.retryAfterMs / 1000))));
