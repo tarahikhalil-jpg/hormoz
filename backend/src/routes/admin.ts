@@ -1219,7 +1219,6 @@ export async function adminRoutes(app: FastifyInstance) {
         [id, orderNumber, trackingToken, serviceType, providerNumber, customerLabel, contact, language, JSON.stringify(details), JSON.stringify(history)]
       );
       touchActivity();
-      touchActivity();
       return reply.code(201).send({ ok: true, orderNumber, trackingCode: trackingToken, status: "submitted", message: language === "en" ? "Your request was recorded. Keep your tracking code to check status. This is not a confirmed booking or payment." : "درخواست شما ثبت شد. کد رهگیری را برای پیگیری نگه دارید؛ این پیام به‌تنهایی تأیید رزرو یا پرداخت نیست." });
     } catch (error) {
       request.log.error(error);
