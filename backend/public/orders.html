@@ -96,7 +96,34 @@ form.addEventListener("submit", async (event) => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || (lang === "en" ? "Request could not be saved." : "ثبت درخواست ناموفق بود."));
     result.className = "result success";
-    result.textContent = (lang === "en" ? "Request recorded: " : "شماره پیگیری درخواست: ") + data.orderNumber + " — " + data.message;
+    result.replaceChildren();
+    const confirmation = document.createElement("p");
+    confirmation.textContent = (lang === "en" ? "Request recorded: " : "شماره سفارش: ") + data.orderNumber + " — " + data.message;
+    result.append(confirmation);
+    if (data.trackingCode) {
+      const codeLabel = document.createElement("p");
+      codeLabel.textContent = (lang === "en" ? "Your tracking code: " : "کد رهگیری شما: ") + data.trackingCode;
+      codeLabel.style.direction = "ltr";
+      codeLabel.style.textAlign = "right";
+      codeLabel.style.fontWeight = "bold";
+      codeLabel.style.overflowWrap = "anywhere";
+      result.append(codeLabel);
+      const trackLink = document.createElement("a");
+      trackLink.className = "btn secondary";
+      trackLink.href = "/track-order.html?code=" + encodeURIComponent(data.trackingCode);
+      trackLink.textContent = (lang === "en" ? "Track this request" : "پیگیری همین سفارش");
+      result.append(trackLink);
+      const copyButton = document.createElement("button");
+      copyButton.type = "button";
+      copyButton.className = "btn secondary";
+      copyButton.style.marginInlineStart = "8px";
+      copyButton.textContent = (lang === "en" ? "Copy tracking code" : "کپی کد رهگیری");
+      copyButton.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(data.trackingCode); copyButton.textContent = lang === "en" ? "Copied" : "کپی شد"; }
+        catch { codeLabel.textContent = (lang === "en" ? "Your tracking code: " : "کد رهگیری شما: ") + data.trackingCode + " (آن را انتخاب و کپی کنید)"; }
+      });
+      result.append(copyButton);
+    }
     form.reset();
   } catch (error) {
     result.className = "result error";
