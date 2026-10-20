@@ -1,0 +1,20 @@
+{
+  "name": "هوش هرمز",
+  "short_name": "هرمز",
+  "description": "نوا، دستیار هوشمند هرمز",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#07141d",
+  "theme_color": "#111827",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "./hormoz-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
