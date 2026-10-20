@@ -1005,6 +1005,13 @@ footer {
 
       <a
         class="chat-button"
+        href="/market.html"
+      >
+        🌴 بازار هرمز؛ ویترین تولیدکنندگان
+      </a>
+
+      <a
+        class="chat-button"
         href="/about.html"
       >
         درباره هرمز
