@@ -984,9 +984,9 @@ footer {
 
       <a
         class="chat-button"
-        href="/orders.html"
+        href="/contact-admin.html"
       >
-        ارتباط با مدیر و ثبت سفارش
+        ارتباط مستقیم با مدیر
       </a>
 
       <a
@@ -1143,9 +1143,9 @@ footer {
 
       <a
         class="chat-button"
-        href="/orders.html"
+        href="/contact-admin.html"
       >
-        ارتباط با مدیر و ثبت سفارش
+        ارتباط مستقیم با مدیر
       </a>
 
       <a
