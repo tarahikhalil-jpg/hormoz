@@ -484,6 +484,9 @@ async function sendMessage(options = {}) {
   input.value = "";
   sendButton.disabled = true;
 
+  const controller = new AbortController();
+  const requestTimeout = setTimeout(() => controller.abort(), 40000);
+
   try {
     const response = await fetch(API, {
       method: "POST",
@@ -493,7 +496,9 @@ async function sendMessage(options = {}) {
       },
       body: JSON.stringify({
         message
-      })
+      }),
+      signal: controller.signal,
+      cache: "no-store"
     });
 
     const data = await readJsonResponse(response);
@@ -535,12 +540,14 @@ async function sendMessage(options = {}) {
     );
 
     const detail =
-      error instanceof Error
-        ? error.message
-        : "خطای نامشخص";
+      error && error.name === "AbortError"
+        ? "پاسخ سرور بیش از ۴۰ ثانیه طول کشید. ممکن است موتور هوش مصنوعی یا اتصال سرور مشکل داشته باشد."
+        : error instanceof Error
+          ? error.message
+          : "خطای نامشخص";
 
     addMessage(
-      "❌ نوا فعلاً پاسخ نداد.\n" + detail,
+      "❌ نوا فعلاً پاسخ نداد.\n" + detail + "\nلطفاً دوباره تلاش کن؛ اگر تکرار شد، مشکل باید در اتصال سرور یا موتور هوش مصنوعی بررسی شود.",
       "nava"
     );
     if (fromVoice && voiceSessionActive) {
@@ -551,6 +558,7 @@ async function sendMessage(options = {}) {
 
   } finally {
 
+    clearTimeout(requestTimeout);
     sendButton.disabled = false;
     if (!fromVoice) input.focus();
 
