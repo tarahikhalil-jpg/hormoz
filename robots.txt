@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tarahikhalil-jpg.github.io/hormoz/sitemap.xml
