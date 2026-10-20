@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071b2b">
+<meta name="description" content="درگاه یکپارچه سفارش، فاکتور هوشمند و پیگیری هوش هرمز">
+<title>دفتر هوشمند هرمز | سفارش و فاکتور</title>
+<style>
+:root{color-scheme:dark;--bg:#071522;--panel:#102b40;--line:#35566c;--text:#f3f8fc;--muted:#c3d4e1;--teal:#70f1e6;--gold:#ffd782;--red:#ffb5b5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#17435a 0,#071522 60%);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.9;padding:14px}
+main{max-width:980px;margin:auto}.hero{text-align:center;padding:25px 10px 15px}.logo{font-size:42px}.hero h1{margin:0;color:var(--gold);font-size:clamp(25px,5vw,40px)}.hero p{color:var(--muted);margin:5px 0}.panel{background:linear-gradient(145deg,#12344a,#0b1d2b);border:1px solid var(--line);border-radius:18px;padding:clamp(15px,3vw,25px);margin:14px 0;box-shadow:0 15px 35px #0003}.panel h2{margin-top:0;color:var(--teal);font-size:22px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:5px}.full{grid-column:1/-1}label{font-weight:bold;font-size:14px}input,select,textarea{width:100%;padding:11px;border:1px solid #47667a;border-radius:10px;background:#071522;color:var(--text);font:inherit;min-width:0}textarea{min-height:105px;resize:vertical}.check{display:flex;align-items:flex-start;gap:9px;font-weight:normal}.check input{width:auto;margin-top:8px}.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border:0;border-radius:11px;background:linear-gradient(145deg,#fff0bc,#c88b2f);color:#142333;font:inherit;font-weight:bold;text-decoration:none;cursor:pointer}.btn.secondary{background:transparent;border:1px solid var(--line);color:var(--text)}.btn:disabled{opacity:.6;cursor:wait}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}.note{padding:12px;border:1px solid #7e6a3a;background:#302a1a;border-radius:12px;color:#ffebba;font-size:13px}.result{margin-top:13px;overflow-wrap:anywhere}.success{border:1px solid #388a79;background:#0c302c;padding:13px;border-radius:12px}.error{border:1px solid #9b5252;background:#401f25;color:#fff;padding:13px;border-radius:12px}.muted{color:var(--muted);font-size:13px}.invoice{border:1px solid #6a613f;background:#241f16;border-radius:12px;padding:12px;margin-top:10px}.invoice strong{color:var(--gold)}.order-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:#071a28}.order-card button{margin:5px 0}.hidden{display:none!important}.ltr{direction:ltr;text-align:left;overflow-wrap:anywhere}.status-pill{display:inline-block;padding:2px 9px;border-radius:30px;background:#214638;color:#baf7d6;font-size:12px}footer{text-align:center;padding:18px;color:var(--muted);font-size:13px}
+@media(max-width:600px){body{padding:8px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.panel{border-radius:14px}.actions .btn{flex:1 1 100%}}
+</style></head>
+<body><main>
+<header class="hero"><div class="logo">💡</div><h1>دفتر هوشمند هرمز</h1><p>سفارش، فاکتور، زمان‌بندی و پیگیری در یک مسیر یکپارچه</p><p><strong>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</strong></p></header>
+<section class="panel">
+<h2>🧾 ثبت سفارش هوشمند</h2>
+<p class="muted">برای کاسب، معلم، تولیدکننده، متخصص، مشتری و هر نوع خدمت؛ اطلاعات لازم را بنویسید. سامانه به‌صورت خودکار شماره سفارش، فاکتور و کد پیگیری می‌سازد.</p>
+<div class="note">قیمت و کارمزد تا زمان صحت‌سنجی انسانی قطعی نیست. ثبت سفارش به معنی پرداخت، رزرو یا انتشار آگهی نیست. رمز، کد یک‌بارمصرف یا اطلاعات کامل بانکی وارد نکنید.</div>
+<form id="orderForm">
+<div class="grid" style="margin-top:14px">
+<div class="field"><label for="serviceType">نوع خدمت</label><select id="serviceType" required><option value="">انتخاب کنید</option><option>آموزش و کلاس</option><option>کالا و فروشگاه</option><option>تبلیغات و بازاریابی</option><option>پوستر، عکس و طراحی</option><option>ویدیو و تولید محتوا</option><option>خدمات فنی و تخصصی</option><option>گردشگری، اقامت و حمل‌ونقل</option><option>مشاوره و خدمات حرفه‌ای</option><option>همکاری و اشتغال</option><option>سایر خدمات</option></select></div>
+<div class="field"><label for="language">زبان</label><select id="language"><option value="fa">فارسی</option><option value="en">English</option></select></div>
+<div class="field"><label for="customer">نام یا نام کسب‌وکار (اختیاری)</label><input id="customer" maxlength="100" autocomplete="name"></div>
+<div class="field"><label for="contact">راه تماس اختیاری</label><input id="contact" maxlength="160" placeholder="ایمیل یا راه تماس امن"></div>
+<div class="field full"><label for="details">شرح نیاز، محصول یا سفارش</label><textarea id="details" maxlength="5000" required placeholder="چه خدمتی لازم دارید؟ مخاطب یا محل هدف کجاست؟ چه چیزی باید تحویل شود؟"></textarea></div>
+<div class="field"><label for="requestedDate">مهلت یا تاریخ موردنظر (اختیاری)</label><input id="requestedDate" maxlength="100" placeholder="تاریخ یا بازه زمانی"></div>
+<div class="field"><label for="budget">بودجه و واحد پول (اختیاری)</label><input id="budget" maxlength="100" placeholder="مثلاً مبلغ، ارز یا «نیاز به پیشنهاد»"></div>
+<div class="field full"><label class="check"><input id="consent" type="checkbox" required><span>موافقم اطلاعات واردشده برای بررسی و پیگیری همین سفارش استفاده شود.</span></label></div>
+</div>
+<div class="actions"><button id="submitOrder" class="btn" type="submit">ثبت سفارش و ساخت فاکتور</button></div><div id="orderResult" class="result" aria-live="polite"></div>
+</form>
+</section>
+<section class="panel">
+<h2>🔎 پیگیری سفارش و فاکتور</h2><form id="trackForm"><div class="field"><label for="trackingCode">کد رهگیری محرمانه</label><input id="trackingCode" class="ltr" maxlength="60" required autocomplete="off" placeholder="کد رهگیری را اینجا وارد کنید"></div><div class="actions"><button class="btn" id="trackButton" type="submit">نمایش وضعیت و فاکتور</button></div></form><div id="trackResult" class="result" aria-live="polite"></div>
+</section>
+<section class="panel">
+<h2>🔐 صحت‌سنجی مدیر</h2><p class="muted">این بخش فقط برای مدیر مجاز است. پس از ورود، فاکتور را با اطلاعات سفارش بررسی کنید؛ سامانه مبلغ، کارمزد و سهم همکار را محاسبه می‌کند. این پنل پولی جابه‌جا نمی‌کند.</p>
+<div id="adminLoginBox"><div class="field"><label for="adminPassword">رمز مدیر</label><input id="adminPassword" type="password" autocomplete="current-password"></div><div class="actions"><button class="btn" id="adminLogin">ورود مدیر</button></div></div>
+<div id="adminArea" class="hidden"><div class="actions"><button class="btn secondary" id="refreshOrders">تازه‌سازی سفارش‌ها</button><button class="btn secondary" id="adminLogout">خروج</button></div><div id="adminStatus" class="result" aria-live="polite"></div><div id="adminOrders"></div>
+<div class="invoice"><strong>صحت‌سنجی فاکتور انتخاب‌شده</strong><p class="muted">مبلغ نهایی را انسان بررسی می‌کند. درصد کارمزد باید از قبل طبق تعرفه شفاف و توافق‌شده باشد.</p>
+<form id="quoteForm"><input id="selectedOrderId" type="hidden">
+<div class="grid">
+<div class="field"><label for="quoteAmount">مبلغ کل (عدد صحیح در کوچک‌ترین واحد اعلامی ارز)</label><input id="quoteAmount" type="number" min="1" step="1" required></div>
+<div class="field"><label for="quoteCurrency">کد ارز سه‌حرفی</label><input id="quoteCurrency" maxlength="3" value="IRR" required></div>
+<div class="field"><label for="commissionRate">کارمزد هرمز (%)</label><input id="commissionRate" type="number" min="0" max="100" step="0.01" required></div>
+<div class="field"><label for="completionAt">مهلت تحویل (اختیاری)</label><input id="completionAt" type="datetime-local"></div>
+<div class="field"><label for="publicationDuration">مدت انتشار یا ارائه (اختیاری)</label><input id="publicationDuration" maxlength="120"></div>
+<div class="field"><label for="targetRegion">منطقه/بازار هدف (اختیاری)</label><input id="targetRegion" maxlength="120"></div>
+<div class="field full"><label class="check"><input id="humanVerified" type="checkbox" required><span>قیمت، کارمزد، سهم‌ها و شرایط را بررسی کرده‌ام و صحت آن‌ها را تأیید می‌کنم.</span></label></div>
+</div><div class="actions"><button class="btn" type="submit">محاسبه و ثبت پیش‌فاکتور تأییدشده</button></div></form></div>
+</div>
+</section>
+<footer>هوش هرمز • هر سفارش یک شناسه، هر فاکتور یک سابقه، هر تغییر قابل پیگیری.<br>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const money=(value,currency)=>value==null?"در انتظار تعیین مبلغ":Number(value).toLocaleString("fa-IR")+" "+currency;
+function show(node,text,kind="success"){node.className="result "+kind;node.textContent=text}
+function safe(tag,text){const n=document.createElement(tag);n.textContent=text;return n}
+function renderInvoice(invoice){
+ const box=document.createElement("div");box.className="invoice";
+ box.append(safe("div","شماره فاکتور: "+(invoice.invoiceNumber||"—")));
+ box.append(safe("div","وضعیت: "+(invoice.status||"در انتظار بررسی")));
+ box.append(safe("div","مبلغ کل: "+money(invoice.amount,invoice.currency||"IRR")));
+ if(invoice.amount!=null){
+  box.append(safe("div","کارمزد هرمز ("+invoice.commissionRate+"٪): "+money(invoice.hormozFee,invoice.currency)));
+  box.append(safe("div","سهم ارائه‌دهنده: "+money(invoice.providerShare,invoice.currency)));
+ }
+ if(invoice.estimatedCompletionAt)box.append(safe("div","مهلت تحویل: "+new Date(invoice.estimatedCompletionAt).toLocaleString()));
+ if(invoice.publicationDuration)box.append(safe("div","مدت انتشار/ارائه: "+invoice.publicationDuration));
+ if(invoice.targetRegion)box.append(safe("div","بازار هدف: "+invoice.targetRegion));
+ box.append(safe("div","صحت‌سنجی انسانی: "+(invoice.humanVerified?"تأیید شده":"در انتظار تأیید")));
+ return box;
+}
+$("orderForm").addEventListener("submit",async e=>{
+ e.preventDefault();const b=$("submitOrder"),out=$("orderResult");b.disabled=true;show(out,"در حال ثبت سفارش و ساخت پرونده فاکتور…");
+ try{
+  const response=await fetch("/api/v1/global-orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+   serviceType:$("serviceType").value,language:$("language").value,customerLabel:$("customer").value.trim(),contact:$("contact").value.trim(),
+   details:{request:$("details").value.trim(),requestedDate:$("requestedDate").value.trim(),budget:$("budget").value.trim()},consent:$("consent").checked
+  })});
+  const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.message||"ثبت سفارش ناموفق بود.");
+  out.className="result success";out.replaceChildren(safe("h3","سفارش ثبت شد"),safe("p","شماره سفارش: "+data.orderNumber),safe("p","شماره فاکتور: "+data.invoiceNumber),safe("p","کد رهگیری (آن را محرمانه نگه دارید): "+data.trackingCode),safe("p",data.message));
+  const copy=document.createElement("button");copy.className="btn secondary";copy.type="button";copy.textContent="کپی کد رهگیری";copy.onclick=async()=>{try{await navigator.clipboard.writeText(data.trackingCode);copy.textContent="کپی شد"}catch{show(out,"کد رهگیری را انتخاب و کپی کنید: "+data.trackingCode)}};out.append(copy);
+  const inv=renderInvoice({invoiceNumber:data.invoiceNumber,status:data.invoiceStatus,amount:null,currency:"IRR",humanVerified:false});out.append(inv);
+  $("trackingCode").value=data.trackingCode;
+  $("orderForm").reset();
+ }catch(err){show(out,err.message||"ارتباط با سامانه برقرار نشد؛ سفارش ثبت نشده است.","error")}finally{b.disabled=false}
+});
+$("trackForm").addEventListener("submit",async e=>{
+ e.preventDefault();const b=$("trackButton"),out=$("trackResult");b.disabled=true;out.replaceChildren();show(out,"در حال دریافت اطلاعات…");
+ try{const r=await fetch("/api/v1/global-orders/track/"+encodeURIComponent($("trackingCode").value.trim()),{cache:"no-store"});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.message||"سفارش پیدا نشد.");
+  out.className="result success";out.replaceChildren(safe("h3","پرونده سفارش"),safe("p","شماره سفارش: "+d.orderNumber),safe("p","نوع خدمت: "+d.serviceType),safe("p","وضعیت: "+d.status),renderInvoice(d.invoice));
+  const h=safe("div","");h.append(safe("strong","تاریخچه تغییرات"));for(const item of (d.invoiceHistory||[]).slice().reverse()){h.append(safe("p",(item.status||"به‌روزرسانی")+" — "+(item.note||"")+" "+(item.at?new Date(item.at).toLocaleString():"")))}out.append(h);
+ }catch(err){show(out,err.message||"پیگیری ناموفق بود.","error")}finally{b.disabled=false}
+});
+let adminToken="";
+$("adminLogin").addEventListener("click",async()=>{
+ const out=$("adminStatus");show(out,"در حال بررسی دسترسی…");
+ try{const r=await fetch("/api/v1/global-admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:$("adminPassword").value})});const d=await r.json();if(!r.ok||!d.token)throw new Error(d.message||"ورود ناموفق بود.");
+  adminToken=d.token;$("adminLoginBox").classList.add("hidden");$("adminArea").classList.remove("hidden");$("adminPassword").value="";await loadOrders();
+ }catch(err){show(out,err.message||"ورود ناموفق بود.","error")}
+});
+async function loadOrders(){
+ const out=$("adminStatus"),list=$("adminOrders");show(out,"در حال دریافت سفارش‌ها…");list.replaceChildren();
+ try{const r=await fetch("/api/v1/global-admin/orders",{headers:{Authorization:"Bearer "+adminToken},cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.message||"دریافت سفارش‌ها ناموفق بود.");
+  if(!d.orders.length)list.append(safe("p","هنوز سفارشی ثبت نشده است."));
+  for(const order of d.orders){const card=document.createElement("div");card.className="order-card";card.append(safe("h3",order.orderNumber+" — "+order.serviceType),safe("p","مشتری: "+(order.customerLabel||"ثبت نشده")),safe("p","شرح: "+Object.values(order.details||{}).filter(Boolean).join(" | ")),safe("p","فاکتور: "+order.invoice.invoiceNumber+" — "+money(order.invoice.amount,order.invoice.currency)));
+   const select=document.createElement("button");select.className="btn secondary";select.type="button";select.textContent="انتخاب برای صحت‌سنجی";select.onclick=()=>{$("selectedOrderId").value=order.id;$("quoteAmount").value=order.invoice.amount??"";$("quoteCurrency").value=order.invoice.currency||"IRR";$("commissionRate").value=order.invoice.commissionRate??"0";$("publicationDuration").value=order.invoice.publicationDuration||"";$("targetRegion").value=order.invoice.targetRegion||"";$("completionAt").value=order.invoice.estimatedCompletionAt?new Date(order.invoice.estimatedCompletionAt).toISOString().slice(0,16):"";$("humanVerified").checked=false;show(out,"سفارش "+order.orderNumber+" برای بررسی انتخاب شد.")};card.append(select);list.append(card)}
+  show(out,"سفارش‌ها دریافت شد: "+d.orders.length);
+ }catch(err){show(out,err.message||"دریافت سفارش‌ها ناموفق بود.","error")}
+}
+$("refreshOrders").addEventListener("click",loadOrders);
+$("adminLogout").addEventListener("click",()=>{adminToken="";$("adminArea").classList.add("hidden");$("adminLoginBox").classList.remove("hidden");$("adminOrders").replaceChildren();show($("adminStatus"),"از پنل خارج شدید.")});
+$("quoteForm").addEventListener("submit",async e=>{
+ e.preventDefault();const id=$("selectedOrderId").value;if(!id){show($("adminStatus"),"ابتدا یک سفارش را انتخاب کنید.","error");return}
+ const b=e.submitter;if(b)b.disabled=true;
+ try{const completion=$("completionAt").value?new Date($("completionAt").value).toISOString():"";
+  const r=await fetch("/api/v1/global-admin/orders/"+encodeURIComponent(id)+"/verify-invoice",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+adminToken},body:JSON.stringify({
+   amount:Number($("quoteAmount").value),currency:$("quoteCurrency").value.trim().toUpperCase(),commissionRate:Number($("commissionRate").value),
+   estimatedCompletionAt:completion,publicationDuration:$("publicationDuration").value.trim(),targetRegion:$("targetRegion").value.trim(),humanVerified:$("humanVerified").checked
+  })});
+  const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.message||"ثبت پیش‌فاکتور ناموفق بود.");
+  show($("adminStatus"),"پیش‌فاکتور "+d.invoice.invoiceNumber+" صحت‌سنجی شد؛ هنوز هیچ پرداختی انجام نشده است.");await loadOrders();
+ }catch(err){show($("adminStatus"),err.message||"ثبت فاکتور ناموفق بود.","error")}finally{if(b)b.disabled=false}
+});
+</script></body></html>
