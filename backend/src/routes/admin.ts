@@ -1818,4 +1818,92 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
 
+
+
+  // ===== بازار هرمز: آگهی‌های عمومی و مدیریت امن =====
+  async function ensureHormozMarketAdsTable() {
+    if (!db) return;
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS hormoz_market_ads (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        price_toman BIGINT NOT NULL DEFAULT 0,
+        price_unit TEXT NOT NULL DEFAULT 'هر کیلو',
+        contact TEXT NOT NULL DEFAULT '',
+        image_data TEXT NOT NULL DEFAULT '',
+        active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+  }
+
+  app.get("/api/v1/market/ads", async (request, reply) => {
+    if (!db) return reply.code(503).send({ message: "بازار هرمز فعلاً به پایگاه داده متصل نیست." });
+    try {
+      await ensureHormozMarketAdsTable();
+      const result = await db.query(
+        "SELECT id,title,description,price_toman,price_unit,contact,image_data,created_at FROM hormoz_market_ads WHERE active=TRUE ORDER BY created_at DESC LIMIT 100"
+      );
+      return { ok: true, ads: result.rows.map(row => ({
+        id: String(row.id), title: String(row.title), description: String(row.description ?? ""),
+        priceToman: Number(row.price_toman), priceUnit: String(row.price_unit ?? "هر کیلو"),
+        contact: String(row.contact ?? ""), imageData: String(row.image_data ?? ""),
+        createdAt: new Date(row.created_at).toISOString()
+      })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "خواندن آگهی‌های بازار هرمز ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/admin/market/ads", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ message: "برای ثبت آگهی باید مدیر وارد شده باشد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده تنظیم نشده است." });
+    const body = (request.body ?? {}) as { title?: unknown; description?: unknown; priceToman?: unknown; priceUnit?: unknown; contact?: unknown; imageData?: unknown };
+    const title = String(body.title ?? "").trim().slice(0, 140);
+    const description = String(body.description ?? "").trim().slice(0, 1800);
+    const priceToman = Number(body.priceToman ?? 0);
+    const priceUnit = String(body.priceUnit ?? "هر کیلو").trim().slice(0, 40) || "هر کیلو";
+    const contact = String(body.contact ?? "").trim().slice(0, 160);
+    const imageData = String(body.imageData ?? "");
+    if (!title || !description || !Number.isSafeInteger(priceToman) || priceToman < 0 || priceToman > 1000000000000) {
+      return reply.code(400).send({ message: "عنوان، توضیحات و قیمت معتبر لازم است." });
+    }
+    if (imageData && (!/^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(imageData) || imageData.length > 900000)) {
+      return reply.code(400).send({ message: "عکس باید JPG، PNG یا WebP و کمتر از حدود ۶۵۰ کیلوبایت باشد." });
+    }
+    try {
+      await ensureHormozMarketAdsTable();
+      const id = crypto.randomBytes(10).toString("hex").toUpperCase();
+      await db.query(
+        "INSERT INTO hormoz_market_ads (id,title,description,price_toman,price_unit,contact,image_data) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+        [id,title,description,priceToman,priceUnit,contact,imageData]
+      );
+      touchActivity();
+      return reply.code(201).send({ ok: true, id, message: "آگهی در بازار هرمز ثبت شد." });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "ثبت آگهی ناموفق بود." });
+    }
+  });
+
+  app.delete("/api/v1/admin/market/ads/:id", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ message: "برای مدیریت آگهی باید مدیر وارد شده باشد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده تنظیم نشده است." });
+    const params = request.params as { id?: string };
+    if (!params.id) return reply.code(400).send({ message: "شناسه آگهی لازم است." });
+    try {
+      await ensureHormozMarketAdsTable();
+      const result = await db.query("UPDATE hormoz_market_ads SET active=FALSE,updated_at=NOW() WHERE id=$1 AND active=TRUE RETURNING id", [params.id]);
+      if (!result.rows.length) return reply.code(404).send({ message: "آگهی پیدا نشد یا قبلاً غیرفعال شده است." });
+      touchActivity();
+      return { ok: true, message: "آگهی غیرفعال شد." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "غیرفعال‌کردن آگهی ناموفق بود." });
+    }
+  });
+
 }
