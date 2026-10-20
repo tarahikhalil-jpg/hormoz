@@ -23,6 +23,7 @@ import { MockIntelligenceEngine } from "./modules/intelligence/mock-intelligence
 import { OpenRouterIntelligenceProvider } from "./modules/intelligence/openrouter-intelligence-provider.js";
 import { adminRoutes, recordPublicVisit } from "./routes/admin.js";
 import { imageGenerationRoutes } from "./routes/image-generation.js";
+import { globalOrderRoutes } from "./routes/global-orders.js";
 
 export interface AppOptions {
   light?: LightDevice;
@@ -2113,6 +2114,8 @@ return reply.type("application/xml; charset=utf-8").send(content);
   );
 
   app.register(imageGenerationRoutes);
+
+  app.register(globalOrderRoutes);
 
 
   app.register(
