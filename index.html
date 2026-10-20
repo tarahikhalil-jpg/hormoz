@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#082f49">
   <meta name="description" content="هوش هرمز؛ درگاه هوشمند دسترسی به خدمات، فناوری، فرصت‌های شغلی و کسب‌وکارهای محلی برای همه.">
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <title>هوش هرمز | فناوری و فرصت برای همه</title>
   <style>
     :root{--bg:#071b2b;--panel:#102b40;--panel2:#13364e;--text:#f3f8fc;--muted:#c3d4e1;--aqua:#63e6d1;--gold:#ffd27a;--line:#2c4c61}
@@ -186,7 +186,7 @@
       document.getElementById("installHormoz").style.display = "none";
     });
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
     }
   </script>
 </body>
