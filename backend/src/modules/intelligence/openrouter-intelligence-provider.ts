@@ -15,14 +15,14 @@ export class OpenRouterIntelligenceProvider
       throw new Error("OpenRouter configuration is incomplete");
     }
 
-    const maxAttempts = 3;
+    const maxAttempts = 1;
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const controller = new AbortController();
       const timeout = setTimeout(
         () => controller.abort(),
-        60_000,
+        15_000,
       );
 
       try {
