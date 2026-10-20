@@ -15,7 +15,7 @@ export class OpenRouterIntelligenceProvider
       throw new Error("OpenRouter configuration is incomplete");
     }
 
-    const maxAttempts = 1;
+    const maxAttempts = 2;
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -38,7 +38,7 @@ export class OpenRouterIntelligenceProvider
             body: JSON.stringify({
               model,
               messages: request.messages,
-              max_tokens: 512,
+              max_tokens: attempt === 1 ? 1200 : 1800,
             }),
           },
         );
@@ -93,6 +93,17 @@ export class OpenRouterIntelligenceProvider
 
         const choice = data.choices?.[0];
         const content = choice?.message?.content;
+        const finishReason =
+          choice?.native_finish_reason ??
+          choice?.finish_reason ??
+          "unknown";
+
+        // A length-limited answer should not be shown as if it were complete.
+        // Retry once with a larger output budget before using the safe fallback.
+        if (finishReason === "length" && attempt < maxAttempts) {
+          console.warn("OpenRouter answer was truncated; retrying with a larger token budget.");
+          continue;
+        }
 
         if (
           typeof content === "string" &&
@@ -111,11 +122,6 @@ export class OpenRouterIntelligenceProvider
             return text;
           }
         }
-
-        const finishReason =
-          choice?.native_finish_reason ??
-          choice?.finish_reason ??
-          "unknown";
 
         throw new Error(
           `OpenRouter returned no final answer (finish_reason: ${finishReason})`,

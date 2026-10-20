@@ -511,14 +511,19 @@ async function sendMessage(options = {}) {
     const spokenAnswer = answer || "نوا پاسخی دریافت نکرد.";
     addMessage(spokenAnswer, "nava");
     if (fromVoice && voiceSessionActive) {
-      speakNava(spokenAnswer, () => {
+      const resumeAfterResponse = () => {
         voiceBusy = false;
         if (voiceSessionActive) {
           setVoiceStatus("نوا گوش می‌دهد… می‌توانی ادامه بدهی.");
           resumeVoiceListening();
         }
-      });
-    } else {
+      };
+      if (voiceReplyEnabled) {
+        speakNava(spokenAnswer, resumeAfterResponse);
+      } else {
+        resumeAfterResponse();
+      }
+    } else if (voiceReplyEnabled) {
       speakNava(spokenAnswer);
     }
 
