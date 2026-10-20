@@ -9,6 +9,22 @@ const host = (() => { try { return databaseUrl ? new URL(databaseUrl).hostname :
 const db = databaseUrl ? new Pool({ connectionString: databaseUrl, ssl: host === "localhost" || host === "127.0.0.1" ? false : { rejectUnauthorized: false }, max: 3 }) : null;
 let tableReady = false;
 const SESSION_TTL = 4 * 60 * 60 * 1000;
+const loginFailures = new Map<string, { count: number; blockedUntil: number }>();
+function isLoginBlocked(key: string) {
+  const record = loginFailures.get(key);
+  if (!record) return false;
+  if (record.blockedUntil <= Date.now()) { loginFailures.delete(key); return false; }
+  return record.count >= 5;
+}
+function noteLoginFailure(key: string) {
+  const current = loginFailures.get(key);
+  if (!current || current.blockedUntil <= Date.now()) {
+    loginFailures.set(key, { count: 1, blockedUntil: Date.now() + 15 * 60 * 1000 });
+    return;
+  }
+  current.count += 1;
+  if (current.count >= 5) current.blockedUntil = Date.now() + 15 * 60 * 1000;
+}
 
 async function ensureTable() {
   if (!db || tableReady) return;
@@ -152,14 +168,18 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/api/v1/global-admin/login", async (request, reply) => {
+    const ipKey = String(request.ip ?? "unknown");
+    if (isLoginBlocked(ipKey)) return reply.code(429).send({ message: "تلاش‌های ورود زیاد بوده است؛ ۱۵ دقیقه دیگر دوباره تلاش کنید." });
     const expected = process.env.HORMOZ_ADMIN_PASSWORD;
     const supplied = String(((request.body ?? {}) as { password?: unknown }).password ?? "");
     if (!expected) return reply.code(503).send({ message: "رمز مدیر روی سرور تنظیم نشده است." });
     const suppliedBuffer = Buffer.from(supplied);
     const expectedBuffer = Buffer.from(expected);
     if (suppliedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(suppliedBuffer, expectedBuffer)) {
+      noteLoginFailure(ipKey);
       return reply.code(401).send({ message: "رمز مدیریت نادرست است." });
     }
+    loginFailures.delete(ipKey);
     const token = crypto.randomBytes(32).toString("hex");
     sessions.set(token, { expiresAt: Date.now() + SESSION_TTL });
     return { ok: true, token, expiresInSeconds: SESSION_TTL / 1000 };
