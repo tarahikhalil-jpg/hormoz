@@ -156,6 +156,19 @@
       document.getElementById("message").value = prompt;
       document.getElementById("message").focus();
     }
+    function getHormozGuestId() {
+      try {
+        let id = localStorage.getItem("hormoz_guest_id");
+        if (!id) {
+          id = "guest-" + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+          localStorage.setItem("hormoz_guest_id", id);
+        }
+        return id;
+      } catch {
+        return "guest-session-" + Math.random().toString(36).slice(2);
+      }
+    }
+
     async function sendMessage() {
       const input = document.getElementById("message");
       const answer = document.getElementById("answer");
@@ -165,7 +178,7 @@
       try {
         const response = await fetch("https://hormoz-ai-backend-777.onrender.com/api/v1/chat", {
           method:"POST",
-          headers:{"Content-Type":"application/json","x-user-id":"public"},
+          headers:{"Content-Type":"application/json","x-user-id":getHormozGuestId()},
           body:JSON.stringify({message})
         });
         const data = await response.json();
