@@ -72,6 +72,77 @@ audio{accent-color:#ffd782}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
     [hidden] { display: none !important; }
+
+    
+    /* ---------- نظم نهایی رابط کاربری: دسکتاپ و موبایل ---------- */
+    :root{--content-width:1100px}
+    html{scroll-padding-top:100px}
+    body{line-height:1.85}
+    .topbar{
+      position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;
+      gap:18px;padding:12px max(4%,calc((100% - 1180px)/2));
+      background:rgba(6,19,31,.96);border-bottom:1px solid #29465c;
+    }
+    .brand{flex:0 0 auto;white-space:nowrap}
+    .nav{
+      flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;
+      gap:6px 8px;max-width:850px;font-size:.82rem;line-height:1.5;
+    }
+    .nav a{
+      display:inline-flex;align-items:center;justify-content:center;min-height:34px;
+      padding:5px 10px;border:1px solid transparent;border-radius:10px;
+      text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s,color .15s;
+    }
+    .nav a:hover{background:#70f1e610;border-color:#70f1e633;color:var(--teal)}
+    main.wrap{width:min(var(--content-width),92%);margin:24px auto 0}
+    .hero{gap:clamp(18px,3vw,34px);margin-bottom:8px}
+    .hero h1{max-width:720px}
+    .hero .actions{gap:10px}
+    section{padding:clamp(30px,5vw,54px) 0}
+    .section-head{margin-bottom:22px}
+    .grid{gap:16px}
+    .card{height:100%;padding:clamp(17px,2vw,23px);overflow-wrap:anywhere}
+    .card h3{line-height:1.6}
+    .card p{line-height:1.9}
+    .card .btn,.card button{margin-top:14px}
+    .music{max-width:760px;margin:18px auto 0}
+    .music audio{display:block}
+    .quote{line-height:1.9}
+    .status{gap:13px}
+    .footer{margin-top:10px;padding-top:28px}
+    @media(max-width:900px){
+      .topbar{align-items:flex-start;flex-direction:column;gap:10px;padding:12px 4%}
+      .nav{width:100%;max-width:none;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:2px 0 7px;scrollbar-width:thin}
+      .nav a{flex:0 0 auto;background:#10283b;border-color:#29465c}
+      main.wrap{margin-top:16px}
+    }
+    @media(max-width:600px){
+      .topbar{padding:10px 4%}
+      .brand{font-size:1rem}
+      .mark{width:44px;height:44px;border-radius:14px}
+      .nav{gap:6px}
+      .nav a{font-size:.78rem;padding:6px 9px;min-height:35px}
+      main.wrap{width:92%;margin-top:12px}
+      .hero{padding:22px 15px 20px;border-radius:22px}
+      .hero h1{font-size:clamp(1.75rem,7.5vw,2.2rem);line-height:1.6}
+      .hero .actions{display:grid;grid-template-columns:1fr;width:100%}
+      .hero .actions .btn{width:100%}
+      .grid{grid-template-columns:1fr;gap:12px}
+      .card{padding:18px;border-radius:17px}
+      section{padding:32px 0}
+      .section-head{text-align:right;margin-bottom:15px}
+      .section-head h2{font-size:1.45rem}
+      .quote{padding:23px 17px;border-radius:18px}
+      .status{padding:15px}
+      .footer{line-height:2.1}
+    }
+    @media(min-width:601px) and (max-width:900px){
+      .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .nav a{transition:none}
+    }
+
   </style>
 </head>
 <body>
