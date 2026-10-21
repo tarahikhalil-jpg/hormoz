@@ -279,24 +279,42 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
         finish("پاسخ صوتی نوا پخش شد.");
         return;
       }
-      const params = new URLSearchParams({
-        ie: "UTF-8",
-        q: chunks[audioIndex++],
-        tl: "fa",
-        client: "tw-ob"
+      const chunk = chunks[audioIndex++];
+      setVoiceStatus("در حال تولید صدای فارسی نوا…");
+      fetch("/api/v1/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: chunk }),
+        cache: "no-store"
+      }).then(async (response) => {
+        if (!response.ok) {
+          let detail = "";
+          try { detail = (await response.json()).error || ""; } catch (_) {}
+          throw new Error(detail || "موتور صوتی پاسخ نداد.");
+        }
+        return response.blob();
+      }).then((blob) => {
+        if (finished) return;
+        if (!blob || !blob.size || !blob.type.toLowerCase().includes("audio")) {
+          throw new Error("فایل صوتی معتبر دریافت نشد.");
+        }
+        const audioUrl = URL.createObjectURL(blob);
+        fallbackAudio.src = audioUrl;
+        fallbackAudio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          playNextAudioChunk();
+        };
+        fallbackAudio.onerror = () => {
+          URL.revokeObjectURL(audioUrl);
+          finish("فایل صوتی نوا دریافت شد اما پخش آن در گوشی ناموفق بود.");
+        };
+        return fallbackAudio.play();
+      }).catch((error) => {
+        console.warn("Hormoz Nava TTS failed:", error);
+        finish((error && error.message ? error.message : "تولید صدای نوا ناموفق بود.") + " پاسخ متنی آماده است.");
       });
-      fallbackAudio.src = "https://translate.google.com/translate_tts?" + params.toString();
-      fallbackAudio.onended = playNextAudioChunk;
-      fallbackAudio.onerror = () => finish("صدای آنلاین نوا هم در این اتصال در دسترس نیست؛ پاسخ متنی آماده است.");
-      const playPromise = fallbackAudio.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch((error) => {
-          console.warn("Nava online audio fallback failed:", error);
-          finish("پخش صوتی مسدود شد؛ پاسخ متنی آماده است. یک بار دیگر دکمه شنیدن را لمس کن.");
-        });
-      }
     };
-    setVoiceStatus("موتور صدای گوشی شروع نشد؛ دارم صدای فارسی آنلاین نوا را امتحان می‌کنم…");
+    setVoiceStatus("در حال اتصال به سرویس اختصاصی صدای نوا…");
     playNextAudioChunk();
   };
 
