@@ -1990,6 +1990,77 @@ return reply.type("application/xml; charset=utf-8").send(content);
   );
 
 
+  /* ===== NAVA TEXT-TO-SPEECH SERVICE ===== */
+  // Dedicated same-origin audio endpoint: the browser never calls a third-party TTS host directly.
+  const ttsRequests = new Map<string, { count: number; resetAt: number }>();
+  app.post("/api/v1/tts", async (request, reply) => {
+    const now = Date.now();
+    const clientKey = request.ip || "unknown";
+    let usage = ttsRequests.get(clientKey);
+    if (!usage || usage.resetAt <= now) {
+      usage = { count: 0, resetAt: now + 60_000 };
+      ttsRequests.set(clientKey, usage);
+    }
+    usage.count += 1;
+    if (usage.count > 30) {
+      return reply.code(429).send({ error: "درخواست‌های صوتی زیاد است؛ یک دقیقه دیگر تلاش کن." });
+    }
+
+    const body = request.body as { text?: unknown } | undefined;
+    const text = typeof body?.text === "string" ? body.text.replace(/\\s+/g, " ").trim() : "";
+    if (!text) return reply.code(400).send({ error: "متن برای تولید صدا خالی است." });
+    if (text.length > 220) return reply.code(413).send({ error: "برای پخش پایدار، متن صوتی باید کوتاه‌تر باشد." });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12_000);
+    try {
+      // If a verified Google Cloud TTS key is configured, prefer its official API.
+      const apiKey = process.env.GOOGLE_TTS_API_KEY;
+      if (apiKey) {
+        const official = await fetch("https://texttospeech.googleapis.com/v1/text:synthesize?key=" + encodeURIComponent(apiKey), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            input: { text },
+            voice: { languageCode: "fa-XA", name: "fa-XA-Standard-A" },
+            audioConfig: { audioEncoding: "MP3", speakingRate: 0.92 }
+          }),
+          signal: controller.signal
+        });
+        if (official.ok) {
+          const data = await official.json() as { audioContent?: string };
+          if (data.audioContent) {
+            return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(Buffer.from(data.audioContent, "base64"));
+          }
+        } else {
+          request.log.warn({ status: official.status }, "Official TTS unavailable; trying fallback provider");
+        }
+      }
+
+      // Keyless fallback is best-effort and can be unavailable on some networks.
+      const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: "fa", client: "tw-ob" });
+      const upstream = await fetch("https://translate.google.com/translate_tts?" + params.toString(), {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; HormozNava/1.0)", "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.8" },
+        signal: controller.signal
+      });
+      if (!upstream.ok) {
+        request.log.warn({ status: upstream.status }, "Nava fallback TTS returned an error");
+        return reply.code(502).send({ error: "موتور تولید صدا فعلاً پاسخ نداد." });
+      }
+      const audio = Buffer.from(await upstream.arrayBuffer());
+      const contentType = upstream.headers.get("content-type") || "";
+      if (!audio.length || !contentType.toLowerCase().includes("audio")) {
+        return reply.code(502).send({ error: "موتور صدا فایل صوتی معتبر برنگرداند." });
+      }
+      return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
+    } catch (error) {
+      request.log.warn({ err: error }, "Nava TTS request failed");
+      return reply.code(504).send({ error: "تولید صدا به‌دلیل اتصال یا زمان‌پاسخ‌گویی ناموفق بود." });
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
+
   /* ===== MUSIC ===== */
 
   app.get(
