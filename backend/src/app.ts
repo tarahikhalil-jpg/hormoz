@@ -2037,22 +2037,34 @@ return reply.type("application/xml; charset=utf-8").send(content);
         }
       }
 
-      // Keyless fallback is best-effort and can be unavailable on some networks.
-      const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: "fa", client: "tw-ob" });
-      const upstream = await fetch("https://translate.google.com/translate_tts?" + params.toString(), {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; HormozNava/1.0)", "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.8" },
-        signal: controller.signal
-      });
-      if (!upstream.ok) {
-        request.log.warn({ status: upstream.status }, "Nava fallback TTS returned an error");
-        return reply.code(502).send({ error: "موتور تولید صدا فعلاً پاسخ نداد." });
+      // Try Google's currently supported Translate TTS client modes. One mode may
+      // return HTTP 400 while the other still returns a valid Persian audio stream.
+      const clients = ["gtx", "tw-ob"];
+      let lastStatus = 502;
+      for (const client of clients) {
+        const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: "fa", client });
+        const upstream = await fetch("https://translate.google.com/translate_tts?" + params.toString(), {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36",
+            "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.8",
+            "Referer": "https://translate.google.com/"
+          },
+          signal: controller.signal
+        });
+        if (!upstream.ok) {
+          lastStatus = upstream.status;
+          request.log.warn({ status: upstream.status, client }, "Nava fallback TTS provider rejected request");
+          continue;
+        }
+        const audio = Buffer.from(await upstream.arrayBuffer());
+        const contentType = upstream.headers.get("content-type") || "";
+        if (audio.length && contentType.toLowerCase().includes("audio")) {
+          return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
+        }
+        request.log.warn({ client, contentType, bytes: audio.length }, "Nava fallback TTS returned invalid audio");
       }
-      const audio = Buffer.from(await upstream.arrayBuffer());
-      const contentType = upstream.headers.get("content-type") || "";
-      if (!audio.length || !contentType.toLowerCase().includes("audio")) {
-        return reply.code(502).send({ error: "موتور صدا فایل صوتی معتبر برنگرداند." });
-      }
-      return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
+      request.log.error({ lastStatus }, "All Nava fallback TTS modes failed");
+      return reply.code(502).send({ error: "سرویس رایگان صدای فارسی در دسترس نیست؛ پاسخ متنی آماده است." });
     } catch (error) {
       request.log.warn({ err: error }, "Nava TTS request failed");
       return reply.code(504).send({ error: "تولید صدا به‌دلیل اتصال یا زمان‌پاسخ‌گویی ناموفق بود." });
