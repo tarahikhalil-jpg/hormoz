@@ -2007,7 +2007,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
     }
 
     const body = request.body as { text?: unknown } | undefined;
-    const text = typeof body?.text === "string" ? body.text.replace(/\\s+/g, " ").trim() : "";
+    const text = typeof body?.text === "string" ? body.text.replace(/\s+/g, " ").trim() : "";
     if (!text) return reply.code(400).send({ error: "متن برای تولید صدا خالی است." });
     if (text.length > 220) return reply.code(413).send({ error: "برای پخش پایدار، متن صوتی باید کوتاه‌تر باشد." });
 
