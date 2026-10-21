@@ -2137,8 +2137,15 @@ return reply.type("application/xml; charset=utf-8").send(content);
     "/",
     async (_request, reply) => {
 
-      const homePath = path.join(__dirname, "../public/hormoz-graphic.html");
-      const homeHtml = await fs.readFile(homePath, "utf8");
+      // Serve the maintained public homepage first; keep the older graphic page only as fallback.
+      const homePath = path.join(__dirname, "../public/index.html");
+      const fallbackPath = path.join(__dirname, "../public/hormoz-graphic.html");
+      let homeHtml: string;
+      try {
+        homeHtml = await fs.readFile(homePath, "utf8");
+      } catch {
+        homeHtml = await fs.readFile(fallbackPath, "utf8");
+      }
 
       return reply
         .type("text/html; charset=utf-8")
