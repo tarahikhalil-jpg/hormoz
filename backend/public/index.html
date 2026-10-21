@@ -288,6 +288,7 @@
           navaAnswerAudio = new Audio(navaAnswerAudioUrl);
           await new Promise((resolve, reject) => {
             navaAnswerAudio.onended = resolve;
+            navaAnswerAudio.onpause = resolve;
             navaAnswerAudio.onerror = () => reject(new Error("پخش صدا در این گوشی ناموفق بود."));
             navaAnswerAudio.play().catch(reject);
           });
