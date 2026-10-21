@@ -172,9 +172,11 @@ function addMessage(text, type) {
       speakButton.textContent = "🔊 در حال پخش…";
       // Try the phone/browser's Persian speech engine first. If it fails,
       // speakNava falls back to online Persian audio.
+      // A manual tap is a direct user gesture: use online Persian audio first.
+      // Some Android speech engines report "speaking" but produce no audible sound.
       speakNava(text, () => {
         speakButton.textContent = "🔊 شنیدن دوباره پاسخ";
-      });
+      }, true);
     });
     div.appendChild(speakButton);
   }
