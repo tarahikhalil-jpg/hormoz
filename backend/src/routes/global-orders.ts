@@ -4,9 +4,43 @@ import { Pool } from "pg";
 
 type GlobalSession = { expiresAt: number };
 const sessions = new Map<string, GlobalSession>();
-const databaseUrl = (process.env.DATABASE_URL ?? "").trim();
-const host = (() => { try { return databaseUrl ? new URL(databaseUrl).hostname : ""; } catch { return ""; } })();
-const db = databaseUrl ? new Pool({ connectionString: databaseUrl, ssl: host === "localhost" || host === "127.0.0.1" ? false : { rejectUnauthorized: false }, max: 3 }) : null;
+function normalizeDatabaseUrl(value: string | undefined): string {
+  if (!value) return "";
+  let normalized = value.trim();
+
+  // Accept either a raw URL or a copied .env-style assignment.
+  if (/^DATABASE_URL\s*=/i.test(normalized)) {
+    normalized = normalized.replace(/^DATABASE_URL\s*=\s*/i, "");
+  }
+
+  // Remove one pair of surrounding quotes often copied from .env examples.
+  if (
+    (normalized.startsWith("'") && normalized.endsWith("'")) ||
+    (normalized.startsWith('"') && normalized.endsWith('"'))
+  ) {
+    normalized = normalized.slice(1, -1).trim();
+  }
+
+  return normalized;
+}
+
+const databaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
+const host = (() => {
+  try {
+    const parsed = databaseUrl ? new URL(databaseUrl) : null;
+    if (!parsed || !["postgres:", "postgresql:"].includes(parsed.protocol)) return "";
+    return parsed.hostname;
+  } catch {
+    return "";
+  }
+})();
+const db = databaseUrl && host
+  ? new Pool({
+      connectionString: databaseUrl,
+      ssl: host === "localhost" || host === "127.0.0.1" ? false : { rejectUnauthorized: false },
+      max: 3
+    })
+  : null;
 let tableReady = false;
 const SESSION_TTL = 4 * 60 * 60 * 1000;
 const loginFailures = new Map<string, { count: number; blockedUntil: number }>();
