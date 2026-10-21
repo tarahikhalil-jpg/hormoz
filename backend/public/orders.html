@@ -80,7 +80,7 @@ form.addEventListener("submit", async (event) => {
   result.className = "";
   result.textContent = "";
   try {
-    const response = await fetch("/api/v1/orders", {
+    const response = await fetch("/api/v1/global-orders", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
