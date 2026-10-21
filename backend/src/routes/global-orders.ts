@@ -9,8 +9,8 @@ function normalizeDatabaseUrl(value: string | undefined): string {
   let normalized = value.trim();
 
   // Accept either a raw URL or a copied .env-style assignment.
-  if (/^DATABASE_URL\\s*=/i.test(normalized)) {
-    normalized = normalized.replace(/^DATABASE_URL\\s*=\\s*/i, "");
+  if (/^DATABASE_URL\s*=/i.test(normalized)) {
+    normalized = normalized.replace(/^DATABASE_URL\s*=\s*/i, "");
   }
 
   // Remove one pair of surrounding quotes often copied from .env examples.
