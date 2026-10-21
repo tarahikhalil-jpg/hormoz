@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#082f49">
+<title>بررسی درخواست‌های بازار | مدیریت هوش هرمز</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#071b2b;color:#f3f8fc;font:15px/1.9 Tahoma,Arial,sans-serif}main{width:min(1000px,94%);margin:22px auto}.card{background:#102b40;border:1px solid #2c4c61;border-radius:16px;padding:18px;margin:14px 0}h1,h2{color:#63e6d1}input,button{font:inherit;padding:11px;border-radius:10px;border:1px solid #54768a}input{background:#061723;color:#fff;width:100%;margin:7px 0}button{cursor:pointer;background:#63e6d1;color:#062532;font-weight:bold;margin:4px}button.reject{background:#47272b;color:#fff}button.neutral{background:transparent;color:#fff}#status{white-space:pre-wrap;color:#ffd27a}.item{border-top:1px solid #2c4c61;padding:14px 0;overflow-wrap:anywhere}.meta{color:#c3d4e1;font-size:13px}.actions{display:flex;flex-wrap:wrap;gap:6px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;color:#dceaf2}
+</style>
+</head>
+<body><main>
+<h1>💡 بررسی درخواست‌های هوش هرمز</h1>
+<p>فقط درخواست‌های ذخیره‌شده در پایگاه داده نمایش داده می‌شوند. تأیید ارائه‌دهنده به‌تنهایی به معنی تأیید کیفیت، رزرو یا پرداخت نیست.</p>
+<section class="card" id="login"><h2>ورود مدیر</h2><label for="password">رمز مدیریت</label><input id="password" type="password" autocomplete="current-password"><button id="loginButton">ورود و دریافت درخواست‌ها</button><div id="status" role="status"></div></section>
+<section class="card" id="queue" hidden><div class="actions"><button id="refresh" class="neutral">تازه‌سازی فهرست</button><button id="logout" class="neutral">خروج</button></div><h2>درخواست‌های معرفی کسب‌وکار</h2><div id="providers"></div><h2>درخواست‌های مهارت و تبلیغات</h2><div id="opportunities"></div></section>
+<p><a href="/" style="color:#63e6d1">بازگشت به هوش هرمز</a></p>
+</main>
+<script>
+let token="";
+const $=id=>document.getElementById(id);
+function setStatus(s){$("status").textContent=s}
+async function api(url,options={}){const r=await fetch(url,{...options,headers:{"Content-Type":"application/json",Authorization:"Bearer "+token,...(options.headers||{})}});const d=await r.json();if(!r.ok)throw new Error(d.message||"درخواست ناموفق بود.");return d}
+function makeButton(label,fn,kind=""){const b=document.createElement("button");b.textContent=label;if(kind)b.className=kind;b.addEventListener("click",fn);return b}
+function itemCard(title,meta,detail,buttons){const el=document.createElement("article");el.className="item";const h=document.createElement("strong");h.textContent=title;const m=document.createElement("div");m.className="meta";m.textContent=meta;const p=document.createElement("pre");p.textContent=detail;const a=document.createElement("div");a.className="actions";buttons.forEach(b=>a.append(b));el.append(h,m,p,a);return el}
+async function load(){setStatus("در حال دریافت درخواست‌ها…");const d=await api("/api/v1/market-admin/applications");$("providers").replaceChildren();$("opportunities").replaceChildren();
+for(const p of d.providers){const detail="نام مسئول: "+p.provider_name+"\nراه تماس خصوصی: "+p.contact+"\nنوع خدمت: "+p.service_type+"\nشهر: "+p.city+"\nقیمت پایه: "+Number(p.starting_price).toLocaleString("fa-IR")+" تومان / "+p.price_unit+"\nتوضیحات: "+p.description+"\nاجازه انتشار عمومی: "+(p.public_listing_consent?"بله":"خیر");
+const buttons=[makeButton("تأیید",()=>update("/api/v1/market-admin/providers/"+encodeURIComponent(p.id),"approved"),""),makeButton("رد",()=>update("/api/v1/market-admin/providers/"+encodeURIComponent(p.id),"rejected"),"reject"),makeButton("بازگرداندن به بررسی",()=>update("/api/v1/market-admin/providers/"+encodeURIComponent(p.id),"pending"),"neutral")];
+$("providers").append(itemCard(p.business_name||p.provider_name,p.id+" · "+p.status+" · "+new Date(p.created_at).toLocaleString("fa-IR"),detail,buttons))}
+if(!d.providers.length)$("providers").textContent="درخواستی ثبت نشده است.";
+for(const o of d.opportunities){const detail=JSON.stringify(o.payload,null,2);const buttons=[makeButton("تأیید برای پیگیری",()=>update("/api/v1/market-admin/opportunities/"+encodeURIComponent(o.id),"approved"),""),makeButton("رد",()=>update("/api/v1/market-admin/opportunities/"+encodeURIComponent(o.id),"rejected"),"reject"),makeButton("بازگرداندن به بررسی",()=>update("/api/v1/market-admin/opportunities/"+encodeURIComponent(o.id),"pending"),"neutral")];$("opportunities").append(itemCard(o.type,o.id+" · "+o.status+" · "+new Date(o.created_at).toLocaleString("fa-IR"),detail,buttons))}
+if(!d.opportunities.length)$("opportunities").textContent="درخواستی ثبت نشده است.";
+setStatus("فهرست تازه شد. درخواست‌ها: "+(d.providers.length+d.opportunities.length))}
+async function update(url,status){try{const d=await api(url,{method:"PATCH",body:JSON.stringify({status})});setStatus(d.message);await load()}catch(e){setStatus(e.message)}}
+$("loginButton").addEventListener("click",async()=>{setStatus("در حال ورود…");try{const r=await fetch("/api/v1/market-admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:$("password").value})});const d=await r.json();if(!r.ok)throw new Error(d.message||"ورود ناموفق بود.");token=d.token;$("login").hidden=true;$("queue").hidden=false;await load()}catch(e){setStatus(e.message)}});
+$("refresh").addEventListener("click",()=>load().catch(e=>setStatus(e.message)));
+$("logout").addEventListener("click",()=>{token="";$("queue").hidden=true;$("login").hidden=false;$("password").value="";setStatus("از سامانه خارج شدی.")});
+</script></body></html>
