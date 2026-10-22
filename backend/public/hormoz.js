@@ -310,6 +310,46 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
         return fallbackAudio.play();
       }).catch((error) => {
         console.warn("Hormoz Nava TTS failed:", error);
+        // If the server-side Persian TTS provider is down, do not stop at an error:
+        // retry the same response through the phone/browser speech engine.
+        if (finished) return;
+        const canSpeakOnDevice = ("speechSynthesis" in window) &&
+          typeof SpeechSynthesisUtterance !== "undefined";
+        if (canSpeakOnDevice) {
+          try {
+            const synth = window.speechSynthesis;
+            synth.cancel();
+            let browserIndex = 0;
+            const speakNextOnDevice = () => {
+              if (finished) return;
+              if (browserIndex >= chunks.length) {
+                finish("پاسخ نوا با صدای گوشی پخش شد.");
+                return;
+              }
+              const utterance = new SpeechSynthesisUtterance(chunks[browserIndex++]);
+              utterance.lang = "fa-IR";
+              utterance.rate = 0.88;
+              const persianVoice = synth.getVoices().find((voice) =>
+                /^fa([_-]|$)/i.test(voice.lang) || /persian|فارسی/i.test(voice.name)
+              );
+              if (persianVoice) utterance.voice = persianVoice;
+              utterance.onstart = () => {
+                speaking = true;
+                setVoiceStatus("سرویس آنلاین در دسترس نیست؛ نوا با صدای گوشی صحبت می‌کند…");
+              };
+              utterance.onend = () => setTimeout(speakNextOnDevice, 100);
+              utterance.onerror = () => {
+                finish("صدای آنلاین در دسترس نیست و صدای گوشی هم فعال نشد؛ صدای فارسی را در تنظیمات گفتار گوشی بررسی کن.");
+              };
+              synth.speak(utterance);
+            };
+            setVoiceStatus("در حال تلاش برای پخش پاسخ با صدای گوشی…");
+            speakNextOnDevice();
+            return;
+          } catch (fallbackError) {
+            console.warn("Nava device speech fallback failed:", fallbackError);
+          }
+        }
         finish((error && error.message ? error.message : "تولید صدای نوا ناموفق بود.") + " پاسخ متنی آماده است.");
       });
     };
