@@ -30,6 +30,7 @@
   <link rel="manifest" href="./manifest.json">
   <title>هوش هرمز | فناوری و فرصت برای همه</title>
   <style>
+    section[id="nova"]{scroll-margin-top:12px} #chatBox{box-shadow:0 12px 34px #0003} #answerAudioControls .btn{min-width:150px} .card .btn{width:100%;text-align:center;margin-top:4px} nav a:hover{color:var(--aqua)}
     :root{--bg:#071b2b;--panel:#102b40;--panel2:#13364e;--text:#f3f8fc;--muted:#c3d4e1;--aqua:#63e6d1;--gold:#ffd27a;--line:#2c4c61}
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
@@ -75,11 +76,11 @@
     <header>
       <div class="brand">💡 هوش هرمز</div>
       <nav aria-label="بخش‌های سایت">
-        <a href="#services">خدمات</a>
+        <a href="#nova">گفت‌وگو با نوا</a>
+        <a href="#services">خدمات روزمره</a>
         <a href="#work">اشتغال و مهارت</a>
         <a href="#local">کسب‌وکارهای محلی</a>
-        <a href="./market.html">🌍 بازار آزمایشی کالا و خدمات</a>
-        <a href="#nova">گفت‌وگو با نوا</a>
+        <a href="#tools">همه امکانات</a>
       </nav>
     </header>
 
@@ -90,17 +91,35 @@
         <p class="lead">دفتر هوشمند خدمات، فناوری و اشتغال هوش هرمز</p>
         <p class="quote">نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p>
         <div class="actions">
-          <a class="btn" href="./market.html">🌍 ورود به بازار آزمایشی کالا و خدمات</a>
-          <a class="btn secondary" href="#services">پیدا کردن خدمت موردنیاز</a>
-          <a class="btn secondary" href="#work">پیدا کردن فرصت همکاری</a>
-          <a class="btn secondary" href="./portal.html">درگاه ورود همیشگی</a>
-          <a class="btn secondary" href="https://hormoz-ai-backend-777.onrender.com/global-office.html">🧾 دفتر سفارش و فاکتور هوشمند</a>
+          <a class="btn" href="#nova">🤖 گفت‌وگو با نوا</a>
+          <a class="btn secondary" href="#services">پیدا کردن خدمت</a>
+          <a class="btn secondary" href="#work">فرصت همکاری</a>
+          <a class="btn secondary" href="#tools">همه امکانات هوش هرمز</a>
         </div>
         <div class="music">
           <audio controls preload="none" aria-label="موسیقی هوش هرمز">
-            <source src="https://hormoz-ai-backend-777.onrender.com/hormoz-music.mp3" type="audio/mpeg">
+            <source src="./hormoz-music%20(1).mp3" type="audio/mpeg">
           </audio>
         </div>
+      </section>
+
+      <section class="section" id="nova">
+        <div class="section-head">
+          <h2>با نوا صحبت کن</h2>
+          <p class="hint">نیازت را با زبان خودت بنویس؛ لازم نیست از قبل دسته‌بندی آن را بدانی.</p>
+        </div>
+        <div style="text-align:center"><button class="btn" onclick="openChat()">شروع گفت‌وگو با نوا 🤖</button></div>
+        <section id="chatBox" aria-live="polite" style="display:block">
+          <label for="message"><strong>چه مشکلی داری یا چه کاری می‌خواهی انجام بدهی؟</strong></label>
+          <textarea id="message" placeholder="نیازت را اینجا بنویس..."></textarea>
+          <button class="btn" type="button" onclick="sendMessage()">ارسال به نوا</button>
+          <div id="answer" aria-live="polite"></div>
+          <div id="answerAudioControls" style="display:none;margin-top:12px;gap:8px;flex-wrap:wrap">
+            <button id="speakAnswerButton" class="btn secondary" type="button">🔊 شنیدن پاسخ نوا</button>
+            <button id="stopAnswerAudioButton" class="btn secondary" type="button">⏹ توقف صدا</button>
+          </div>
+          <div id="answerAudioStatus" role="status" style="margin-top:8px;color:var(--muted);font-size:13px"></div>
+        </section>
       </section>
 
       <section class="section" id="services">
@@ -159,24 +178,7 @@
         </div>
       </section>
 
-      <section class="section" id="nova">
-        <div class="section-head">
-          <h2>با نوا صحبت کن</h2>
-          <p class="hint">نیازت را با زبان خودت بنویس؛ لازم نیست از قبل دسته‌بندی آن را بدانی.</p>
-        </div>
-        <div style="text-align:center"><button class="btn" onclick="openChat()">شروع گفت‌وگو با نوا 🤖</button></div>
-        <section id="chatBox" aria-live="polite">
-          <label for="message"><strong>چه مشکلی داری یا چه کاری می‌خواهی انجام بدهی؟</strong></label>
-          <textarea id="message" placeholder="نیازت را اینجا بنویس..."></textarea>
-          <button class="btn" type="button" onclick="sendMessage()">ارسال به نوا</button>
-          <div id="answer" aria-live="polite"></div>
-          <div id="answerAudioControls" style="display:none;margin-top:12px;gap:8px;flex-wrap:wrap">
-            <button id="speakAnswerButton" class="btn secondary" type="button">🔊 شنیدن پاسخ نوا</button>
-            <button id="stopAnswerAudioButton" class="btn secondary" type="button">⏹ توقف صدا</button>
-          </div>
-          <div id="answerAudioStatus" role="status" style="margin-top:8px;color:var(--muted);font-size:13px"></div>
-        </section>
-      </section>
+
 
       <section class="section">
         <div class="notice"><strong>شفافیت و امنیت:</strong> در این نسخه، نوا راهنمایی می‌کند و مسیر مناسب را پیشنهاد می‌دهد. ثبت رسمی درخواست، پرداخت قبض، خرید بلیت یا اتصال مستقیم به سامانه‌های دولتی تا زمان ایجاد اتصال مجاز و آزمایش‌شده، فعال اعلام نمی‌شود. رمز، کد یک‌بارمصرف یا اطلاعات بانکی خود را در گفت‌وگو وارد نکن.</div>
