@@ -61,15 +61,30 @@
     .feature{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:14px}
     .notice{border:1px solid #6d5d35;background:#302a1a;color:#ffebba;border-radius:13px;padding:14px;font-size:14px}
     .status{display:inline-block;font-size:12px;border-radius:20px;padding:2px 9px;background:#214638;color:#baf7d6;margin-bottom:5px}
-    #chatBox{display:none;margin:20px auto 0;max-width:760px;background:#0c2638;border:1px solid var(--line);padding:18px;border-radius:17px;text-align:right}
-    textarea{width:100%;min-height:115px;resize:vertical;border-radius:12px;padding:13px;font:inherit;background:#061723;color:white;border:1px solid #426176}
-    #answer{margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere;color:#fff}
-    .conversation-history{display:flex;flex-direction:column;gap:12px;max-height:52vh;overflow-y:auto;padding:12px 4px;margin:14px 0;border-bottom:1px solid var(--line);scroll-behavior:smooth}
-    .chat-turn{max-width:92%;padding:11px 14px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9}
-    .chat-user{align-self:flex-start;background:#16445a;border:1px solid #2b637b}
-    .chat-nava{align-self:flex-end;background:#153d38;border:1px solid #2a7166}
+    /* کادر اختصاصی و مرتب گفت‌وگوی نوا */
+    #chatBox{display:none;margin:22px auto 0;max-width:780px;padding:0;overflow:hidden;background:#081e2d;border:1px solid #367084;border-radius:22px;text-align:right;box-shadow:0 18px 48px #0005}
+    .chat-topbar{display:flex;align-items:center;gap:12px;padding:15px 17px;background:linear-gradient(120deg,#12465a,#12362f);border-bottom:1px solid #2c5968}
+    .nava-avatar{display:grid;place-items:center;flex:0 0 45px;width:45px;height:45px;border-radius:50%;font-size:25px;background:#d5fff4;color:#063b40;box-shadow:0 0 0 4px #ffffff12}
+    .chat-title{font-weight:bold;font-size:17px;line-height:1.5}
+    .chat-subtitle{font-size:12px;color:#c3dedf;line-height:1.6}
+    .chat-online{margin-right:auto;white-space:nowrap;font-size:11px;color:#b8f5d7;background:#164b3e;border:1px solid #337c68;border-radius:20px;padding:4px 9px}
+    .chat-online:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#70e5a7;margin-left:6px}
+    .chat-body{padding:10px 14px 14px}
+    .chat-instruction{font-size:13px;color:var(--muted);margin:4px 2px 8px}
+    .conversation-history{display:flex;flex-direction:column;gap:12px;min-height:170px;max-height:48vh;overflow-y:auto;padding:15px 8px;margin:0 0 12px;border:1px solid #23485b;border-radius:15px;background:linear-gradient(180deg,#0a2435,#091d2b);scroll-behavior:smooth;overscroll-behavior:contain}
+    .chat-turn{max-width:min(88%,560px);padding:10px 14px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;font-size:14px;box-shadow:0 3px 10px #0002}
+    .chat-user{align-self:flex-start;background:#16445a;border:1px solid #2b637b;border-bottom-left-radius:5px}
+    .chat-nava{align-self:flex-end;background:#153d38;border:1px solid #2a7166;border-bottom-right-radius:5px}
     .chat-pending{opacity:.8;font-style:italic}
+    .chat-composer{padding:11px;background:#0d2a3d;border:1px solid #2c4c61;border-radius:16px}
+    .chat-composer textarea{display:block;width:100%;min-height:82px;max-height:180px;resize:vertical;border-radius:11px;padding:12px;font:inherit;font-size:15px;line-height:1.8;background:#061723;color:white;border:1px solid #426176;outline:none}
+    .chat-composer textarea:focus{border-color:var(--aqua);box-shadow:0 0 0 2px #63e6d122}
+    .chat-composer-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .chat-privacy{font-size:11px;color:#a9c3d2}
+    .chat-send{min-width:130px;display:inline-flex;justify-content:center;align-items:center;gap:7px}
+    #answer{margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere;color:#fff}
     #answer{display:none}
+    @media(max-width:520px){#chatBox{border-radius:17px}.chat-topbar{padding:12px}.chat-body{padding:9px}.nava-avatar{width:40px;height:40px;flex-basis:40px}.chat-title{font-size:16px}.chat-online{font-size:10px}.conversation-history{max-height:44vh;min-height:150px;padding:11px 7px}.chat-turn{max-width:94%;font-size:14px}.chat-composer-bottom{align-items:stretch}.chat-send{width:100%}.chat-privacy{text-align:center;width:100%}}
     .music{max-width:560px;margin:22px auto}
     audio{width:100%}
     footer{text-align:center;padding:28px 0 36px;color:var(--muted);font-size:13px}
@@ -182,17 +197,33 @@
           <p class="hint">نیازت را با زبان خودت بنویس؛ لازم نیست از قبل دسته‌بندی آن را بدانی.</p>
         </div>
         <div style="text-align:center"><button class="btn" onclick="openChat()">شروع گفت‌وگو با نوا 🤖</button></div>
-        <section id="chatBox" aria-live="polite">
-          <label for="message"><strong>چه مشکلی داری یا چه کاری می‌خواهی انجام بدهی؟</strong></label>
-          <textarea id="message" placeholder="نیازت را اینجا بنویس..."></textarea>
-          <button class="btn" type="button" onclick="sendMessage()">ارسال به نوا</button>
-          <div id="conversationHistory" class="conversation-history" aria-live="polite" aria-label="تاریخچه گفت‌وگو با نوا"><div class="chat-turn chat-nava">سلام، من نوا هستم. بگو چه کمکی از دستم برمی‌آید؛ گفت‌وگو را همین‌جا ادامه می‌دهیم. 🌱</div></div>
-          <div id="answer" aria-live="polite"></div>
-          <div id="answerAudioControls" style="display:none;margin-top:12px;gap:8px;flex-wrap:wrap">
-            <button id="speakAnswerButton" class="btn secondary" type="button">🔊 شنیدن پاسخ نوا</button>
-            <button id="stopAnswerAudioButton" class="btn secondary" type="button">⏹ توقف صدا</button>
+        <section id="chatBox" aria-label="کادر اختصاصی گفت‌وگو با نوا">
+          <div class="chat-topbar">
+            <div class="nava-avatar" aria-hidden="true">🤖</div>
+            <div>
+              <div class="chat-title">گفت‌وگو با نوا</div>
+              <div class="chat-subtitle">همراه هوشمند هوش هرمز · با زبان خودت بنویس</div>
+            </div>
+            <span class="chat-online">آماده گفت‌وگو</span>
           </div>
-          <div id="answerAudioStatus" role="status" style="margin-top:8px;color:var(--muted);font-size:13px"></div>
+          <div class="chat-body">
+            <p class="chat-instruction">پیام‌ها اینجا مرتب نمایش داده می‌شوند و می‌توانی گفت‌وگو را ادامه بدهی.</p>
+            <div id="conversationHistory" class="conversation-history" aria-live="polite" aria-label="تاریخچه گفت‌وگو با نوا"><div class="chat-turn chat-nava">سلام، من نوا هستم. 🌱<br>بگو چه کمکی از دستم برمی‌آید؛ با هم قدم‌به‌قدم پیش می‌رویم.</div></div>
+            <div class="chat-composer">
+              <label for="message"><strong>پیام تو</strong></label>
+              <textarea id="message" placeholder="اینجا برای نوا بنویس..." aria-label="متن پیام به نوا"></textarea>
+              <div class="chat-composer-bottom">
+                <span class="chat-privacy">🔒 اطلاعات حساس، رمز و کد بانکی نفرست.</span>
+                <button class="btn chat-send" type="button" onclick="sendMessage()">ارسال پیام <span aria-hidden="true">➤</span></button>
+              </div>
+            </div>
+            <div id="answer" aria-live="polite"></div>
+            <div id="answerAudioControls" style="display:none;margin-top:12px;gap:8px;flex-wrap:wrap">
+              <button id="speakAnswerButton" class="btn secondary" type="button">🔊 شنیدن پاسخ نوا</button>
+              <button id="stopAnswerAudioButton" class="btn secondary" type="button">⏹ توقف صدا</button>
+            </div>
+            <div id="answerAudioStatus" role="status" style="margin-top:8px;color:var(--muted);font-size:13px"></div>
+          </div>
         </section>
       </section>
 
