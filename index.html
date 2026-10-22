@@ -288,9 +288,36 @@
         }
         if (requestId === navaAudioRequestId) answerAudioStatus.textContent = "پاسخ صوتی نوا پخش شد.";
       } catch (error) {
-        if (requestId === navaAudioRequestId) answerAudioStatus.textContent = (error && error.message) || "پخش صدای نوا ناموفق بود.";
+        if (requestId === navaAudioRequestId && "speechSynthesis" in window && text) {
+          // Local device voice is a fallback when the online Persian TTS provider is unavailable.
+          try {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "fa-IR";
+            utterance.rate = 0.92;
+            const voices = window.speechSynthesis.getVoices();
+            const persianVoice = voices.find(voice => /^fa([_-]|$)/i.test(voice.lang));
+            if (persianVoice) utterance.voice = persianVoice;
+            utterance.onend = () => {
+              if (requestId === navaAudioRequestId) answerAudioStatus.textContent = "پاسخ با صدای دستگاه پخش شد.";
+              speakAnswerButton.disabled = false;
+            };
+            utterance.onerror = () => {
+              if (requestId === navaAudioRequestId) answerAudioStatus.textContent = "سرویس صدای آنلاین و صدای فارسی این گوشی در دسترس نیست.";
+              speakAnswerButton.disabled = false;
+            };
+            answerAudioStatus.textContent = "سرویس آنلاین پاسخ نداد؛ صدای داخلی گوشی را امتحان می‌کنیم…";
+            window.speechSynthesis.speak(utterance);
+            return;
+          } catch (_) {}
+        }
+        if (requestId === navaAudioRequestId) {
+          answerAudioStatus.textContent = (error && error.message) || "پخش صدای نوا ناموفق بود.";
+        }
       } finally {
-        if (requestId === navaAudioRequestId) speakAnswerButton.disabled = false;
+        if (requestId === navaAudioRequestId && !("speechSynthesis" in window && window.speechSynthesis.speaking)) {
+          speakAnswerButton.disabled = false;
+        }
       }
     }
     speakAnswerButton.addEventListener("click", speakNavaAnswer);
