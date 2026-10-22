@@ -22,7 +22,7 @@ export class OpenRouterIntelligenceProvider
       const controller = new AbortController();
       const timeout = setTimeout(
         () => controller.abort(),
-        15_000,
+        25_000,
       );
 
       try {
@@ -38,7 +38,7 @@ export class OpenRouterIntelligenceProvider
             body: JSON.stringify({
               model,
               messages: request.messages,
-              max_tokens: attempt === 1 ? 1200 : 1800,
+              max_tokens: 900,
             }),
           },
         );
@@ -139,7 +139,7 @@ export class OpenRouterIntelligenceProvider
 
         if (attempt < maxAttempts) {
           await new Promise((resolve) =>
-            setTimeout(resolve, attempt * 2500),
+            setTimeout(resolve, 1000),
           );
         }
       } finally {
