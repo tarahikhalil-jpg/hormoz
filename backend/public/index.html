@@ -64,6 +64,12 @@
     #chatBox{display:none;margin:20px auto 0;max-width:760px;background:#0c2638;border:1px solid var(--line);padding:18px;border-radius:17px;text-align:right}
     textarea{width:100%;min-height:115px;resize:vertical;border-radius:12px;padding:13px;font:inherit;background:#061723;color:white;border:1px solid #426176}
     #answer{margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere;color:#fff}
+    .conversation-history{display:flex;flex-direction:column;gap:12px;max-height:52vh;overflow-y:auto;padding:12px 4px;margin:14px 0;border-bottom:1px solid var(--line);scroll-behavior:smooth}
+    .chat-turn{max-width:92%;padding:11px 14px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9}
+    .chat-user{align-self:flex-start;background:#16445a;border:1px solid #2b637b}
+    .chat-nava{align-self:flex-end;background:#153d38;border:1px solid #2a7166}
+    .chat-pending{opacity:.8;font-style:italic}
+    #answer{display:none}
     .music{max-width:560px;margin:22px auto}
     audio{width:100%}
     footer{text-align:center;padding:28px 0 36px;color:var(--muted);font-size:13px}
@@ -180,6 +186,7 @@
           <label for="message"><strong>چه مشکلی داری یا چه کاری می‌خواهی انجام بدهی؟</strong></label>
           <textarea id="message" placeholder="نیازت را اینجا بنویس..."></textarea>
           <button class="btn" type="button" onclick="sendMessage()">ارسال به نوا</button>
+          <div id="conversationHistory" class="conversation-history" aria-live="polite" aria-label="تاریخچه گفت‌وگو با نوا"><div class="chat-turn chat-nava">سلام، من نوا هستم. بگو چه کمکی از دستم برمی‌آید؛ گفت‌وگو را همین‌جا ادامه می‌دهیم. 🌱</div></div>
           <div id="answer" aria-live="polite"></div>
           <div id="answerAudioControls" style="display:none;margin-top:12px;gap:8px;flex-wrap:wrap">
             <button id="speakAnswerButton" class="btn secondary" type="button">🔊 شنیدن پاسخ نوا</button>
@@ -369,29 +376,68 @@
       answerAudioStatus.textContent = "پخش صدا متوقف شد.";
     });
 
+    let navaMessagePending = false;
+    function addConversationTurn(text, role, extraClass = "") {
+      const history = document.getElementById("conversationHistory");
+      const bubble = document.createElement("div");
+      bubble.className = "chat-turn " + (role === "user" ? "chat-user" : "chat-nava") + (extraClass ? " " + extraClass : "");
+      bubble.textContent = text;
+      history.appendChild(bubble);
+      history.scrollTop = history.scrollHeight;
+      return bubble;
+    }
+
     async function sendMessage() {
       const input = document.getElementById("message");
       const answer = document.getElementById("answer");
       const message = input.value.trim();
-      if (!message) { answer.textContent = "لطفاً نیازت را بنویس."; return; }
+      if (!message || navaMessagePending) {
+        if (!message && !navaMessagePending) addConversationTurn("لطفاً پیام خودت را بنویس.", "nava");
+        return;
+      }
+
+      navaMessagePending = true;
+      const sendButton = document.querySelector('#chatBox button[onclick="sendMessage()"]');
+      if (sendButton) {
+        sendButton.disabled = true;
+        sendButton.textContent = "در حال گفت‌وگو…";
+      }
       stopNavaAnswerAudio();
       answerAudioControls.style.display = "none";
       answerAudioStatus.textContent = "";
-      answer.textContent = "نوا در حال آماده شدن است؛ ممکن است بار اول کمی زمان ببرد...";
+      addConversationTurn(message, "user");
+      input.value = "";
+      const pendingBubble = addConversationTurn("نوا در حال آماده کردن پاسخ است…", "nava", "chat-pending");
+      answer.textContent = "";
+
       try {
         const response = await fetch("/api/v1/chat", {
-          method:"POST",
-          headers:{"Content-Type":"application/json","x-user-id":getHormozGuestId()},
-          body:JSON.stringify({message})
+          method: "POST",
+          headers: {"Content-Type": "application/json", "x-user-id": getHormozGuestId()},
+          body: JSON.stringify({message}),
+          cache: "no-store"
         });
         const data = await response.json();
-        if (!response.ok) throw new Error("ارتباط ناموفق بود");
-        answer.textContent = data.response || "نوا پاسخی دریافت نکرد. دوباره تلاش کن.";
-        if (answer.textContent && answer.textContent !== "نوا پاسخی دریافت نکرد. دوباره تلاش کن.") {
-          answerAudioControls.style.display = "flex";
-        }
+        if (!response.ok) throw new Error(data.message || data.error || "ارتباط با نوا ناموفق بود.");
+        const reply = data.response || data.content || data.reply || data.answer || "نوا پاسخی دریافت نکرد. لطفاً دوباره تلاش کن.";
+        pendingBubble.classList.remove("chat-pending");
+        pendingBubble.textContent = reply;
+        answer.textContent = reply;
+        answerAudioControls.style.display = "flex";
+        const history = document.getElementById("conversationHistory");
+        history.scrollTop = history.scrollHeight;
       } catch (error) {
-        answer.textContent = "فعلاً ارتباط با نوا برقرار نشد. چند لحظه صبر کن و دوباره امتحان کن. اگر سرور در خواب باشد، بیدار شدنش ممکن است کمی زمان ببرد. 🌱";
+        const message = error && error.message ? error.message : "خطای نامشخص";
+        pendingBubble.classList.remove("chat-pending");
+        pendingBubble.textContent = "فعلاً پاسخ نوا دریافت نشد: " + message + " می‌توانی همین‌جا دوباره تلاش کنی.";
+        answer.textContent = "";
+      } finally {
+        navaMessagePending = false;
+        if (sendButton) {
+          sendButton.disabled = false;
+          sendButton.textContent = "ارسال به نوا";
+        }
+        input.focus();
       }
     }
     let deferredPrompt;
