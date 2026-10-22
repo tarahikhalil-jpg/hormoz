@@ -1257,7 +1257,7 @@ export async function adminRoutes(app: FastifyInstance) {
     try {
       await ensureServiceOrdersTable();
       const result = await db.query(
-        "SELECT order_number, service_type, status, status_history, created_at, updated_at FROM hormoz_service_orders WHERE tracking_token = $1 LIMIT 1",
+        "SELECT order_number, service_type, details, status, status_history, created_at, updated_at FROM hormoz_service_orders WHERE tracking_token = $1 LIMIT 1",
         [token]
       );
       if (!result.rows.length) return reply.code(404).send({ ok: false, message: "کد رهگیری معتبر نیست یا سفارش پیدا نشد." });
@@ -1285,6 +1285,10 @@ export async function adminRoutes(app: FastifyInstance) {
         ok: true,
         orderNumber: String(row.order_number),
         serviceType: String(row.service_type),
+        requestDetails: (() => {
+          const details = row.details && typeof row.details === "object" && !Array.isArray(row.details) ? row.details as Record<string, unknown> : {};
+          return String(details.request ?? "").trim().slice(0, 2500);
+        })(),
         status: String(row.status),
         message: safeMessages[String(row.status)] ?? "وضعیت سفارش به‌روزرسانی شده است.",
         history,
