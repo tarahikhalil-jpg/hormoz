@@ -41,6 +41,7 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
     const body = request.body as {
       message?: string;
       conversationId?: string;
+      history?: Array<{ role?: string; content?: string }>;
     };
 
     const message = body?.message?.trim();
@@ -154,7 +155,24 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
         await intelligenceEngine.generate({
           userId,
           correlationId: `chat-${Date.now()}`,
-          messages: [{ role: "user", content: message }],
+          messages: [
+            ...(Array.isArray(body.history)
+              ? body.history
+                  .filter(
+                    (item): item is { role: "user" | "assistant"; content: string } =>
+                      !!item &&
+                      (item.role === "user" || item.role === "assistant") &&
+                      typeof item.content === "string" &&
+                      item.content.trim().length > 0,
+                  )
+                  .slice(-10)
+                  .map((item) => ({
+                    role: item.role,
+                    content: item.content.trim().slice(0, MAX_MESSAGE_LENGTH),
+                  }))
+              : []),
+            { role: "user", content: message },
+          ],
           context,
         });
 
