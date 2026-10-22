@@ -1,369 +1,108 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#082f49">
-  <meta name="description" content="هوش هرمز؛ درگاه هوشمند دسترسی به خدمات، فناوری، فرصت‌های شغلی و کسب‌وکارهای محلی برای همه.">
-  <meta name="robots" content="index,follow,max-image-preview:large">
-  <link rel="canonical" href="https://tarahikhalil-jpg.github.io/hormoz/">
-  <meta property="og:type" content="website">
-  <meta property="og:locale" content="fa_IR">
-  <meta property="og:site_name" content="هوش هرمز">
-  <meta property="og:title" content="هوش هرمز | فناوری و فرصت برای همه">
-  <meta property="og:description" content="فناوری برای همه؛ فرصت برای هر استعداد. نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.">
-  <meta property="og:url" content="https://tarahikhalil-jpg.github.io/hormoz/">
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="هوش هرمز | فناوری و فرصت برای همه">
-  <meta name="twitter:description" content="فناوری برای همه؛ فرصت برای هر استعداد.">
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "هوش هرمز",
-    "alternateName": "Hormoz Intelligence",
-    "url": "https://tarahikhalil-jpg.github.io/hormoz/",
-    "inLanguage": "fa-IR",
-    "description": "درگاه هوشمند دسترسی به خدمات، فناوری، فرصت‌های شغلی و کسب‌وکارهای محلی."
-  }
-  </script>
-  <link rel="manifest" href="./manifest.json">
-  <title>هوش هرمز | فناوری و فرصت برای همه</title>
-  <style>
-    section[id="nova"]{scroll-margin-top:12px} #chatBox{box-shadow:0 12px 34px #0003} #answerAudioControls .btn{min-width:150px} .card .btn{width:100%;text-align:center;margin-top:4px} nav a:hover{color:var(--aqua)}
-    :root{--bg:#071b2b;--panel:#102b40;--panel2:#13364e;--text:#f3f8fc;--muted:#c3d4e1;--aqua:#63e6d1;--gold:#ffd27a;--line:#2c4c61}
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{margin:0;background:radial-gradient(ellipse at top,#123c56 0,#071b2b 56%);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
-    a{color:inherit}
-    .wrap{width:min(1050px,92%);margin:auto}
-    header{padding:18px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-    .brand{font-size:20px;font-weight:bold;color:var(--aqua)}
-    nav{display:flex;gap:14px;flex-wrap:wrap;font-size:14px}
-    nav a{text-decoration:none;color:var(--muted)}
-    .hero{padding:34px 0 28px;text-align:center}
-    .lamp{font-size:48px;line-height:1.4}
-    h1{font-size:clamp(30px,6vw,48px);line-height:1.5;margin:8px 0}
-    .lead{font-size:clamp(18px,3vw,23px);color:var(--aqua);margin:0 auto 12px}
-    .quote{max-width:740px;margin:12px auto 22px;color:var(--muted);font-size:17px}
-    .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-    .btn{display:inline-block;border:0;border-radius:13px;padding:12px 20px;font:inherit;font-weight:bold;text-decoration:none;cursor:pointer;background:var(--aqua);color:#062532}
-    .btn.secondary{background:transparent;color:var(--text);border:1px solid #54768a}
-    .section{padding:26px 0}
-    .section-head{text-align:center;margin-bottom:18px}
-    h2{font-size:clamp(23px,4vw,31px);margin:0 0 5px}
-    .hint{color:var(--muted);margin:0}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:13px}
-    .card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:17px;padding:18px;text-align:right}
-    .card .icon{font-size:30px}
-    .card h3{font-size:18px;margin:5px 0}
-    .card p{color:var(--muted);font-size:14px;margin:4px 0 14px}
-    .card button{width:100%;padding:10px;border-radius:10px;border:1px solid #4c7187;background:#0b2537;color:var(--aqua);font:inherit;cursor:pointer}
-    .feature{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:14px}
-    .notice{border:1px solid #6d5d35;background:#302a1a;color:#ffebba;border-radius:13px;padding:14px;font-size:14px}
-    .status{display:inline-block;font-size:12px;border-radius:20px;padding:2px 9px;background:#214638;color:#baf7d6;margin-bottom:5px}
-    #chatBox{display:none;margin:20px auto 0;max-width:760px;background:#0c2638;border:1px solid var(--line);padding:18px;border-radius:17px;text-align:right}
-    textarea{width:100%;min-height:115px;resize:vertical;border-radius:12px;padding:13px;font:inherit;background:#061723;color:white;border:1px solid #426176}
-    #answer{margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere;color:#fff}
-    .music{max-width:560px;margin:22px auto}
-    audio{width:100%}
-    footer{text-align:center;padding:28px 0 36px;color:var(--muted);font-size:13px}
-    @media(max-width:520px){header{justify-content:center}nav{justify-content:center}.hero{padding-top:18px}.card{padding:15px}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#082f49">
+<meta name="description" content="هوش هرمز؛ خانه‌ای یکپارچه برای گفت‌وگو با نوا، خدمات روزمره، معرفی مهارت و کسب‌وکارهای محلی.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://tarahikhalil-jpg.github.io/hormoz/">
+<link rel="manifest" href="./manifest.json">
+<title>هوش هرمز | خانه نوا</title>
+<style>
+:root{color-scheme:dark;--bg:#061725;--panel:#0c293d;--panel2:#10364d;--line:#28536a;--text:#f4f9fc;--muted:#b8cedb;--aqua:#70ead7;--gold:#ffd68b;--green:#9cf0bd}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:78px}body{margin:0;background:radial-gradient(ellipse at top,#12425b 0,#061725 58%);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.85}button,input,textarea{font:inherit}button,a{-webkit-tap-highlight-color:transparent}a{color:inherit}.wrap{width:min(1040px,92%);margin:auto}
+header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blur(14px);border-bottom:1px solid #28536a;padding:10px 0}.head{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:bold;color:var(--aqua);font-size:19px;text-decoration:none;white-space:nowrap}.nav{display:flex;gap:13px;overflow-x:auto;white-space:nowrap;font-size:13px}.nav a{text-decoration:none;color:var(--muted)}.nav a:hover{color:var(--aqua)}
+.hero{text-align:center;padding:32px 0 20px}.lamp{font-size:48px;line-height:1.25}h1{font-size:clamp(29px,6vw,46px);line-height:1.5;margin:8px 0}.lead{font-size:clamp(17px,3vw,22px);color:var(--aqua);margin:0}.quote{color:var(--muted);margin:8px auto 18px;max-width:680px}.row{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}.btn{border:1px solid transparent;border-radius:12px;padding:11px 16px;background:var(--aqua);color:#052433;font-weight:bold;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}.btn.alt{background:transparent;border-color:#477086;color:var(--text)}.btn:disabled{opacity:.55;cursor:not-allowed}
+.music{max-width:520px;margin:20px auto 0;padding:12px 15px;border:1px solid var(--line);border-radius:16px;background:#0a2335}.music p{margin:0 0 6px;color:var(--muted);font-size:13px}audio{width:100%;height:42px}
+.section{padding:25px 0}.section-head{text-align:center;margin:0 auto 16px}.section-head h2{font-size:clamp(22px,4vw,30px);margin:0 0 4px}.hint{color:var(--muted);margin:0;font-size:14px}.chat{max-width:790px;margin:auto;background:linear-gradient(145deg,#10364d,#0a2335);border:1px solid #347086;border-radius:20px;padding:clamp(14px,3vw,24px);box-shadow:0 14px 36px #0003}.statusline{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.pill{font-size:12px;border-radius:30px;padding:4px 10px;background:#183f43;color:#b6f7d1}.pill.neutral{background:#243b4c;color:#d7e5ec}label{display:block;font-weight:bold;margin:9px 0 6px}textarea,input{width:100%;border-radius:12px;border:1px solid #42677b;background:#061a28;color:var(--text);padding:12px;outline:none}textarea:focus,input:focus{border-color:var(--aqua)}textarea{min-height:100px;resize:vertical}.chat-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.chat-actions .btn{flex:1 1 135px}.answer{white-space:pre-wrap;overflow-wrap:anywhere;background:#071d2c;border:1px solid #23465b;border-radius:13px;padding:13px;margin-top:14px;min-height:48px}.answer:empty{display:none}.small{font-size:12px;color:var(--muted);margin:8px 0 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}.card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:17px;padding:16px;display:flex;flex-direction:column;align-items:stretch}.icon{font-size:29px}.card h3{font-size:17px;margin:3px 0}.card p{font-size:13px;color:var(--muted);margin:2px 0 13px;flex:1}.card button{width:100%;border:1px solid #42677b;border-radius:10px;padding:9px;background:#092537;color:var(--aqua);cursor:pointer}.feature{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}.notice{border:1px solid #786338;background:#2b281c;color:#ffedc1;border-radius:14px;padding:13px;font-size:13px}.footer{text-align:center;padding:24px 0 34px;color:var(--muted);font-size:13px}.footer strong{color:var(--text)}.hidden{display:none!important}
+@media(max-width:600px){.head{align-items:flex-start;flex-direction:column;gap:4px}.nav{width:100%;padding-bottom:3px}.hero{padding-top:22px}.section{padding:20px 0}.btn{padding:10px 12px}.chat{padding:13px}}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">💡 هوش هرمز</div>
-      <nav aria-label="بخش‌های سایت">
-        <a href="#nova">گفت‌وگو با نوا</a>
-        <a href="#services">خدمات روزمره</a>
-        <a href="#work">اشتغال و مهارت</a>
-        <a href="#local">کسب‌وکارهای محلی</a>
-        <a href="#tools">همه امکانات</a>
-      </nav>
-    </header>
+<header><div class="wrap head">
+<a class="brand" href="#home">💡 هوش هرمز</a>
+<nav class="nav" aria-label="رفتن به بخش‌ها"><a href="#nava">نوا</a><a href="#services">خدمات</a><a href="#skills">مهارت و کار</a><a href="#local">کسب‌وکارها</a><a href="#about">درباره هرمز</a></nav>
+</div></header>
+<main class="wrap" id="home">
+<section class="hero">
+<div class="lamp" aria-hidden="true">💡🌊</div>
+<h1>خانه هوش هرمز</h1>
+<p class="lead">فناوری برای همه؛ فرصت برای هر استعداد</p>
+<p class="quote">نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p>
+<div class="row"><a class="btn" href="#nava">🤖 گفت‌وگو با نوا</a><a class="btn alt" href="#services">پیدا کردن خدمت</a><a class="btn alt" href="#skills">معرفی مهارت</a></div>
+<div class="music"><p>🎵 چراغ هوش هرمز — برای پخش، دکمه پخش را بزن</p><audio controls preload="none" aria-label="موسیقی هوش هرمز"><source src="./hormoz-music%20(1).mp3" type="audio/mpeg">مرورگر شما پخش صوت را پشتیبانی نمی‌کند.</audio></div>
+</section>
 
-    <main>
-      <section class="hero">
-        <div class="lamp" aria-hidden="true">💡</div>
-        <h1>فناوری برای همه؛ فرصت برای هر استعداد</h1>
-        <p class="lead">دفتر هوشمند خدمات، فناوری و اشتغال هوش هرمز</p>
-        <p class="quote">نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p>
-        <div class="actions">
-          <a class="btn" href="#nova">🤖 گفت‌وگو با نوا</a>
-          <a class="btn secondary" href="#services">پیدا کردن خدمت</a>
-          <a class="btn secondary" href="#work">فرصت همکاری</a>
-          <a class="btn secondary" href="#tools">همه امکانات هوش هرمز</a>
-        </div>
-        <div class="music">
-          <audio controls preload="none" aria-label="موسیقی هوش هرمز">
-            <source src="./hormoz-music%20(1).mp3" type="audio/mpeg">
-          </audio>
-        </div>
-      </section>
+<section class="section" id="nava">
+<div class="section-head"><h2>با نوا صحبت کن</h2><p class="hint">درخواستت را بنویس یا اگر گوشی پشتیبانی می‌کند، با صدایت بگو. همه‌چیز از همین صفحه انجام می‌شود.</p></div>
+<div class="chat">
+<div class="statusline"><strong>🤖 نوا، دستیار هوشمند هرمز</strong><span class="pill neutral" id="connectionStatus">آماده برای گفت‌وگو</span></div>
+<label for="message">چه کاری می‌خواهی انجام بدهی؟</label>
+<textarea id="message" maxlength="5000" placeholder="مثلاً: می‌خواهم کسب‌وکار کوچکم را معرفی کنم، دنبال کار هستم یا برای سفر به هرمز راهنمایی می‌خواهم..."></textarea>
+<div class="chat-actions"><button class="btn" id="sendBtn" type="button">ارسال به نوا ↗</button><button class="btn alt" id="voiceInputBtn" type="button">🎙️ گفتن درخواست</button><button class="btn alt" id="clearBtn" type="button">پاک‌کردن متن</button></div>
+<div class="small" id="voiceInputStatus" role="status">برای استفاده از میکروفون، مرورگر ممکن است اجازه دسترسی بخواهد.</div>
+<div id="answer" class="answer" aria-live="polite"></div>
+<div class="chat-actions hidden" id="audioActions"><button class="btn" id="speakBtn" type="button">🔊 شنیدن پاسخ نوا</button><button class="btn alt" id="stopBtn" type="button">⏹ توقف صدا</button></div>
+<div class="small" id="audioStatus" role="status"></div>
+</div>
+</section>
 
-      <section class="section" id="nova">
-        <div class="section-head">
-          <h2>با نوا صحبت کن</h2>
-          <p class="hint">نیازت را با زبان خودت بنویس؛ لازم نیست از قبل دسته‌بندی آن را بدانی.</p>
-        </div>
-        <div style="text-align:center"><button class="btn" onclick="openChat()">شروع گفت‌وگو با نوا 🤖</button></div>
-        <section id="chatBox" aria-live="polite" style="display:block">
-          <label for="message"><strong>چه مشکلی داری یا چه کاری می‌خواهی انجام بدهی؟</strong></label>
-          <textarea id="message" placeholder="نیازت را اینجا بنویس..."></textarea>
-          <button class="btn" type="button" onclick="sendMessage()">ارسال به نوا</button>
-          <div id="answer" aria-live="polite"></div>
-          <div id="answerAudioControls" style="display:none;margin-top:12px;gap:8px;flex-wrap:wrap">
-            <button id="speakAnswerButton" class="btn secondary" type="button">🔊 شنیدن پاسخ نوا</button>
-            <button id="stopAnswerAudioButton" class="btn secondary" type="button">⏹ توقف صدا</button>
-          </div>
-          <div id="answerAudioStatus" role="status" style="margin-top:8px;color:var(--muted);font-size:13px"></div>
-        </section>
-      </section>
+<section class="section" id="services">
+<div class="section-head"><h2>خدمات و نیازهای روزمره</h2><p class="hint">هر گزینه گفت‌وگوی نوا را با درخواست مرتبط آماده می‌کند؛ ارسال نهایی با انتخاب خودت است.</p></div>
+<div class="grid">
+<article class="card"><div class="icon">💧</div><h3>آب، برق و گاز</h3><p>راهنمایی برای مشکل خدمات شهری و یافتن مسیر رسمی پیگیری.</p><button data-prompt="برای مشکل آب، برق یا گاز راهنمایی می‌خواهم. از من بپرس در کدام شهر هستم و کمک کن مسیر رسمی پیگیری را پیدا کنم.">شروع با نوا</button></article>
+<article class="card"><div class="icon">📶</div><h3>اینترنت و تلفن</h3><p>بررسی مشکل اتصال، تلفن همراه یا انتخاب سرویس مناسب.</p><button data-prompt="برای اینترنت یا تلفن مشکل دارم. با چند سؤال کمک کن علت احتمالی و راه پیگیری رسمی را پیدا کنم.">شروع با نوا</button></article>
+<article class="card"><div class="icon">🩺</div><h3>سلامت و بیمه</h3><p>اطلاعات عمومی و راهنمای پیدا کردن مرکز یا درگاه رسمی.</p><button data-prompt="برای پیدا کردن خدمت سلامت یا بیمه راهنمایی عمومی می‌خواهم. کمک کن مسیر معتبر و رسمی را پیدا کنم.">شروع با نوا</button></article>
+<article class="card"><div class="icon">🏛️</div><h3>کارهای اداری</h3><p>فهم مراحل، مدارک احتمالی و پیدا کردن درگاه رسمی مربوط.</p><button data-prompt="برای یک کار اداری راهنمایی می‌خواهم. اول بپرس چه خدمتی و مربوط به کدام شهر یا سازمان است؛ سپس مراحل و مسیر رسمی را توضیح بده.">شروع با نوا</button></article>
+<article class="card"><div class="icon">🧳</div><h3>سفر و گردشگری</h3><p>برنامه‌ریزی سفر، فهرست نیازها و راهنمایی برای حمل‌ونقل و اقامت.</p><button data-prompt="برای سفر و گردشگری راهنمایی می‌خواهم. درباره مقصد، تاریخ و بودجه‌ام سؤال کن و برنامه‌ای واقع‌بینانه پیشنهاد بده.">برنامه‌ریزی سفر</button></article>
+<article class="card"><div class="icon">🏠</div><h3>خدمات محلی</h3><p>مشخص‌کردن نیاز برای اقامت، تعمیرکار، خودرو یا خدمات محلی.</p><button data-prompt="به یک خدمت محلی نیاز دارم. کمک کن نیازم را دقیق کنم، اطلاعات لازم را فهرست کنم و روش امنی برای پیدا کردن ارائه‌دهنده پیشنهاد بده.">پیدا کردن خدمت</button></article>
+</div>
+</section>
 
-      <section class="section" id="services">
-        <div class="section-head">
-          <h2>چه خدمتی نیاز داری؟</h2>
-          <p class="hint">یک موضوع را انتخاب کن؛ نوا برای پیدا کردن مسیر مناسب کمکت می‌کند.</p>
-        </div>
-        <div class="grid">
-          <article class="card"><div class="icon">💧</div><h3>آب، برق و گاز</h3><p>راهنمایی درباره قبض، قطعی، پیگیری و مسیر ارتباط با شرکت خدماتی.</p><button onclick="startPrompt('برای مشکل آب، برق یا گاز راهنمایی می‌خواهم. کمک کن مسیر رسمی پیگیری را پیدا کنم.')">درخواست راهنمایی</button></article>
-          <article class="card"><div class="icon">📶</div><h3>اینترنت و تلفن</h3><p>راهنمایی برای اینترنت، تلفن همراه، قطعی یا انتخاب سرویس.</p><button onclick="startPrompt('برای اینترنت یا تلفن مشکل دارم. کمک کن راه‌حل و مسیر رسمی پیگیری را پیدا کنم.')">بررسی مشکل</button></article>
-          <article class="card"><div class="icon">🚆</div><h3>سفر و بلیت</h3><p>راهنمایی برای قطار، هواپیما، اتوبوس، کشتی و برنامه‌ریزی سفر.</p><button onclick="startPrompt('برای سفر و تهیه بلیت قطار، هواپیما، اتوبوس یا کشتی راهنمایی می‌خواهم.')">برنامه‌ریزی سفر</button></article>
-          <article class="card"><div class="icon">🏠</div><h3>خانه و خدمات محلی</h3><p>جست‌وجوی مسیر برای اقامت، تعمیرات، خودرو و خدمات موردنیاز.</p><button onclick="startPrompt('به یک خدمت محلی مثل اقامت، تعمیرکار یا خودرو نیاز دارم. کمک کن نیازم را دقیق کنم و راه امن پیدا کنم.')">پیدا کردن خدمت</button></article>
-          <article class="card"><div class="icon">🏛️</div><h3>خدمات اداری و دولتی</h3><p>کمک برای فهم مراحل، مدارک و پیدا کردن درگاه رسمی سازمان مربوطه.</p><button onclick="startPrompt('برای یک خدمت اداری یا دولتی راهنمایی می‌خواهم. اول بپرس کدام خدمت و شهر مدنظرم است و سپس مسیر رسمی را توضیح بده.')">راهنمایی اداری</button></article>
-          <article class="card"><div class="icon">🩺</div><h3>سلامت و بیمه</h3><p>راهنمایی عمومی برای پیدا کردن خدمات و مسیرهای رسمی مرتبط.</p><button onclick="startPrompt('برای پیدا کردن خدمت سلامت یا بیمه و مسیر رسمی دسترسی به آن راهنمایی می‌خواهم.')">یافتن مسیر خدمت</button></article>
-        </div>
-      </section>
+<section class="section" id="skills">
+<div class="section-head"><h2>مهارت، اشتغال و فرصت همکاری</h2><p class="hint">هر فرد فرصتی برای یادگیری، معرفی توانایی و ساختن مسیر خودش داشته باشد.</p></div>
+<div class="feature">
+<article class="card"><div class="icon">🧰</div><h3>من مهارت دارم</h3><p>توانایی‌ات را به یک خدمت روشن و قابل معرفی تبدیل کن.</p><button data-prompt="می‌خواهم مهارت و تخصصم را معرفی کنم. از من درباره مهارت، تجربه، شهر و امکاناتم بپرس و کمک کن یک معرفی حرفه‌ای و کم‌هزینه آماده کنم.">معرفی مهارت</button></article>
+<article class="card"><div class="icon">🌱</div><h3>دنبال کار هستم</h3><p>با توجه به تجربه و شرایط واقعی، قدم بعدی را مشخص کن.</p><button data-prompt="دنبال کار هستم. از من درباره مهارت، سابقه، شهر و امکاناتم سؤال کن و چند قدم عملی و کم‌هزینه برای پیدا کردن کار پیشنهاد بده.">راهنمایی شغلی</button></article>
+<article class="card"><div class="icon">💡</div><h3>ایده یا کسب‌وکار دارم</h3><p>ایده را با نیاز مشتری و هزینه شروع بسنج.</p><button data-prompt="یک ایده یا کسب‌وکار دارم و می‌خواهم با هزینه کم شروع کنم. کمک کن مشتری احتمالی، قدم اول، هزینه‌ها و خطرها را بررسی کنم.">بررسی ایده</button></article>
+</div>
+</section>
 
-      <section class="section" id="work">
-        <div class="section-head">
-          <h2>استعداد تو، فرصت فردا</h2>
-          <p class="hint">هوش هرمز می‌خواهد مهارت افراد را به نیازهای واقعی مردم و کسب‌وکارها پیوند دهد.</p>
-        </div>
-        <div class="feature">
-          <article class="card"><div class="icon">🧰</div><h3>من مهارت دارم</h3><p>مهارت یا تخصصت را معرفی کن تا نوا کمک کند آن را به خدمات قابل ارائه تبدیل کنی.</p><button onclick="startPrompt('می‌خواهم مهارت و تخصصم را به فرصت شغلی تبدیل کنم. از من درباره مهارت، شهر و امکاناتم سؤال کن و یک برنامه عملی کم‌هزینه پیشنهاد بده.')">معرفی مهارت به نوا</button></article>
-          <article class="card"><div class="icon">🌱</div><h3>دنبال کار هستم</h3><p>توانایی‌ها و شرایطت را مشخص کن تا مسیرهای واقع‌بینانه جست‌وجوی کار را بررسی کنیم.</p><button onclick="startPrompt('دنبال کار هستم. لطفاً با پرسیدن چند سؤال درباره مهارت، تجربه، شهر و زمان در دسترسم کمک کن قدم‌های واقعی برای یافتن کار مشخص کنم.')">شروع راهنمایی شغلی</button></article>
-          <article class="card"><div class="icon">💡</div><h3>ایده یا کسب‌وکار دارم</h3><p>برای سنجش ایده، شناخت مشتری و شروع کوچک و کم‌هزینه برنامه بگیر.</p><button onclick="startPrompt('یک ایده یا کسب‌وکار دارم و می‌خواهم آن را با هزینه کم شروع کنم. کمک کن نیاز مشتری، قدم اول و خطرهای اصلی را بررسی کنم.')">بررسی ایده</button></article>
-        </div>
-      </section>
+<section class="section" id="local">
+<div class="section-head"><h2>هرمز؛ خانه همکاری محلی</h2><p class="hint">معرفی کسب‌وکارها، محصولات، خدمات گردشگری و همکاری مسئولانه از همین گفت‌وگو آغاز می‌شود.</p></div>
+<div class="grid">
+<article class="card"><div class="icon">🏪</div><h3>معرفی کسب‌وکار یا محصول</h3><p>برای آماده‌کردن متن معرفی، خدمات، محدوده فعالیت و راه ارتباطی کمک بگیر.</p><button data-prompt="می‌خواهم کسب‌وکار یا محصول محلی‌ام را معرفی کنم. کمک کن یک معرفی روشن بنویسم و اطلاعاتی را که باید آماده کنم فهرست کن.">آماده‌سازی معرفی</button></article>
+<article class="card"><div class="icon">🛶</div><h3>گردشگری و اقامت</h3><p>برای معرفی اقامتگاه، راهنمای محلی، قایق یا تجربه گردشگری برنامه‌ریزی کن.</p><button data-prompt="می‌خواهم یک خدمت گردشگری یا اقامتگاه محلی را معرفی کنم. کمک کن اطلاعات لازم، نکات ایمنی و متن معرفی را آماده کنم.">معرفی خدمت گردشگری</button></article>
+<article class="card"><div class="icon">🤝</div><h3>همکاری با هوش هرمز</h3><p>برای همکاری تخصصی، پیشنهاد فنی یا مشارکت اجتماعی مسیر مشخص کن.</p><button data-prompt="می‌خواهم در ساخت هوش هرمز همکاری کنم. از من درباره توانایی، زمان و نوع همکاری موردنظرم سؤال کن و کمک کن پیشنهاد همکاری روشنی آماده کنم.">پیشنهاد همکاری</button></article>
+<article class="card"><div class="icon">🎨</div><h3>تبلیغات و معرفی</h3><p>برای نوشتن متن تبلیغاتی صادقانه و معرفی محصولات و خدمات کمک بگیر.</p><button data-prompt="برای محصول، خدمت یا کسب‌وکارم یک متن تبلیغاتی صادقانه و جذاب می‌خواهم. درباره مخاطب، ویژگی‌ها و راه تماس از من سؤال کن.">ساخت متن تبلیغاتی</button></article>
+</div>
+</section>
 
-      <section class="section" id="local">
-        <div class="section-head">
-          <h2>رشد کسب‌وکارهای محلی</h2>
-          <p class="hint">برای معرفی خدمات، گردشگری و همکاری میان مردم و کسب‌وکارها.</p>
-        </div>
-        <div class="grid">
-          <article class="card"><div class="icon">🛶</div><h3>گردشگری و اقامت</h3><p>اقامتگاه، راهنمای محلی، قایق و تجربه‌های گردشگری.</p><button onclick="startPrompt('می‌خواهم یک خدمت گردشگری یا اقامتگاه محلی را معرفی کنم یا برای سفر خدمات پیدا کنم. راهنمایی‌ام کن چه اطلاعاتی لازم است.')">درخواست همکاری گردشگری</button></article>
-          <article class="card"><div class="icon">🏪</div><h3>معرفی کسب‌وکار</h3><p>کمک به آماده‌سازی معرفی روشن و قابل اعتماد برای خدمات یا محصولات.</p><button onclick="startPrompt('می‌خواهم کسب‌وکار محلی‌ام را معرفی کنم. کمک کن متن معرفی، خدمات، محدوده فعالیت و راه ارتباط امن را آماده کنم.')">معرفی کسب‌وکار</button></article>
-          <article class="card"><div class="icon">🤝</div><h3>همکاری با هوش هرمز</h3><p>پیشنهاد همکاری، داوطلبی تخصصی یا توسعه فناوری برای همه.</p><button onclick="startPrompt('می‌خواهم در ساخت هوش هرمز یا توسعه فناوری برای همه همکاری کنم. از من درباره توانایی و نوع همکاری موردنظرم بپرس.')">پیشنهاد همکاری</button></article>
-        </div>
-      </section>
-
-      <section class="section" id="tools">
-        <div class="section-head">
-          <h2>درگاه‌های قابل استفاده</h2>
-          <p class="hint">هر بخش فقط در حد قابلیتی که واقعاً فعال است معرفی شده؛ ثبت درخواست به‌تنهایی به معنی رزرو، پرداخت یا درآمد قطعی نیست.</p>
-        </div>
-        <div class="grid">
-          <article class="card"><div class="icon">🔎</div><h3>جست‌وجوی خدمات تأییدشده</h3><p>فهرست فقط خدماتی را نشان می‌دهد که مدیر تأیید کرده و اجازه انتشار دارند.</p><a class="btn" href="https://hormoz-ai-backend-777.onrender.com/directory.html">باز کردن فهرست خدمات</a></article>
-          <article class="card"><div class="icon">📦</div><h3>ثبت و پیگیری درخواست</h3><p>درخواست در پایگاه داده ثبت می‌شود، اگر ذخیره‌سازی سرور در دسترس باشد؛ کد رهگیری را نگه دار.</p><a class="btn" href="https://hormoz-ai-backend-777.onrender.com/orders.html">ثبت درخواست خدمت</a></article>
-          <article class="card"><div class="icon">🏪</div><h3>ثبت کسب‌وکار یا مهارت</h3><p>درخواست همکاری برای بررسی مدیر ثبت می‌شود؛ نمایش عمومی فقط پس از تأیید و اجازه انتشار است.</p><a class="btn" href="https://hormoz-ai-backend-777.onrender.com/providers.html">درخواست همکاری</a></article>
-          <article class="card"><div class="icon">🧰</div><h3>فرصت‌ها و تبلیغات</h3><p>فرم درخواست مهارت یا تبلیغات در صورت اتصال پایگاه داده ذخیره می‌شود و دستی بررسی خواهد شد.</p><a class="btn" href="https://hormoz-ai-backend-777.onrender.com/opportunities.html">ثبت درخواست معرفی</a></article>
-          <article class="card"><div class="icon">🎨</div><h3>کارگاه پوستر و کلیپ</h3><p>ساخت پوستر و کلیپ ساده از عکس در مرورگر؛ تولید تصویر یا ویدئوی هوش مصنوعی ممکن است به حساب و اعتبار جداگانه نیاز داشته باشد.</p><a class="btn" href="https://hormoz-ai-backend-777.onrender.com/creative-studio.html">ورود به کارگاه</a></article>
-          <article class="card"><div class="icon">🧾</div><h3>سفارش و پیش‌فاکتور</h3><p>پرونده سفارش و پیش‌فاکتور برای بررسی انسانی؛ این بخش پول جابه‌جا نمی‌کند.</p><a class="btn" href="https://hormoz-ai-backend-777.onrender.com/global-office.html">باز کردن دفتر سفارش</a></article>
-          <article class="card"><div class="icon">💰</div><h3>دفتر مالی آزمایشی</h3><p>فقط دفتر ثبت محلی همین مرورگر است؛ بانک واقعی، پرداخت یا انتقال پول نیست.</p><a class="btn secondary" href="https://hormoz-ai-backend-777.onrender.com/finance-center.html">باز کردن نسخه آزمایشی</a></article>
-          <article class="card"><div class="icon">✉️</div><h3>ارتباط مستقیم با مدیر</h3><p>با لمس دکمه، برنامه ایمیل گوشی باز می‌شود؛ ارسال پیام را خودت تأیید می‌کنی.</p><a class="btn secondary" href="https://hormoz-ai-backend-777.onrender.com/contact-admin.html">ارتباط با مدیر</a></article>
-        </div>
-      </section>
-
-
-
-      <section class="section">
-        <div class="notice"><strong>شفافیت و امنیت:</strong> در این نسخه، نوا راهنمایی می‌کند و مسیر مناسب را پیشنهاد می‌دهد. ثبت رسمی درخواست، پرداخت قبض، خرید بلیت یا اتصال مستقیم به سامانه‌های دولتی تا زمان ایجاد اتصال مجاز و آزمایش‌شده، فعال اعلام نمی‌شود. رمز، کد یک‌بارمصرف یا اطلاعات بانکی خود را در گفت‌وگو وارد نکن.</div>
-      </section>
-    </main>
-
-    <footer>
-      <p>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p>
-      <p>رؤیا • تلاش • ادامه — چراغ ۷۷۷ برای خاموش شدن ساخته نشده.</p>
-      <p>هوش هرمز؛ فناوری در خدمت انسان و فرصت برای همه.</p>
-      <p>بازدید ثبت‌شده: <strong id="visitCount">در حال بررسی…</strong></p>
-    </footer>
-  </div>
-
-  <button id="installHormoz" class="btn" style="display:none;position:fixed;bottom:14px;left:14px;z-index:10;box-shadow:0 5px 22px #0008">📲 نصب هوش هرمز</button>
-
-  <script>
-    fetch("https://hormoz-ai-backend-777.onrender.com/api/v1/visits", {cache:"no-store"})
-      .then(response => response.json())
-      .then(data => { if (data && data.ok && Number.isFinite(Number(data.visits))) document.getElementById("visitCount").textContent = Number(data.visits).toLocaleString("fa-IR"); else document.getElementById("visitCount").textContent = "فعلاً در دسترس نیست"; })
-      .catch(() => { document.getElementById("visitCount").textContent = "فعلاً در دسترس نیست"; });
-
-    function openChat() {
-      const box = document.getElementById("chatBox");
-      box.style.display = "block";
-      document.getElementById("message").focus();
-      box.scrollIntoView({behavior:"smooth",block:"center"});
-    }
-    function startPrompt(prompt) {
-      openChat();
-      document.getElementById("message").value = prompt;
-      document.getElementById("message").focus();
-    }
-    function getHormozGuestId() {
-      try {
-        let id = localStorage.getItem("hormoz_guest_id");
-        if (!id) {
-          id = "guest-" + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
-          localStorage.setItem("hormoz_guest_id", id);
-        }
-        return id;
-      } catch {
-        return "guest-session-" + Math.random().toString(36).slice(2);
-      }
-    }
-
-    let navaAnswerAudio = null;
-    let navaAnswerAudioUrl = null;
-    let navaAudioRequestId = 0;
-    const answerAudioControls = document.getElementById("answerAudioControls");
-    const speakAnswerButton = document.getElementById("speakAnswerButton");
-    const stopAnswerAudioButton = document.getElementById("stopAnswerAudioButton");
-    const answerAudioStatus = document.getElementById("answerAudioStatus");
-
-    function stopNavaAnswerAudio() {
-      navaAudioRequestId++;
-      if (navaAnswerAudio) {
-        navaAnswerAudio.pause();
-        navaAnswerAudio.removeAttribute("src");
-        navaAnswerAudio = null;
-      }
-      if (navaAnswerAudioUrl) {
-        URL.revokeObjectURL(navaAnswerAudioUrl);
-        navaAnswerAudioUrl = null;
-      }
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-      if (speakAnswerButton) speakAnswerButton.disabled = false;
-    }
-
-    async function speakNavaAnswer() {
-      const text = (document.getElementById("answer").textContent || "").trim();
-      if (!text || !speakAnswerButton) return;
-      stopNavaAnswerAudio();
-      const requestId = navaAudioRequestId;
-      speakAnswerButton.disabled = true;
-      answerAudioStatus.textContent = "در حال آماده‌سازی صدای فارسی نوا…";
-      const chunks = [];
-      let remaining = text;
-      while (remaining.length) {
-        if (remaining.length <= 160) { chunks.push(remaining); break; }
-        let cut = remaining.lastIndexOf(" ", 160);
-        if (cut < 70) cut = 160;
-        chunks.push(remaining.slice(0, cut).trim());
-        remaining = remaining.slice(cut).trim();
-      }
-      try {
-        for (const chunk of chunks) {
-          if (requestId !== navaAudioRequestId) return;
-          const response = await fetch("https://hormoz-ai-backend-777.onrender.com/api/v1/tts", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({text: chunk}),
-            cache: "no-store"
-          });
-          if (!response.ok) throw new Error("سرویس صدای نوا فعلاً پاسخ نداد. کمی بعد دوباره تلاش کن.");
-          const blob = await response.blob();
-          if (!blob.size || !blob.type.toLowerCase().includes("audio")) throw new Error("فایل صوتی معتبر دریافت نشد.");
-          if (requestId !== navaAudioRequestId) return;
-          navaAnswerAudioUrl = URL.createObjectURL(blob);
-          navaAnswerAudio = new Audio(navaAnswerAudioUrl);
-          await new Promise((resolve, reject) => {
-            navaAnswerAudio.onended = resolve;
-            navaAnswerAudio.onerror = () => reject(new Error("پخش صدا در این گوشی ناموفق بود."));
-            navaAnswerAudio.play().catch(reject);
-          });
-          if (navaAnswerAudioUrl) URL.revokeObjectURL(navaAnswerAudioUrl);
-          navaAnswerAudioUrl = null;
-          navaAnswerAudio = null;
-        }
-        if (requestId === navaAudioRequestId) answerAudioStatus.textContent = "پاسخ صوتی نوا پخش شد.";
-      } catch (error) {
-        if (requestId === navaAudioRequestId && "speechSynthesis" in window && text) {
-          // Local device voice is a fallback when the online Persian TTS provider is unavailable.
-          try {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = "fa-IR";
-            utterance.rate = 0.92;
-            const voices = window.speechSynthesis.getVoices();
-            const persianVoice = voices.find(voice => /^fa([_-]|$)/i.test(voice.lang));
-            if (persianVoice) utterance.voice = persianVoice;
-            utterance.onend = () => {
-              if (requestId === navaAudioRequestId) answerAudioStatus.textContent = "پاسخ با صدای دستگاه پخش شد.";
-              speakAnswerButton.disabled = false;
-            };
-            utterance.onerror = () => {
-              if (requestId === navaAudioRequestId) answerAudioStatus.textContent = "سرویس صدای آنلاین و صدای فارسی این گوشی در دسترس نیست.";
-              speakAnswerButton.disabled = false;
-            };
-            answerAudioStatus.textContent = "سرویس آنلاین پاسخ نداد؛ صدای داخلی گوشی را امتحان می‌کنیم…";
-            window.speechSynthesis.speak(utterance);
-            return;
-          } catch (_) {}
-        }
-        if (requestId === navaAudioRequestId) {
-          answerAudioStatus.textContent = (error && error.message) || "پخش صدای نوا ناموفق بود.";
-        }
-      } finally {
-        if (requestId === navaAudioRequestId && !("speechSynthesis" in window && window.speechSynthesis.speaking)) {
-          speakAnswerButton.disabled = false;
-        }
-      }
-    }
-    speakAnswerButton.addEventListener("click", speakNavaAnswer);
-    stopAnswerAudioButton.addEventListener("click", () => {
-      stopNavaAnswerAudio();
-      answerAudioStatus.textContent = "پخش صدا متوقف شد.";
-    });
-
-    async function sendMessage() {
-      const input = document.getElementById("message");
-      const answer = document.getElementById("answer");
-      const message = input.value.trim();
-      if (!message) { answer.textContent = "لطفاً نیازت را بنویس."; return; }
-      stopNavaAnswerAudio();
-      answerAudioControls.style.display = "none";
-      answerAudioStatus.textContent = "";
-      answer.textContent = "نوا در حال آماده شدن است؛ ممکن است بار اول کمی زمان ببرد...";
-      try {
-        const response = await fetch("https://hormoz-ai-backend-777.onrender.com/api/v1/chat", {
-          method:"POST",
-          headers:{"Content-Type":"application/json","x-user-id":getHormozGuestId()},
-          body:JSON.stringify({message})
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error("ارتباط ناموفق بود");
-        answer.textContent = data.response || "نوا پاسخی دریافت نکرد. دوباره تلاش کن.";
-        if (data.response) answerAudioControls.style.display = "flex";
-      } catch (error) {
-        answer.textContent = "فعلاً ارتباط با نوا برقرار نشد. چند لحظه صبر کن و دوباره امتحان کن. اگر سرور در خواب باشد، بیدار شدنش ممکن است کمی زمان ببرد. 🌱";
-      }
-    }
-    let deferredPrompt;
-    window.addEventListener("beforeinstallprompt", event => {
-      event.preventDefault(); deferredPrompt = event;
-      document.getElementById("installHormoz").style.display = "block";
-    });
-    document.getElementById("installHormoz").addEventListener("click", async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null;
-      document.getElementById("installHormoz").style.display = "none";
-    });
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
-    }
-  </script>
+<section class="section" id="about">
+<div class="section-head"><h2>درباره هوش هرمز</h2><p class="hint">رؤیا • تلاش • ادامه — چراغ ۷۷۷ برای خاموش شدن ساخته نشده.</p></div>
+<div class="chat"><p>هوش هرمز پروژه‌ای مستقل و در حال توسعه است؛ با هدف پیوند فناوری با نیازهای واقعی مردم، کمک به دیده‌شدن استعدادها و ایجاد فرصت همکاری بدون سوءاستفاده.</p><p>امنیت، حریم خصوصی، شفافیت و احترام به انتخاب انسان اصل کار ماست. نوا راهنمایی می‌کند؛ تصمیم نهایی با انسان است.</p><div class="notice"><strong>شفافیت:</strong> نوا یک دستیار آزمایشی است. پیشنهاد یا گفت‌وگو به معنی رزرو قطعی، پرداخت، ثبت رسمی سفارش، تضمین استخدام یا تأیید کسب‌وکار نیست. تا زمانی که اتصال رسمی و آزمایش‌شده‌ای وجود نداشته باشد، اطلاعات حساس، رمز، کد یک‌بارمصرف یا اطلاعات بانکی را در گفت‌وگو وارد نکن.</div><p style="text-align:center;margin-bottom:0">«این فقط رویا نیست؛ دست گرفتن همدیگه است، کمک کردن به همدیگه بدون سوءاستفاده از هم.»</p></div>
+</section>
+</main>
+<footer class="footer"><div class="wrap"><p>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p><p>بازدید ثبت‌شده: <strong id="visitCount">در حال بررسی…</strong></p><p>هوش هرمز | فناوری در خدمت انسان 💚</p></div></footer>
+<script>
+const API="https://hormoz-ai-backend-777.onrender.com";
+const $=id=>document.getElementById(id);
+const input=$("message"),answer=$("answer"),sendBtn=$("sendBtn"),audioActions=$("audioActions");
+let audio=null,audioUrl=null,requestId=0,recognition=null;
+function guestId(){try{let id=localStorage.getItem("hormoz_guest_id");if(!id){id="guest-"+(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36));localStorage.setItem("hormoz_guest_id",id)}return id}catch{return "guest-"+Math.random().toString(36).slice(2)}}
+function askWith(prompt){input.value=prompt; $("nava").scrollIntoView({behavior:"smooth"});input.focus()}
+document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>askWith(b.dataset.prompt)));
+$("clearBtn").addEventListener("click",()=>{input.value="";input.focus()});
+async function sendMessage(){const message=input.value.trim();if(!message){answer.textContent="لطفاً اول درخواستت را بنویس.";return}stopAudio();audioActions.classList.add("hidden");$("audioStatus").textContent="";sendBtn.disabled=true;$("connectionStatus").textContent="نوا در حال پاسخ‌گویی است…";answer.textContent="نوا در حال آماده شدن است؛ بار اول ممکن است کمی زمان ببرد.";try{const res=await fetch(API+"/api/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-user-id":guestId()},body:JSON.stringify({message})});let data;try{data=await res.json()}catch{throw Error("پاسخ قابل خواندن از سرور دریافت نشد.")}if(!res.ok)throw Error(data.error||"ارتباط با نوا ناموفق بود.");const reply=data.response||data.message||"";if(!reply)throw Error("نوا این بار پاسخ متنی دریافت نکرد.");answer.textContent=reply;audioActions.classList.remove("hidden");$("connectionStatus").textContent="پاسخ دریافت شد";$("connectionStatus").className="pill"}catch(e){answer.textContent="فعلاً ارتباط با نوا برقرار نشد. اگر سرور در خواب باشد، کمی برای بیدارشدن آن صبر کن و دوباره بفرست. ("+(e.message||"خطای ارتباط")+")";$("connectionStatus").textContent="ارتباط برقرار نشد";$("connectionStatus").className="pill neutral"}finally{sendBtn.disabled=false}}
+sendBtn.addEventListener("click",sendMessage);
+input.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();sendMessage()}});
+function stopAudio(){requestId++;if(audio){audio.pause();audio.removeAttribute("src");audio=null}if(audioUrl){URL.revokeObjectURL(audioUrl);audioUrl=null}if("speechSynthesis"in window)window.speechSynthesis.cancel();$("speakBtn").disabled=false}
+async function speakAnswer(){const text=answer.textContent.trim();if(!text)return;stopAudio();const id=requestId;$("speakBtn").disabled=true;$("audioStatus").textContent="در حال آماده‌سازی صدای نوا…";const chunks=[];let rest=text;while(rest.length){if(rest.length<=160){chunks.push(rest);break}let cut=rest.lastIndexOf(" ",160);if(cut<70)cut=160;chunks.push(rest.slice(0,cut).trim());rest=rest.slice(cut).trim()}try{for(const chunk of chunks){if(id!==requestId)return;const res=await fetch(API+"/api/v1/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:chunk}),cache:"no-store"});if(!res.ok)throw Error("سرویس صدای آنلاین در دسترس نیست.");const blob=await res.blob();if(!blob.size||!blob.type.toLowerCase().includes("audio"))throw Error("فایل صوتی معتبر دریافت نشد.");if(id!==requestId)return;audioUrl=URL.createObjectURL(blob);audio=new Audio(audioUrl);await new Promise((resolve,reject)=>{audio.onended=resolve;audio.onerror=()=>reject(Error("پخش صدا ناموفق بود."));audio.play().catch(reject)});if(audioUrl)URL.revokeObjectURL(audioUrl);audioUrl=null;audio=null}if(id===requestId)$("audioStatus").textContent="پاسخ صوتی پخش شد."}catch(e){if(id===requestId&&"speechSynthesis"in window){try{const u=new SpeechSynthesisUtterance(text);u.lang="fa-IR";u.rate=.92;const v=window.speechSynthesis.getVoices().find(x=>/^fa([_-]|$)/i.test(x.lang));if(v)u.voice=v;u.onend=()=>{$("audioStatus").textContent="پاسخ با صدای داخلی دستگاه پخش شد.";$("speakBtn").disabled=false};u.onerror=()=>{$("audioStatus").textContent="صدای آنلاین و صدای فارسی دستگاه در دسترس نیست.";$("speakBtn").disabled=false};$("audioStatus").textContent="صدای آنلاین در دسترس نیست؛ صدای دستگاه را امتحان می‌کنیم…";window.speechSynthesis.speak(u);return}catch(_){}}if(id===requestId)$("audioStatus").textContent=(e.message||"پخش صدا ناموفق بود.")}finally{if(id===requestId&&!("speechSynthesis"in window&&window.speechSynthesis.speaking))$("speakBtn").disabled=false}}
+$("speakBtn").addEventListener("click",speakAnswer);$("stopBtn").addEventListener("click",()=>{stopAudio();$("audioStatus").textContent="پخش صدا متوقف شد."});
+$("voiceInputBtn").addEventListener("click",()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$("voiceInputStatus").textContent="تشخیص گفتار در این مرورگر پشتیبانی نمی‌شود؛ درخواستت را تایپ کن.";return}if(recognition){recognition.stop();recognition=null;return}recognition=new SR();recognition.lang="fa-IR";recognition.interimResults=false;recognition.maxAlternatives=1;$("voiceInputStatus").textContent="گوش می‌دهم؛ صحبت کن…";recognition.onresult=e=>{input.value=e.results[0][0].transcript;$("voiceInputStatus").textContent="گفتارت به متن تبدیل شد؛ برای ارسال، دکمه ارسال به نوا را بزن."};recognition.onerror=()=>{$("voiceInputStatus").textContent="دسترسی میکروفون یا تشخیص گفتار در دسترس نیست؛ می‌توانی درخواستت را تایپ کنی."};recognition.onend=()=>{recognition=null};try{recognition.start()}catch{$("voiceInputStatus").textContent="شروع میکروفون ممکن نشد؛ درخواستت را تایپ کن."}});
+fetch(API+"/api/v1/visits",{cache:"no-store"}).then(r=>r.json()).then(d=>{$("visitCount").textContent=d&&d.ok&&Number.isFinite(Number(d.visits))?Number(d.visits).toLocaleString("fa-IR"):"فعلاً در دسترس نیست"}).catch(()=>$("visitCount").textContent="فعلاً در دسترس نیست");
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+</script>
 </body>
 </html>
