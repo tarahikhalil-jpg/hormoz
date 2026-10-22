@@ -377,6 +377,8 @@
     });
 
     let navaMessagePending = false;
+    // Keep only successful turns in memory and send recent context with each request.
+    let navaConversationHistory = [];
     function addConversationTurn(text, role, extraClass = "") {
       const history = document.getElementById("conversationHistory");
       const bubble = document.createElement("div");
@@ -414,7 +416,7 @@
         const response = await fetch("/api/v1/chat", {
           method: "POST",
           headers: {"Content-Type": "application/json", "x-user-id": getHormozGuestId()},
-          body: JSON.stringify({message}),
+          body: JSON.stringify({message, history: navaConversationHistory.slice(-10)}),
           cache: "no-store"
         });
         const data = await response.json();
@@ -422,6 +424,11 @@
         const reply = data.response || data.content || data.reply || data.answer || "نوا پاسخی دریافت نکرد. لطفاً دوباره تلاش کن.";
         pendingBubble.classList.remove("chat-pending");
         pendingBubble.textContent = reply;
+        navaConversationHistory.push(
+          {role: "user", content: message},
+          {role: "assistant", content: reply}
+        );
+        navaConversationHistory = navaConversationHistory.slice(-10);
         answer.textContent = reply;
         answerAudioControls.style.display = "flex";
         const history = document.getElementById("conversationHistory");
