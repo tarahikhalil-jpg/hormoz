@@ -304,6 +304,34 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
+  app.post("/api/v1/global-admin/members/:id/reset-password", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند گذرواژه عضو را بازنشانی کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const id = String((request.params as { id?: string }).id ?? "");
+    const password = String(((request.body ?? {}) as { password?: unknown }).password ?? "");
+    if (!id || password.length < 12 || password.length > 200) {
+      return reply.code(400).send({ message: "گذرواژه جدید باید بین ۱۲ تا ۲۰۰ نویسه باشد." });
+    }
+    try {
+      await ensureTable();
+      const salt = crypto.randomBytes(16).toString("hex");
+      const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+      const result = await db.query(
+        "UPDATE hormoz_global_members SET password_hash=$2, updated_at=NOW() WHERE id=$1 RETURNING username",
+        [id, salt + "$" + hash]
+      );
+      if (!result.rows.length) return reply.code(404).send({ message: "حساب عضو پیدا نشد." });
+      const username = String(result.rows[0].username);
+      for (const [token, value] of sessions) if (value.username === username) sessions.delete(token);
+      return { ok: true, message: "گذرواژه بازنشانی شد. عضو باید با گذرواژه جدید وارد شود." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "بازنشانی گذرواژه انجام نشد." });
+    }
+  });
+
   app.post("/api/v1/global-admin/members/:id/review", async (request, reply) => {
     const session = adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
