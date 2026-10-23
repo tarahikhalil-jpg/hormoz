@@ -40,7 +40,7 @@ export class OpenRouterIntelligenceProvider
             body: JSON.stringify({
               model,
               messages: request.messages,
-              max_tokens: attempt === 1 ? 650 : 900,
+              max_tokens: attempt === 1 ? 500 : 700,
             }),
           },
         );
@@ -101,11 +101,11 @@ export class OpenRouterIntelligenceProvider
           choice?.finish_reason ??
           "unknown";
 
-        // A length-limited answer should not be shown as if it were complete.
-        // Retry once with a larger output budget before using the safe fallback.
-        if (finishReason === "length" && attempt < maxAttempts) {
-          console.warn("OpenRouter answer was truncated; retrying with a larger token budget.");
-          continue;
+        // Do not spend another full provider round-trip just because the first answer
+        // reached its token budget. Return the available answer promptly; reserve retries
+        // for transient network/provider failures.
+        if (finishReason === "length") {
+          console.warn("OpenRouter answer reached its token budget; returning the available answer to avoid a slow second call.");
         }
 
         if (
