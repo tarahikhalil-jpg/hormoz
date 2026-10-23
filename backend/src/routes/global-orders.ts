@@ -91,7 +91,11 @@ async function ensureTable() {
     )
   `);
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_global_orders_created_idx ON hormoz_global_orders (created_at DESC)");
-  await db.query("CREATE TABLE IF NOT EXISTS hormoz_global_members (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('invoice_approver','viewer')), active BOOLEAN NOT NULL DEFAULT TRUE, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+  await db.query("CREATE TABLE IF NOT EXISTS hormoz_global_members (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('invoice_approver','viewer')), active BOOLEAN NOT NULL DEFAULT TRUE, status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')), full_name TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+  await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved'");
+  await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS full_name TEXT NOT NULL DEFAULT ''");
+  await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS contact TEXT NOT NULL DEFAULT ''");
+  await db.query("CREATE INDEX IF NOT EXISTS hormoz_global_members_status_idx ON hormoz_global_members (status, created_at DESC)");
   tableReady = true;
 }
 
@@ -221,6 +225,36 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     return { ok: true, token, expiresInSeconds: SESSION_TTL / 1000 };
   });
 
+  app.post("/api/v1/global-admin/member-register", async (request, reply) => {
+    const ipKey = "register:" + String(request.ip ?? "unknown");
+    if (isLoginBlocked(ipKey)) return reply.code(429).send({ message: "درخواست‌های زیاد ثبت شده است؛ ۱۵ دقیقه دیگر دوباره تلاش کنید." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const username = String(body.username ?? "").trim().toLowerCase();
+    const password = String(body.password ?? "");
+    const fullName = String(body.fullName ?? "").trim().slice(0, 100);
+    const contact = String(body.contact ?? "").trim().slice(0, 160);
+    if (!fullName || !/^[a-z0-9._-]{3,40}$/.test(username) || password.length < 12 || password.length > 200) {
+      noteLoginFailure(ipKey);
+      return reply.code(400).send({ message: "نام کامل، نام کاربری انگلیسی ۳ تا ۴۰ نویسه و گذرواژه حداقل ۱۲ نویسه لازم است." });
+    }
+    try {
+      await ensureTable();
+      const salt = crypto.randomBytes(16).toString("hex");
+      const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+      const id = crypto.randomBytes(12).toString("hex");
+      await db.query(
+        "INSERT INTO hormoz_global_members (id,username,password_hash,role,active,status,full_name,contact,created_by) VALUES ($1,$2,$3,'viewer',FALSE,'pending',$4,$5,'self-registration')",
+        [id, username, salt + "$" + hash, fullName, contact]
+      );
+      return reply.code(201).send({ ok: true, status: "pending", message: "درخواست عضویت ثبت شد. پس از بررسی و تأیید مدیر، امکان ورود فعال می‌شود." });
+    } catch (error) {
+      if ((error as any)?.code === "23505") return reply.code(409).send({ message: "این نام کاربری قبلاً استفاده شده است؛ نام دیگری انتخاب کنید." });
+      request.log.error(error);
+      return reply.code(503).send({ message: "ثبت درخواست عضویت ناموفق بود؛ لطفاً بعداً دوباره تلاش کنید." });
+    }
+  });
+
   app.post("/api/v1/global-admin/member-login", async (request, reply) => {
     const ipKey = "member:" + String(request.ip ?? "unknown");
     if (isLoginBlocked(ipKey)) return reply.code(429).send({ message: "تلاش‌های ورود زیاد بوده است؛ ۱۵ دقیقه دیگر دوباره تلاش کنید." });
@@ -230,9 +264,9 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     if (!/^[a-z0-9._-]{3,40}$/.test(username) || password.length < 10 || password.length > 200) { noteLoginFailure(ipKey); return reply.code(401).send({ message: "نام کاربری یا گذرواژه نادرست است." }); }
     try {
       await ensureTable();
-      const found = await db.query("SELECT username,password_hash,role,active FROM hormoz_global_members WHERE username=$1 LIMIT 1", [username]);
+      const found = await db.query("SELECT username,password_hash,role,active,status FROM hormoz_global_members WHERE username=$1 LIMIT 1", [username]);
       const member = found.rows[0]; let valid = false;
-      if (member && member.active === true) { const parts = String(member.password_hash).split("$"); if (parts.length === 2) { const actual = crypto.scryptSync(password, parts[0], 64); const expectedHash = Buffer.from(parts[1], "hex"); valid = actual.length === expectedHash.length && crypto.timingSafeEqual(actual, expectedHash); } }
+      if (member && member.active === true && member.status === "approved") { const parts = String(member.password_hash).split("$"); if (parts.length === 2) { const actual = crypto.scryptSync(password, parts[0], 64); const expectedHash = Buffer.from(parts[1], "hex"); valid = actual.length === expectedHash.length && crypto.timingSafeEqual(actual, expectedHash); } }
       if (!valid) { noteLoginFailure(ipKey); return reply.code(401).send({ message: "نام کاربری یا گذرواژه نادرست است." }); }
       loginFailures.delete(ipKey); const token = crypto.randomBytes(32).toString("hex");
       sessions.set(token, { expiresAt: Date.now() + SESSION_TTL, role: member.role, username: String(member.username) });
@@ -262,12 +296,39 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
+  app.post("/api/v1/global-admin/members/:id/review", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند درخواست عضویت را بررسی کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const id = String((request.params as { id?: string }).id ?? "");
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const status = String(body.status ?? "");
+    const role = String(body.role ?? "viewer");
+    if (!id || !["approved", "rejected"].includes(status) || !["invoice_approver", "viewer"].includes(role)) {
+      return reply.code(400).send({ message: "وضعیت تأیید یا رد و سطح دسترسی معتبر لازم است." });
+    }
+    try {
+      await ensureTable();
+      const result = await db.query(
+        "UPDATE hormoz_global_members SET status=$2, role=$3, active=($2='approved'), updated_at=NOW() WHERE id=$1 AND status='pending' RETURNING id,username,role,active,status,full_name,contact",
+        [id, status, role]
+      );
+      if (!result.rows.length) return reply.code(404).send({ message: "درخواست در انتظار بررسی پیدا نشد." });
+      for (const [token, value] of sessions) if (value.username === String(result.rows[0].username)) sessions.delete(token);
+      return { ok: true, member: result.rows[0], message: status === "approved" ? "عضو تأیید شد و دسترسی تعیین‌شده فعال است." : "درخواست عضویت رد شد." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "بررسی درخواست عضویت ناموفق بود." });
+    }
+  });
+
   app.get("/api/v1/global-admin/members", async (request, reply) => {
     const session = adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
     if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند اعضا را مدیریت کند." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
-    try { await ensureTable(); const result = await db.query("SELECT id,username,role,active,created_by,created_at FROM hormoz_global_members ORDER BY created_at DESC"); return { members: result.rows }; }
+    try { await ensureTable(); const result = await db.query("SELECT id,username,role,active,status,full_name,contact,created_by,created_at FROM hormoz_global_members ORDER BY CASE WHEN status='pending' THEN 0 ELSE 1 END, created_at DESC"); return { members: result.rows }; }
     catch (error) { request.log.error(error); return reply.code(503).send({ message: "دریافت اعضا ناموفق بود." }); }
   });
 
