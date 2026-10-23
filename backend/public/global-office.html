@@ -56,12 +56,25 @@ main{max-width:980px;margin:auto}.hero{text-align:center;padding:25px 10px 15px}
 <script>
 const $=id=>document.getElementById(id);
 const money=(value,currency)=>value==null?"در انتظار تعیین مبلغ":Number(value).toLocaleString("fa-IR")+" "+currency;
+const serviceLabels={
+ "آموزش و کلاس":"آموزش و کلاس","کالا و فروشگاه":"کالا و فروشگاه","تبلیغات و بازاریابی":"تبلیغات و بازاریابی",
+ "پوستر، عکس و طراحی":"پوستر، عکس و طراحی","ویدیو و تولید محتوا":"ویدیو و تولید محتوا","خدمات فنی و تخصصی":"خدمات فنی و تخصصی",
+ "گردشگری، اقامت و حمل‌ونقل":"گردشگری، اقامت و حمل‌ونقل","مشاوره و خدمات حرفه‌ای":"مشاوره و خدمات حرفه‌ای",
+ "همکاری و اشتغال":"همکاری و اشتغال","سایر خدمات":"سایر خدمات",
+ flight:"هواپیما",train:"قطار",bus:"اتوبوس",stay:"هتل، سوئیت یا مهمان‌خانه",boat:"شناور یا قایق",
+ driver:"راننده و حمل‌ونقل",food:"غذا و رستوران",electrician:"برق‌کار",repair:"تعمیرکار یا نیروی فنی",
+ tourism:"گردشگری و راهنما",skill:"معرفی مهارت و اشتغال",other:"سایر خدمات",
+ education:"آموزش و کلاس",products:"کالا و فروشگاه",advertising:"تبلیغات و بازاریابی",design:"پوستر، عکس و طراحی",
+ video:"ویدیو و تولید محتوا",technical:"خدمات فنی و تخصصی",travel:"گردشگری، اقامت و حمل‌ونقل",consulting:"مشاوره و خدمات حرفه‌ای",employment:"همکاری و اشتغال"
+};
+const statusLabels={submitted:"درخواست ثبت شده",awaiting_provider:"در حال هماهنگی با ارائه‌دهنده خدمت",quoted:"پیشنهاد قیمت آماده بررسی",confirmed:"سفارش تأیید شده",payment_pending:"در انتظار پرداخت",payment_confirmed:"پرداخت تأیید شده",in_progress:"در حال انجام",completed:"تکمیل شده",cancelled:"لغو شده",refund_pending:"درخواست بازپرداخت در حال بررسی",refunded:"بازپرداخت شده",pending:"در انتظار بررسی",approved:"تأیید شده",rejected:"رد شده",paid:"پرداخت شده",unpaid:"پرداخت نشده"};
+function labelFor(map,value){if(value==null||value==="")return "ثبت نشده";const key=String(value);return map[key]||map[key.toLowerCase()]||key;}
 function show(node,text,kind="success"){node.className="result "+kind;node.textContent=text}
 function safe(tag,text){const n=document.createElement(tag);n.textContent=text;return n}
 function renderInvoice(invoice){
  const box=document.createElement("div");box.className="invoice";
  box.append(safe("div","شماره فاکتور: "+(invoice.invoiceNumber||"—")));
- box.append(safe("div","وضعیت: "+(invoice.status||"در انتظار بررسی")));
+ box.append(safe("div","وضعیت: "+labelFor(statusLabels,invoice.status||"pending")));
  box.append(safe("div","مبلغ کل: "+money(invoice.amount,invoice.currency||"IRR")));
  if(invoice.amount!=null){
   box.append(safe("div","کارمزد هرمز ("+invoice.commissionRate+"٪): "+money(invoice.hormozFee,invoice.currency)));
@@ -91,8 +104,8 @@ $("orderForm").addEventListener("submit",async e=>{
 $("trackForm").addEventListener("submit",async e=>{
  e.preventDefault();const b=$("trackButton"),out=$("trackResult");b.disabled=true;out.replaceChildren();show(out,"در حال دریافت اطلاعات…");
  try{const r=await fetch("/api/v1/global-orders/track/"+encodeURIComponent($("trackingCode").value.trim()),{cache:"no-store"});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.message||"سفارش پیدا نشد.");
-  out.className="result success";out.replaceChildren(safe("h3","پرونده سفارش"),safe("p","شماره سفارش: "+d.orderNumber),safe("p","نوع خدمت: "+d.serviceType),safe("p","وضعیت: "+d.status),renderInvoice(d.invoice));
-  const h=safe("div","");h.append(safe("strong","تاریخچه تغییرات"));for(const item of (d.invoiceHistory||[]).slice().reverse()){h.append(safe("p",(item.status||"به‌روزرسانی")+" — "+(item.note||"")+" "+(item.at?new Date(item.at).toLocaleString():"")))}out.append(h);
+  out.className="result success";out.replaceChildren(safe("h3","پرونده سفارش"),safe("p","شماره سفارش: "+d.orderNumber),safe("p","نوع خدمت: "+labelFor(serviceLabels,d.serviceType)),safe("p","وضعیت: "+labelFor(statusLabels,d.status)),renderInvoice(d.invoice));
+  const h=safe("div","");h.append(safe("strong","تاریخچه تغییرات"));for(const item of (d.invoiceHistory||[]).slice().reverse()){h.append(safe("p",labelFor(statusLabels,item.status||"به‌روزرسانی")+" — "+(item.note||"")+" "+(item.at?new Date(item.at).toLocaleString():"")))}out.append(h);
  }catch(err){show(out,err.message||"پیگیری ناموفق بود.","error")}finally{b.disabled=false}
 });
 let adminToken="";
@@ -106,7 +119,7 @@ async function loadOrders(){
  const out=$("adminStatus"),list=$("adminOrders");show(out,"در حال دریافت سفارش‌ها…");list.replaceChildren();
  try{const r=await fetch("/api/v1/global-admin/orders",{headers:{Authorization:"Bearer "+adminToken},cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.message||"دریافت سفارش‌ها ناموفق بود.");
   if(!d.orders.length)list.append(safe("p","هنوز سفارشی ثبت نشده است."));
-  for(const order of d.orders){const card=document.createElement("div");card.className="order-card";card.append(safe("h3",order.orderNumber+" — "+order.serviceType),safe("p","مشتری: "+(order.customerLabel||"ثبت نشده")),safe("p","شرح: "+Object.values(order.details||{}).filter(Boolean).join(" | ")),safe("p","فاکتور: "+order.invoice.invoiceNumber+" — "+money(order.invoice.amount,order.invoice.currency)));
+  for(const order of d.orders){const card=document.createElement("div");card.className="order-card";card.append(safe("h3",order.orderNumber+" — "+labelFor(serviceLabels,order.serviceType)),safe("p","مشتری: "+(order.customerLabel||"ثبت نشده")),safe("p","شرح: "+Object.values(order.details||{}).filter(Boolean).join(" | ")),safe("p","فاکتور: "+order.invoice.invoiceNumber+" — "+money(order.invoice.amount,order.invoice.currency)));
    const select=document.createElement("button");select.className="btn secondary";select.type="button";select.textContent="انتخاب برای صحت‌سنجی";select.onclick=()=>{$("selectedOrderId").value=order.id;$("quoteAmount").value=order.invoice.amount??"";$("quoteCurrency").value=order.invoice.currency||"IRR";$("commissionRate").value=order.invoice.commissionRate??"0";$("publicationDuration").value=order.invoice.publicationDuration||"";$("targetRegion").value=order.invoice.targetRegion||"";$("completionAt").value=order.invoice.estimatedCompletionAt?new Date(order.invoice.estimatedCompletionAt).toISOString().slice(0,16):"";$("humanVerified").checked=false;show(out,"سفارش "+order.orderNumber+" برای بررسی انتخاب شد.")};card.append(select);list.append(card)}
   show(out,"سفارش‌ها دریافت شد: "+d.orders.length);
  }catch(err){show(out,err.message||"دریافت سفارش‌ها ناموفق بود.","error")}
