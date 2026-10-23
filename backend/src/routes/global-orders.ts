@@ -221,6 +221,54 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     return { ok: true, token, expiresInSeconds: SESSION_TTL / 1000 };
   });
 
+  app.post("/api/v1/global-admin/members", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند اعضا را مدیریت کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const username = String(body.username ?? "").trim().toLowerCase();
+    const password = String(body.password ?? "");
+    const role = String(body.role ?? "viewer");
+    if (!/^[a-z0-9._-]{3,40}$/.test(username) || password.length < 12 || password.length > 200 || !["invoice_approver","viewer"].includes(role)) return reply.code(400).send({ message: "نام کاربری ۳ تا ۴۰ نویسه انگلیسی و گذرواژه حداقل ۱۲ نویسه لازم است." });
+    try {
+      await ensureTable();
+      const salt = crypto.randomBytes(16).toString("hex");
+      const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+      const id = crypto.randomBytes(12).toString("hex");
+      await db.query("INSERT INTO hormoz_global_members (id,username,password_hash,role,created_by) VALUES ($1,$2,$3,$4,$5)", [id,username,salt+"$"+hash,role,session.username]);
+      return reply.code(201).send({ ok: true, member: { id, username, role, active: true } });
+    } catch (error) {
+      if ((error as any)?.code === "23505") return reply.code(409).send({ message: "این نام کاربری قبلاً ثبت شده است." });
+      request.log.error(error); return reply.code(503).send({ message: "ساخت حساب عضو ناموفق بود." });
+    }
+  });
+
+  app.get("/api/v1/global-admin/members", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند اعضا را مدیریت کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try { await ensureTable(); const result = await db.query("SELECT id,username,role,active,created_by,created_at FROM hormoz_global_members ORDER BY created_at DESC"); return { members: result.rows }; }
+    catch (error) { request.log.error(error); return reply.code(503).send({ message: "دریافت اعضا ناموفق بود." }); }
+  });
+
+  app.post("/api/v1/global-admin/members/:id/active", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند دسترسی را تغییر دهد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const id = String((request.params as {id?: string}).id ?? "");
+    const active = (request.body as any)?.active;
+    if (!id || typeof active !== "boolean") return reply.code(400).send({ message: "وضعیت فعال یا غیرفعال لازم است." });
+    try {
+      await ensureTable();
+      const result = await db.query("UPDATE hormoz_global_members SET active=$2,updated_at=NOW() WHERE id=$1 RETURNING id,username,role,active", [id,active]);
+      if (!result.rows.length) return reply.code(404).send({ message: "عضو پیدا نشد." });
+      for (const [token,value] of sessions) if (value.username === String(result.rows[0].username)) sessions.delete(token);
+      return { ok: true, member: result.rows[0] };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message: "تغییر دسترسی ناموفق بود." }); }
+  });
   app.get("/api/v1/global-admin/orders", async (request, reply) => {
     const session = adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
