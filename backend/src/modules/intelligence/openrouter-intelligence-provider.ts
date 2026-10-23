@@ -15,14 +15,16 @@ export class OpenRouterIntelligenceProvider
       throw new Error("OpenRouter configuration is incomplete");
     }
 
+    // Keep normal replies quick while allowing one retry for temporary provider/network failures.
     const maxAttempts = 2;
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      let retryableError = true;
       const controller = new AbortController();
       const timeout = setTimeout(
         () => controller.abort(),
-        25_000,
+        15_000,
       );
 
       try {
@@ -38,7 +40,7 @@ export class OpenRouterIntelligenceProvider
             body: JSON.stringify({
               model,
               messages: request.messages,
-              max_tokens: 900,
+              max_tokens: attempt === 1 ? 650 : 900,
             }),
           },
         );
@@ -51,6 +53,7 @@ export class OpenRouterIntelligenceProvider
         );
 
         if (!response.ok) {
+          retryableError = response.status === 429 || response.status >= 500;
           throw new Error(
             `OpenRouter request failed: ${response.status} ${rawText}`,
           );
@@ -137,10 +140,10 @@ export class OpenRouterIntelligenceProvider
           lastError.message,
         );
 
-        if (attempt < maxAttempts) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, 1000),
-          );
+        if (attempt < maxAttempts && retryableError) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } else {
+          break;
         }
       } finally {
         clearTimeout(timeout);
