@@ -14,7 +14,7 @@ main{max-width:850px;margin:20px auto}.top{display:flex;align-items:center;gap:1
 <header class="top"><div class="logo">۷۷۷</div><div><h1>هوش هرمز | درخواست خدمات</h1><div class="sub">نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</div></div></header>
 <section class="panel">
 <h2>از چه خدمتی کمک می‌خواهید؟</h2>
-<p>از سفر و اقامت تا راننده، شناور، غذا، برق‌کار، تعمیرکار، گردشگری و معرفی مهارت؛ درخواستتان را یک‌جا ثبت کنید تا مسیر پیگیری منظم باشد.</p>
+<p>از خدمات روزمره تا نامه و مکاتبه اداری؛ درخواست را ثبت کنید و با یک کد، وضعیت پرونده و فاکتور آن را پیگیری کنید.</p>
 <div class="chips"><span class="chip">✈️ سفر و بلیت</span><span class="chip">🏠 اقامت</span><span class="chip">🚗 حمل‌ونقل</span><span class="chip">🚤 شناور و قایق</span><span class="chip">🍲 غذا</span><span class="chip">🧰 مهارت و تعمیر</span><span class="chip">🌍 گردشگر خارجی</span></div>
 <div class="notice" style="margin:14px 0"><strong>📦 قبلاً درخواست ثبت کرده‌اید؟</strong><br><a class="btn secondary" href="/track-order.html">پیگیری سفارش با کد رهگیری</a></div>
 <div class="notice"><strong>🔐 شفافیت و امنیت:</strong> فقط اطلاعات لازم را بنویسید. رمز عبور، کد یک‌بارمصرف، اطلاعات کامل کارت بانکی یا مدارک حساس را وارد نکنید. ثبت درخواست هنوز به معنی رزرو قطعی، صدور بلیت یا پرداخت نیست؛ پس از بررسی، شرایط و قیمت باید تأیید شوند.</div>
@@ -23,7 +23,7 @@ main{max-width:850px;margin:20px auto}.top{display:flex;align-items:center;gap:1
 <div class="field"><label for="serviceType">نوع خدمت / Service type</label>
 <select id="serviceType" required>
 <option value="">انتخاب کنید</option>
-<option value="flight">هواپیما / Flight</option><option value="train">قطار / Train</option><option value="bus">اتوبوس / Bus</option><option value="stay">هتل، سوئیت یا مهمان‌خانه / Stay</option><option value="boat">شناور یا قایق / Boat</option><option value="driver">راننده و حمل‌ونقل / Driver</option><option value="food">غذا و رستوران / Food</option><option value="electrician">برق‌کار / Electrician</option><option value="repair">تعمیرکار یا نیروی فنی / Repair</option><option value="tourism">گردشگری و راهنما / Tourism</option><option value="skill">معرفی مهارت و اشتغال / Skills & work</option><option value="other">سایر خدمات / Other</option>
+<option value="flight">بلیت هواپیما</option><option value="train">بلیت قطار</option><option value="bus">بلیت اتوبوس</option><option value="stay">هتل، سوئیت یا مهمان‌خانه</option><option value="boat">شناور یا قایق</option><option value="driver">راننده و حمل‌ونقل</option><option value="food">غذا و رستوران</option><option value="electrician">برق‌کار</option><option value="repair">تعمیرکار یا نیروی فنی</option><option value="tourism">گردشگری و راهنما</option><option value="skill">معرفی مهارت و اشتغال</option><option value="letter">نامه و مکاتبه / پیگیری اداری</option><option value="invoice">پیگیری پرونده فاکتور</option><option value="other">سایر خدمات</option>
 </select></div>
 <div id="providerSelectionHint" class="field full hint" hidden>نوع خدمت بر اساس ارائه‌دهنده‌ای که انتخاب کرده‌اید تنظیم شده و قابل تغییر نیست. پیش از ثبت، جزئیات و شرایط را بررسی کنید.</div>
 <div class="field"><label for="language">زبان پاسخ / Preferred language</label><select id="language"><option value="fa">فارسی</option><option value="en">English</option></select></div>
@@ -33,7 +33,7 @@ main{max-width:850px;margin:20px auto}.top{display:flex;align-items:center;gap:1
 <div class="field"><label for="people">تعداد نفرات / تعداد یا مدت (اختیاری)</label><input id="people" maxlength="100" placeholder="مثلاً ۲ نفر، ۳ شب، یا ۱ خدمت"></div>
 <div class="field"><label for="budget">بودجه تقریبی (اختیاری)</label><input id="budget" maxlength="100" placeholder="مثلاً اقتصادی؛ یا مبلغ و واحد پول"></div>
 <div class="field full"><label for="details">جزئیات درخواست / Request details</label><textarea id="details" maxlength="2500" required placeholder="مبدأ و مقصد، تاریخ سفر، تعداد شب، نوع خرابی، وعده غذا یا نیازتان را توضیح دهید. English is welcome."></textarea><span class="hint">برای سفارش سفر می‌توانید مسیر و تاریخ را بنویسید؛ برای اقامت تعداد شب و نفرات؛ برای تعمیر نوع مشکل و محل تقریبی انجام کار.</span></div>
-<div class="field full"><label class="check"><input id="consent" type="checkbox" required><span>موافقم اطلاعاتی را که در این فرم نوشته‌ام برای بررسی و پیگیری همین درخواست خدمات استفاده کنید. اطلاعات حساس وارد نکرده‌ام.</span></label></div>
+<div class="field full"><label class="check"><input id="consent" type="checkbox" required><span>موافقم اطلاعاتی را که در این فرم نوشته‌ام برای بررسی و پیگیری همین پرونده استفاده کنید. اطلاعات حساس وارد نکرده‌ام.</span></label></div>
 </div>
 <div class="actions"><button class="btn" id="submitOrder" type="submit">ثبت درخواست</button><a class="btn secondary" href="/">بازگشت به صفحه اصلی</a></div>
 <div id="formResult" aria-live="polite"></div>
@@ -80,7 +80,7 @@ form.addEventListener("submit", async (event) => {
   result.className = "";
   result.textContent = "";
   try {
-    const response = await fetch("/api/v1/orders", {
+    const response = await fetch("/api/v1/global-orders", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
