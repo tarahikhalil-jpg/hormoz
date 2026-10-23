@@ -201,6 +201,19 @@ async function loadMembers(){
     btn.onclick=async()=>{try{const resp=await fetch("/api/v1/global-admin/members/"+encodeURIComponent(m.id)+"/active",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+adminToken},body:JSON.stringify({active:!m.active})});const result=await resp.json();if(!resp.ok||!result.ok)throw new Error(result.message||"تغییر دسترسی ناموفق بود.");await loadMembers();show($("adminStatus"),"دسترسی عضو به‌روزرسانی شد.");}catch(err){show($("adminStatus"),err.message||"خطا","error")}};
     card.append(btn);
    }
+   if(m.username==="hormoztest777"){
+    const deleteTest=document.createElement("button");deleteTest.className="btn secondary";deleteTest.type="button";deleteTest.textContent="🗑 حذف حساب آزمایشی hormoztest777";
+    deleteTest.onclick=async()=>{
+     if(!confirm("فقط حساب آزمایشی hormoztest777 حذف شود؟ این کار دائمی است و اطلاعات ورود این حساب را حذف می‌کند."))return;
+     deleteTest.disabled=true;
+     try{
+      const resp=await fetch("/api/v1/global-admin/members/test-account/hormoztest777",{method:"DELETE",headers:{Authorization:"Bearer "+adminToken}});
+      const data=await resp.json();if(!resp.ok||!data.ok)throw new Error(data.message||"حذف حساب ناموفق بود.");
+      show($("adminStatus"),data.message);await loadMembers();
+     }catch(err){show($("adminStatus"),err.message||"حذف حساب ناموفق بود.","error");deleteTest.disabled=false}
+    };
+    card.append(deleteTest);
+   }
    list.append(card);
   }
  }catch(err){show($("adminStatus"),err.message||"دریافت اعضا ناموفق بود.","error")}
