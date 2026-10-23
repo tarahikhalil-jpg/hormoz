@@ -302,7 +302,9 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/api/v1/global-admin/orders/:id/verify-invoice", async (request, reply) => {
-    if (!adminSession(request)) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود لازم است." });
+    if (!["owner", "invoice_approver"].includes(session.role)) return reply.code(403).send({ message: "سطح دسترسی شما اجازه تأیید فاکتور را نمی‌دهد." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
     const id = String((request.params as { id?: string }).id ?? "");
     const body = (request.body ?? {}) as Record<string, unknown>;
@@ -326,8 +328,8 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       const providerShare = amount - hormozFee;
       if (![hormozFee, providerShare].every(Number.isSafeInteger)) return reply.code(400).send({ message: "مبلغ برای محاسبه امن بیش از حد مجاز است." });
       const now = new Date().toISOString();
-      const invoiceHistory = [...(Array.isArray(found.rows[0].invoice_history) ? found.rows[0].invoice_history : []), { status: "awaiting_customer_approval", at: now, note: "قیمت، کارمزد، زمان و محدوده توسط انسان صحت‌سنجی شد." }].slice(-100);
-      const statusHistory = [...(Array.isArray(found.rows[0].status_history) ? found.rows[0].status_history : []), { status: "quoted", at: now, note: "پیش‌فاکتور برای بررسی مشتری آماده است." }].slice(-100);
+      const invoiceHistory = [...(Array.isArray(found.rows[0].invoice_history) ? found.rows[0].invoice_history : []), { status: "awaiting_customer_approval", at: now, actor: session.username, actorRole: session.role, note: "قیمت، کارمزد، زمان و محدوده توسط انسان صحت‌سنجی شد." }].slice(-100);
+      const statusHistory = [...(Array.isArray(found.rows[0].status_history) ? found.rows[0].status_history : []), { status: "quoted", at: now, actor: session.username, actorRole: session.role, note: "پیش‌فاکتور برای بررسی مشتری آماده است." }].slice(-100);
       const result = await db.query(
         `UPDATE hormoz_global_orders SET amount=$2, currency=$3, commission_rate=$4, hormoz_fee=$5, provider_share=$6,
          estimated_completion_at=$7, publication_duration=$8, target_region=$9, human_verified=TRUE,
