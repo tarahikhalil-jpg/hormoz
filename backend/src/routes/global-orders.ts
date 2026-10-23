@@ -221,6 +221,24 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     return { ok: true, token, expiresInSeconds: SESSION_TTL / 1000 };
   });
 
+  app.post("/api/v1/global-admin/member-login", async (request, reply) => {
+    const ipKey = "member:" + String(request.ip ?? "unknown");
+    if (isLoginBlocked(ipKey)) return reply.code(429).send({ message: "تلاش‌های ورود زیاد بوده است؛ ۱۵ دقیقه دیگر دوباره تلاش کنید." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const username = String(body.username ?? "").trim().toLowerCase(); const password = String(body.password ?? "");
+    if (!/^[a-z0-9._-]{3,40}$/.test(username) || password.length < 10 || password.length > 200) { noteLoginFailure(ipKey); return reply.code(401).send({ message: "نام کاربری یا گذرواژه نادرست است." }); }
+    try {
+      await ensureTable();
+      const found = await db.query("SELECT username,password_hash,role,active FROM hormoz_global_members WHERE username=$1 LIMIT 1", [username]);
+      const member = found.rows[0]; let valid = false;
+      if (member && member.active === true) { const parts = String(member.password_hash).split("$"); if (parts.length === 2) { const actual = crypto.scryptSync(password, parts[0], 64); const expectedHash = Buffer.from(parts[1], "hex"); valid = actual.length === expectedHash.length && crypto.timingSafeEqual(actual, expectedHash); } }
+      if (!valid) { noteLoginFailure(ipKey); return reply.code(401).send({ message: "نام کاربری یا گذرواژه نادرست است." }); }
+      loginFailures.delete(ipKey); const token = crypto.randomBytes(32).toString("hex");
+      sessions.set(token, { expiresAt: Date.now() + SESSION_TTL, role: member.role, username: String(member.username) });
+      return { ok: true, token, role: member.role, username: String(member.username), expiresInSeconds: SESSION_TTL / 1000 };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message: "ورود عضو انجام نشد." }); }
+  });
   app.post("/api/v1/global-admin/members", async (request, reply) => {
     const session = adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
@@ -272,7 +290,6 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   app.get("/api/v1/global-admin/orders", async (request, reply) => {
     const session = adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
-    if (!["owner", "invoice_approver"].includes(session.role)) return reply.code(403).send({ message: "سطح دسترسی شما اجازه تأیید فاکتور را نمی‌دهد." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
     try {
       await ensureTable();
