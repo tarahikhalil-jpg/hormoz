@@ -36,8 +36,17 @@ main{max-width:980px;margin:auto}.hero{text-align:center;padding:25px 10px 15px}
 </section>
 <section class="panel">
 <h2>🔐 صحت‌سنجی مدیر</h2><p class="muted">این بخش فقط برای مدیر مجاز است. پس از ورود، فاکتور را با اطلاعات سفارش بررسی کنید؛ سامانه مبلغ، کارمزد و سهم همکار را محاسبه می‌کند. این پنل پولی جابه‌جا نمی‌کند.</p>
-<div id="adminLoginBox"><div class="field"><label for="adminPassword">رمز مدیر اصلی</label><input id="adminPassword" type="password" autocomplete="current-password"></div><div class="actions"><button class="btn" id="adminLogin">ورود مدیر اصلی</button></div><hr style="border-color:var(--line);margin:18px 0"><h3>ورود عضو تأییدشده</h3><div class="grid"><div class="field"><label for="memberUsername">نام کاربری</label><input id="memberUsername" autocomplete="username" maxlength="40"></div><div class="field"><label for="memberPassword">گذرواژه عضو</label><input id="memberPassword" type="password" autocomplete="current-password"></div></div><div class="actions"><button class="btn secondary" id="memberLogin">ورود عضو</button></div></div>
-<div id="adminArea" class="hidden"><div class="actions"><button class="btn secondary" id="refreshOrders">تازه‌سازی سفارش‌ها</button><button class="btn secondary" id="adminLogout">خروج</button></div><div id="adminStatus" class="result" aria-live="polite"></div><div id="memberManagement" class="invoice hidden"><h3>👥 مدیریت اعضای مورداعتماد</h3><p class="muted">فقط مدیر اصلی می‌تواند حساب بسازد یا دسترسی را قطع کند. نام کاربری انگلیسی و گذرواژه حداقل ۱۲ نویسه باشد.</p><form id="memberForm"><div class="grid"><div class="field"><label for="newMemberUsername">نام کاربری عضو</label><input id="newMemberUsername" minlength="3" maxlength="40" pattern="[A-Za-z0-9._-]+" required></div><div class="field"><label for="newMemberPassword">گذرواژه موقت</label><input id="newMemberPassword" type="password" minlength="12" maxlength="200" required></div><div class="field"><label for="newMemberRole">سطح دسترسی</label><select id="newMemberRole"><option value="invoice_approver">تأییدکننده سفارش و فاکتور</option><option value="viewer">مشاهده‌گر فقط‌خواندنی</option></select></div></div><div class="actions"><button class="btn" type="submit">ساخت حساب عضو</button><button class="btn secondary" id="refreshMembers" type="button">تازه‌سازی اعضا</button></div></form><div id="membersList"></div></div><div id="adminOrders"></div>
+<div id="adminLoginBox">
+<div class="invoice" style="margin-bottom:18px"><h3>🤝 درخواست همکاری با هوش هرمز</h3><p class="muted">همکار نام کاربری و گذرواژه خودش را می‌سازد. حساب تا تأیید مدیر غیرفعال می‌ماند و هیچ دسترسی ویژه‌ای خودکار داده نمی‌شود.</p>
+<form id="memberRegisterForm"><div class="grid">
+<div class="field"><label for="registerFullName">نام و نام خانوادگی</label><input id="registerFullName" maxlength="100" required autocomplete="name"></div>
+<div class="field"><label for="registerContact">راه تماس (اختیاری)</label><input id="registerContact" maxlength="160" autocomplete="email" placeholder="ایمیل یا راه تماس"></div>
+<div class="field"><label for="registerUsername">نام کاربری انگلیسی</label><input id="registerUsername" minlength="3" maxlength="40" pattern="[A-Za-z0-9._-]+" required autocomplete="username"></div>
+<div class="field"><label for="registerPassword">گذرواژه (حداقل ۱۲ نویسه)</label><input id="registerPassword" type="password" minlength="12" maxlength="200" required autocomplete="new-password"></div>
+<div class="field"><label for="registerPasswordConfirm">تکرار گذرواژه</label><input id="registerPasswordConfirm" type="password" minlength="12" maxlength="200" required autocomplete="new-password"></div>
+</div><div class="actions"><button class="btn" type="submit" id="registerMemberButton">ارسال درخواست عضویت</button></div><div id="registerResult" class="result" aria-live="polite"></div></form></div>
+<div class="field"><label for="adminPassword">رمز مدیر اصلی</label><input id="adminPassword" type="password" autocomplete="current-password"></div><div class="actions"><button class="btn" id="adminLogin">ورود مدیر اصلی</button></div><hr style="border-color:var(--line);margin:18px 0"><h3>ورود عضو تأییدشده</h3><div class="grid"><div class="field"><label for="memberUsername">نام کاربری</label><input id="memberUsername" autocomplete="username" maxlength="40"></div><div class="field"><label for="memberPassword">گذرواژه عضو</label><input id="memberPassword" type="password" autocomplete="current-password"></div></div><div class="actions"><button class="btn secondary" id="memberLogin">ورود عضو</button></div></div>
+<div id="adminArea" class="hidden"><div class="actions"><button class="btn secondary" id="refreshOrders">تازه‌سازی سفارش‌ها</button><button class="btn secondary" id="adminLogout">خروج</button></div><div id="adminStatus" class="result" aria-live="polite"></div><div id="memberManagement" class="invoice hidden"><h3>👥 مدیریت اعضای مورداعتماد</h3><p class="muted">درخواست‌های تازه در انتظار بررسی اینجا ظاهر می‌شوند. مدیر اصلی نام متقاضی را می‌بیند و خودش نقش را تعیین می‌کند؛ تأییدکننده فاکتور فقط به افراد مورداعتماد داده شود.</p><form id="memberForm"><div class="grid"><div class="field"><label for="newMemberUsername">نام کاربری عضو</label><input id="newMemberUsername" minlength="3" maxlength="40" pattern="[A-Za-z0-9._-]+" required></div><div class="field"><label for="newMemberPassword">گذرواژه موقت</label><input id="newMemberPassword" type="password" minlength="12" maxlength="200" required></div><div class="field"><label for="newMemberRole">سطح دسترسی</label><select id="newMemberRole"><option value="invoice_approver">تأییدکننده سفارش و فاکتور</option><option value="viewer">مشاهده‌گر فقط‌خواندنی</option></select></div></div><div class="actions"><button class="btn" type="submit">ساخت حساب عضو</button><button class="btn secondary" id="refreshMembers" type="button">تازه‌سازی اعضا</button></div></form><div id="membersList"></div></div><div id="adminOrders"></div>
 <div class="invoice"><strong>صحت‌سنجی فاکتور انتخاب‌شده</strong><p class="muted">مبلغ نهایی را انسان بررسی می‌کند. درصد کارمزد باید از قبل طبق تعرفه شفاف و توافق‌شده باشد.</p>
 <form id="quoteForm"><input id="selectedOrderId" type="hidden">
 <div class="grid">
@@ -70,6 +79,19 @@ const serviceLabels={
 const statusLabels={submitted:"درخواست ثبت شده",awaiting_provider:"در حال هماهنگی با ارائه‌دهنده خدمت",quoted:"پیشنهاد قیمت آماده بررسی",confirmed:"سفارش تأیید شده",payment_pending:"در انتظار پرداخت",payment_confirmed:"پرداخت تأیید شده",in_progress:"در حال انجام",completed:"تکمیل شده",cancelled:"لغو شده",refund_pending:"درخواست بازپرداخت در حال بررسی",refunded:"بازپرداخت شده",pending:"در انتظار بررسی",approved:"تأیید شده",rejected:"رد شده",paid:"پرداخت شده",unpaid:"پرداخت نشده"};
 function labelFor(map,value){if(value==null||value==="")return "ثبت نشده";const key=String(value);return map[key]||map[key.toLowerCase()]||key;}
 function show(node,text,kind="success"){node.className="result "+kind;node.textContent=text}
+$("memberRegisterForm").addEventListener("submit",async e=>{
+ e.preventDefault();const out=$("registerResult"),button=$("registerMemberButton");
+ if($("registerPassword").value!==$("registerPasswordConfirm").value){show(out,"دو گذرواژه یکسان نیستند.","error");return}
+ button.disabled=true;show(out,"در حال ثبت درخواست عضویت…");
+ try{
+  const r=await fetch("/api/v1/global-admin/member-register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+   fullName:$("registerFullName").value.trim(),contact:$("registerContact").value.trim(),
+   username:$("registerUsername").value.trim(),password:$("registerPassword").value
+  })});
+  const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.message||"ثبت درخواست ناموفق بود.");
+  $("memberRegisterForm").reset();show(out,d.message||"درخواست ثبت شد و پس از تأیید مدیر امکان ورود فراهم می‌شود.");
+ }catch(err){show(out,err.message||"ثبت درخواست ناموفق بود.","error")}finally{button.disabled=false}
+});
 function safe(tag,text){const n=document.createElement(tag);n.textContent=text;return n}
 function renderInvoice(invoice){
  const box=document.createElement("div");box.className="invoice";
@@ -117,7 +139,42 @@ $("adminLogin").addEventListener("click",async()=>{
  }catch(err){show(out,err.message||"ورود ناموفق بود.","error")}
 });
 $("memberLogin").addEventListener("click",async()=>{const out=$("adminStatus");show(out,"در حال بررسی حساب عضو…");try{const r=await fetch("/api/v1/global-admin/member-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:$("memberUsername").value.trim(),password:$("memberPassword").value})});const d=await r.json();if(!r.ok||!d.token)throw new Error(d.message||"ورود عضو ناموفق بود.");$("memberPassword").value="";await enterOffice(d.token,d.role,d.username);}catch(err){show(out,err.message||"ورود عضو ناموفق بود.","error")}});
-async function loadMembers(){const list=$("membersList");list.replaceChildren();try{const r=await fetch("/api/v1/global-admin/members",{headers:{Authorization:"Bearer "+adminToken},cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.message||"دریافت اعضا ناموفق بود.");if(!d.members.length)list.append(safe("p","هنوز عضوی تعریف نشده است."));for(const m of d.members){const card=document.createElement("div");card.className="order-card";card.append(safe("strong",m.username),safe("p","نقش: "+(m.role==="invoice_approver"?"تأییدکننده سفارش و فاکتور":"مشاهده‌گر فقط‌خواندنی")),safe("p","وضعیت: "+(m.active?"فعال":"غیرفعال")));const btn=document.createElement("button");btn.className="btn "+(m.active?"secondary":"");btn.type="button";btn.textContent=m.active?"غیرفعال‌کردن دسترسی":"فعال‌کردن دسترسی";btn.onclick=async()=>{try{const resp=await fetch("/api/v1/global-admin/members/"+encodeURIComponent(m.id)+"/active",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+adminToken},body:JSON.stringify({active:!m.active})});const result=await resp.json();if(!resp.ok||!result.ok)throw new Error(result.message||"تغییر دسترسی ناموفق بود.");await loadMembers();show($("adminStatus"),"دسترسی عضو به‌روزرسانی شد.");}catch(err){show($("adminStatus"),err.message||"خطا","error")}};card.append(btn);list.append(card)}}catch(err){show($("adminStatus"),err.message||"دریافت اعضا ناموفق بود.","error")}}
+async function loadMembers(){
+ const list=$("membersList");list.replaceChildren();
+ try{
+  const r=await fetch("/api/v1/global-admin/members",{headers:{Authorization:"Bearer "+adminToken},cache:"no-store"});
+  const d=await r.json();if(!r.ok)throw new Error(d.message||"دریافت اعضا ناموفق بود.");
+  if(!d.members.length)list.append(safe("p","هنوز درخواستی ثبت نشده است."));
+  for(const m of d.members){
+   const card=document.createElement("div");card.className="order-card";
+   card.append(safe("strong",(m.full_name?m.full_name+" — ":"")+m.username));
+   if(m.contact)card.append(safe("p","راه تماس: "+m.contact));
+   card.append(safe("p","وضعیت: "+({pending:"در انتظار تأیید شما",approved:"تأیید شده",rejected:"رد شده"}[m.status]||m.status||"نامشخص")));
+   card.append(safe("p","نقش: "+(m.role==="invoice_approver"?"تأییدکننده سفارش و فاکتور":"مشاهده‌گر فقط‌خواندنی")));
+   if(m.status==="pending"){
+    const role=document.createElement("select");role.innerHTML='<option value="viewer">مشاهده‌گر فقط‌خواندنی</option><option value="invoice_approver">تأییدکننده سفارش و فاکتور</option>';role.value="viewer";
+    const approve=document.createElement("button");approve.className="btn";approve.type="button";approve.textContent="تأیید و فعال‌سازی";
+    approve.onclick=()=>reviewMember(m.id,"approved",role.value,approve);
+    const reject=document.createElement("button");reject.className="btn secondary";reject.type="button";reject.textContent="رد درخواست";
+    reject.onclick=()=>reviewMember(m.id,"rejected","viewer",reject);
+    card.append(safe("p","سطح دسترسی پس از تأیید:"));card.append(role,approve,reject);
+   } else {
+    const btn=document.createElement("button");btn.className="btn secondary";btn.type="button";btn.textContent=m.active?"غیرفعال‌کردن دسترسی":"فعال‌کردن دسترسی";
+    btn.onclick=async()=>{try{const resp=await fetch("/api/v1/global-admin/members/"+encodeURIComponent(m.id)+"/active",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+adminToken},body:JSON.stringify({active:!m.active})});const result=await resp.json();if(!resp.ok||!result.ok)throw new Error(result.message||"تغییر دسترسی ناموفق بود.");await loadMembers();show($("adminStatus"),"دسترسی عضو به‌روزرسانی شد.");}catch(err){show($("adminStatus"),err.message||"خطا","error")}};
+    card.append(btn);
+   }
+   list.append(card);
+  }
+ }catch(err){show($("adminStatus"),err.message||"دریافت اعضا ناموفق بود.","error")}
+}
+async function reviewMember(id,status,role,button){
+ button.disabled=true;
+ try{
+  const r=await fetch("/api/v1/global-admin/members/"+encodeURIComponent(id)+"/review",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+adminToken},body:JSON.stringify({status,role})});
+  const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.message||"بررسی درخواست ناموفق بود.");
+  show($("adminStatus"),d.message||"درخواست بررسی شد.");await loadMembers();
+ }catch(err){show($("adminStatus"),err.message||"بررسی درخواست ناموفق بود.","error");button.disabled=false}
+}
 $("memberForm").addEventListener("submit",async e=>{e.preventDefault();try{const r=await fetch("/api/v1/global-admin/members",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+adminToken},body:JSON.stringify({username:$("newMemberUsername").value.trim(),password:$("newMemberPassword").value,role:$("newMemberRole").value})});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.message||"ساخت حساب عضو ناموفق بود.");$("memberForm").reset();show($("adminStatus"),"حساب عضو ساخته شد. گذرواژه را امن و مستقیم به خود عضو بسپارید.");await loadMembers()}catch(err){show($("adminStatus"),err.message||"ساخت حساب عضو ناموفق بود.","error")}});
 $("refreshMembers").addEventListener("click",loadMembers);
 async function loadOrders(){
