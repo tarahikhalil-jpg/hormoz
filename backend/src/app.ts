@@ -1893,6 +1893,7 @@ export function buildApp(
     "https://tarahikhalil-jpg.github.io",
     "https://hormozai.ir",
     "https://www.hormozai.ir",
+    "https://hormoz-portal-public-777.onrender.com",
   ]);
 
   app.addHook("onRequest", async (request, reply) => {
