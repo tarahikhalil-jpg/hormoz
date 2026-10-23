@@ -95,6 +95,9 @@ async function ensureTable() {
   await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved'");
   await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS full_name TEXT NOT NULL DEFAULT ''");
   await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS contact TEXT NOT NULL DEFAULT ''");
+  await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS collaboration_areas JSONB NOT NULL DEFAULT '[]'::jsonb");
+  await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS collaboration_skills TEXT NOT NULL DEFAULT ''");
+  await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS collaboration_availability TEXT NOT NULL DEFAULT ''");
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_global_members_status_idx ON hormoz_global_members (status, created_at DESC)");
   tableReady = true;
 }
@@ -234,9 +237,14 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     const password = String(body.password ?? "");
     const fullName = String(body.fullName ?? "").trim().slice(0, 100);
     const contact = String(body.contact ?? "").trim().slice(0, 160);
-    if (!fullName || !/^[a-z0-9._-]{3,40}$/.test(username) || password.length < 12 || password.length > 200) {
+    const allowedAreas = new Set(["technology","nava_content","business_outreach","customer_support","order_coordination","service_provider","sales_products","tourism","education","design_media","delivery","community_support","testing_security","accounting_admin","other"]);
+    const rawAreas = Array.isArray(body.collaborationAreas) ? body.collaborationAreas : [];
+    const collaborationAreas = [...new Set(rawAreas.map(value => String(value)).filter(value => allowedAreas.has(value)))].slice(0, 15);
+    const collaborationSkills = String(body.collaborationSkills ?? "").trim().slice(0, 1500);
+    const collaborationAvailability = String(body.collaborationAvailability ?? "").trim().slice(0, 300);
+    if (!fullName || collaborationAreas.length === 0 || !/^[a-z0-9._-]{3,40}$/.test(username) || password.length < 12 || password.length > 200) {
       noteLoginFailure(ipKey);
-      return reply.code(400).send({ message: "نام کامل، نام کاربری انگلیسی ۳ تا ۴۰ نویسه و گذرواژه حداقل ۱۲ نویسه لازم است." });
+      return reply.code(400).send({ message: "نام کامل، انتخاب حداقل یک زمینه همکاری، نام کاربری انگلیسی ۳ تا ۴۰ نویسه و گذرواژه حداقل ۱۲ نویسه لازم است." });
     }
     try {
       await ensureTable();
@@ -244,8 +252,8 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       const hash = crypto.scryptSync(password, salt, 64).toString("hex");
       const id = crypto.randomBytes(12).toString("hex");
       await db.query(
-        "INSERT INTO hormoz_global_members (id,username,password_hash,role,active,status,full_name,contact,created_by) VALUES ($1,$2,$3,'viewer',FALSE,'pending',$4,$5,'self-registration')",
-        [id, username, salt + "$" + hash, fullName, contact]
+        "INSERT INTO hormoz_global_members (id,username,password_hash,role,active,status,full_name,contact,collaboration_areas,collaboration_skills,collaboration_availability,created_by) VALUES ($1,$2,$3,'viewer',FALSE,'pending',$4,$5,$6::jsonb,$7,$8,'self-registration')",
+        [id, username, salt + "$" + hash, fullName, contact, JSON.stringify(collaborationAreas), collaborationSkills, collaborationAvailability]
       );
       return reply.code(201).send({ ok: true, status: "pending", message: "درخواست عضویت ثبت شد. پس از بررسی و تأیید مدیر، امکان ورود فعال می‌شود." });
     } catch (error) {
@@ -311,7 +319,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     try {
       await ensureTable();
       const result = await db.query(
-        "UPDATE hormoz_global_members SET status=$2, role=$3, active=($2='approved'), updated_at=NOW() WHERE id=$1 AND status='pending' RETURNING id,username,role,active,status,full_name,contact",
+        "UPDATE hormoz_global_members SET status=$2, role=$3, active=($2='approved'), updated_at=NOW() WHERE id=$1 AND status='pending' RETURNING id,username,role,active,status,full_name,contact,collaboration_areas,collaboration_skills,collaboration_availability",
         [id, status, role]
       );
       if (!result.rows.length) return reply.code(404).send({ message: "درخواست در انتظار بررسی پیدا نشد." });
@@ -328,7 +336,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
     if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند اعضا را مدیریت کند." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
-    try { await ensureTable(); const result = await db.query("SELECT id,username,role,active,status,full_name,contact,created_by,created_at FROM hormoz_global_members ORDER BY CASE WHEN status='pending' THEN 0 ELSE 1 END, created_at DESC"); return { members: result.rows }; }
+    try { await ensureTable(); const result = await db.query("SELECT id,username,role,active,status,full_name,contact,collaboration_areas,collaboration_skills,collaboration_availability,created_by,created_at FROM hormoz_global_members ORDER BY CASE WHEN status='pending' THEN 0 ELSE 1 END, created_at DESC"); return { members: result.rows }; }
     catch (error) { request.log.error(error); return reply.code(503).send({ message: "دریافت اعضا ناموفق بود." }); }
   });
 
