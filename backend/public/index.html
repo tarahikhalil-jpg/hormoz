@@ -442,7 +442,7 @@
       // Route clear action requests to real pages already served by Hormoz.
       // This local router stays available even when the AI provider is temporarily offline.
       const normalizedRequest = message.replace(/[ي]/g, "ی").replace(/[ك]/g, "ک").replace(/\u200c/g, " ").toLowerCase();
-      const asksToNavigate = /ببر|هدایت|برو|باز کن|نشان بده|وارد شو|دسترسی|بخش|میخواهم|می خواهم|می‌خواهم|لازم دارم|پیدا کن|پیگیری|ثبت کن|ثبت نام/.test(normalizedRequest);
+      const asksToNavigate = /ببر|هدایت|برو|باز کن|نشان بده|وارد شو|دسترسی|بخش|میخواهم|می خواهم|می‌خواهم|میخوام|می‌خوام|لازم دارم|نیاز دارم|پیدا کن|پیگیری|رهگیری|ثبت کن|ثبت نام|ثبت سفارش|ثبت درخواست|سفارش|آگهی|جست.?وجو|پوستر بساز/.test(normalizedRequest);
       const routeIntents = [
         { test: /پیگیری|رهگیری|کد رهگیری|وضعیت سفارش|وضعیت درخواست/, href: "/track-order.html", title: "پیگیری سفارش و درخواست", description: "در این صفحه می‌توانی کد رهگیری واقعی درخواستت را وارد کنی." },
         { test: /ثبت سفارش|ثبت درخواست|درخواست خدمت|سفارش خدمت|خدمت لازم دارم|خدمت میخواهم|خدمت می خواهم/, href: "/orders.html", title: "ثبت درخواست خدمت", description: "فرم ثبت درخواست باز می‌شود؛ ثبت درخواست به‌تنهایی به معنی رزرو یا پرداخت قطعی نیست." },
@@ -452,7 +452,11 @@
         { test: /خدمات تأیید|خدمات تایید|فهرست خدمات|جست.?وجوی خدمات|ارائه.?دهنده.? تأیید|خدمات هوش هرمز|خدمات هرمز/, href: "/directory.html", title: "فهرست خدمات تأییدشده", description: "فهرست از سرور بارگذاری می‌شود و فقط ارائه‌دهندگان تأییدشده را نمایش می‌دهد." },
         { test: /خدمات|سرویس|خدمت/, href: "#services", title: "بخش خدمات هوش هرمز", description: "به دسته‌بندی خدمات می‌رویم تا مسیر مناسب را انتخاب کنی." }
       ];
-      const requestedRoute = asksToNavigate ? routeIntents.find(item => item.test.test(normalizedRequest)) : null;
+      const isServiceSearch = /سوئیت|سوییت|اقامتگاه|هتل|راننده|خودرو|ماشین|قایق|لنج|رستوران|کافه|تعمیرکار|برق.?کار|لوله.?کش|راهنمای گردشگری|اقامت|تعمیر/.test(normalizedRequest)
+        && /پیدا|جست.?وجو|نیاز|لازم|میخواهم|می خواهم|می‌خواهم|میخوام|می‌خوام|ببر|هدایت|باز کن/.test(normalizedRequest);
+      const requestedRoute = isServiceSearch
+        ? {href: "/directory.html?q=" + encodeURIComponent(message), title: "جست‌وجوی خدمات", description: "جست‌وجوی واقعی در فهرست خدمات تأییدشده را با عبارت خودت باز می‌کنم. اگر موردی تأیید نشده باشد، آن را به‌عنوان موجود معرفی نمی‌کنیم."}
+        : (asksToNavigate ? routeIntents.find(item => item.test.test(normalizedRequest)) : null);
       if (requestedRoute) {
         addConversationTurn(message, "user");
         input.value = "";
