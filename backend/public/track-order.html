@@ -1,26 +1,63 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#073b4c">
-<title>پیگیری سفارش | هوش هرمز</title>
+<meta name="description" content="پیگیری یکپارچه خدمات، مکاتبات، درخواست‌ها و فاکتورهای هوش هرمز با یک کد رهگیری.">
+<title>پیگیری هوشمند همه موارد | هوش هرمز</title>
 <style>
-:root{font-family:Tahoma,Arial,sans-serif;color:#15313a;background:#f3f8f8}*{box-sizing:border-box}body{margin:0;padding:20px}.wrap{max-width:620px;margin:28px auto}.card{background:#fff;border:1px solid #dbe8e8;border-radius:18px;padding:22px;box-shadow:0 8px 28px #073b4c12}h1{margin-top:0;color:#07566a;font-size:1.55rem}.muted{color:#60747a;line-height:1.9}label{display:block;margin:16px 0 8px;font-weight:bold}input,button{font:inherit;width:100%;padding:13px;border-radius:10px}input{border:1px solid #b8cccc;direction:ltr;text-align:left}button{border:0;background:#087f8c;color:white;margin-top:12px;font-weight:bold;cursor:pointer}button:disabled{opacity:.6}.result{margin-top:18px}.status{padding:12px;background:#e8f7f2;border-radius:10px;margin:12px 0}.history{border-right:3px solid #cde4e6;padding:4px 14px;margin-top:14px}.entry{margin:12px 0}.entry small{display:block;color:#71858a;direction:ltr;text-align:right;margin-top:5px}.error{color:#a22}.hidden{display:none}a{color:#087f8c}
+:root{font-family:Tahoma,Arial,sans-serif;color:#15313a;background:#f1f7f7}*{box-sizing:border-box}body{margin:0;padding:16px;line-height:1.85}.wrap{max-width:760px;margin:20px auto}.card{background:#fff;border:1px solid #dbe8e8;border-radius:20px;padding:clamp(18px,4vw,30px);box-shadow:0 8px 28px #073b4c12}h1,h2,h3{color:#07566a}h1{font-size:clamp(1.4rem,4vw,1.9rem);margin-top:0}.muted{color:#60747a}.intro{line-height:2}label{display:block;margin:16px 0 8px;font-weight:bold}input,button{font:inherit;width:100%;padding:13px;border-radius:11px}input{border:1px solid #b8cccc;direction:ltr;text-align:left}button{border:0;background:#087f8c;color:white;margin-top:12px;font-weight:bold;cursor:pointer}button:disabled{opacity:.6}.result{margin-top:20px}.hidden{display:none}.panel{padding:14px;background:#f3f9f8;border:1px solid #d9e9e7;border-radius:13px;margin:12px 0;overflow-wrap:anywhere}.error{color:#a22;background:#fff2f2;border:1px solid #f0cccc;padding:12px;border-radius:10px}.history{border-right:3px solid #cde4e6;padding:4px 14px;margin:14px 0}.entry{margin:12px 0}.entry small{display:block;color:#71858a;margin-top:3px}.badge{display:inline-block;background:#dff4ed;color:#075c4c;padding:3px 10px;border-radius:99px;font-size:.88rem}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.foot{margin-top:22px;text-align:center;font-size:.9rem;color:#60747a}a{color:#087f8c}@media(max-width:480px){body{padding:9px}.card{padding:16px}}
 </style>
 </head>
 <body><main class="wrap"><section class="card">
-<h1>پیگیری سفارش هوش هرمز</h1>
-<p class="muted">کد رهگیری‌ای را که هنگام ثبت درخواست دریافت کرده‌اید وارد کنید. برای حفظ حریم خصوصی، اطلاعات تماس و جزئیات مالی در این صفحه نمایش داده نمی‌شود.</p>
-<form id="trackForm"><label for="trackingCode">کد رهگیری</label><input id="trackingCode" name="trackingCode" autocomplete="off" required minlength="20" maxlength="40" placeholder="کد رهگیری را وارد کنید" dir="ltr"><button id="submitBtn" type="submit">پیگیری سفارش</button></form>
+<h1>🔎 پیگیری هوشمند هوش هرمز</h1>
+<p class="muted intro">با همان کد رهگیری، وضعیت درخواست خدمات، مکاتبات و پرونده فاکتور را ببینید؛ از ثبت اولیه تا آخرین مرحله‌ای که واقعاً در سامانه ثبت شده است. اطلاعات تماس و شرح خصوصی درخواست در این صفحه نمایش داده نمی‌شود.</p>
+<form id="trackForm"><label for="trackingCode">کد رهگیری یکپارچه</label><input id="trackingCode" name="trackingCode" autocomplete="off" required minlength="20" maxlength="40" placeholder="کد رهگیری را دقیق وارد کنید" dir="ltr"><button id="submitBtn" type="submit">پیگیری همه مراحل</button></form>
 <div id="result" class="result hidden" aria-live="polite"></div>
-<p class="muted">هوش هرمز | نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p>
+<div class="foot">هوش هرمز • نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</div>
 </section></main>
 <script>
 const form=document.getElementById("trackForm"),input=document.getElementById("trackingCode"),button=document.getElementById("submitBtn"),result=document.getElementById("result");
-const statuses={submitted:"درخواست ثبت شده است.",awaiting_provider:"در حال هماهنگی با ارائه‌دهنده خدمت هستیم.",quoted:"قیمت یا پیشنهاد خدمت آماده بررسی است.",confirmed:"سفارش تأیید شده است.",payment_pending:"در انتظار تکمیل پرداخت است.",payment_confirmed:"پرداخت توسط سامانه تأیید شده است.",in_progress:"سفارش در حال انجام است.",completed:"سفارش تکمیل شده است.",cancelled:"سفارش لغو شده است.",refund_pending:"درخواست بازپرداخت در حال بررسی است.",refunded:"بازپرداخت ثبت شده است."};
-const serviceTypes={flight:"هواپیما",train:"قطار",bus:"اتوبوس",stay:"هتل، سوئیت یا مهمان‌خانه",boat:"شناور یا قایق",driver:"راننده و حمل‌ونقل",food:"غذا و رستوران",electrician:"برق‌کار",repair:"تعمیرکار یا نیروی فنی",tourism:"گردشگری و راهنما",skill:"معرفی مهارت و اشتغال",other:"سایر خدمات"};
+const statuses={submitted:"درخواست ثبت شده است.",awaiting_provider:"در انتظار هماهنگی با ارائه‌دهنده خدمت.",quoted:"پیش‌فاکتور یا پیشنهاد برای بررسی آماده است.",confirmed:"درخواست تأیید شده است.",payment_pending:"در انتظار پرداخت؛ پرداخت هنوز تأیید نشده است.",payment_confirmed:"پرداخت توسط سامانه تأیید شده است.",in_progress:"در حال انجام یا پیگیری.",completed:"این پرونده تکمیل شده است.",cancelled:"این پرونده لغو شده است.",refund_pending:"درخواست بازپرداخت در حال بررسی است.",refunded:"بازپرداخت ثبت شده است.",awaiting_review:"پرونده فاکتور در انتظار بررسی انسانی است.",awaiting_customer_approval:"پیش‌فاکتور پس از بررسی انسانی آماده تأیید مشتری است.",issued:"فاکتور صادر شده است.",paid:"پرداخت فاکتور تأیید شده است.",disputed:"درباره فاکتور درخواست بررسی ثبت شده است."};
+const invoiceStatuses={awaiting_review:"در انتظار بررسی انسانی",awaiting_customer_approval:"در انتظار تأیید مشتری",issued:"صادرشده",paid:"پرداخت‌شده",payment_pending:"در انتظار پرداخت",cancelled:"لغوشده",disputed:"نیازمند بررسی"};
+const serviceTypes={flight:"بلیت هواپیما",train:"بلیت قطار",bus:"بلیت اتوبوس",stay:"هتل، سوئیت یا مهمان‌خانه",boat:"شناور یا قایق",driver:"راننده و حمل‌ونقل",food:"غذا و رستوران",electrician:"برق‌کار",repair:"تعمیرکار یا نیروی فنی",tourism:"گردشگری و راهنما",skill:"معرفی مهارت و اشتغال",other:"سایر خدمات",letter:"نامه و مکاتبه",correspondence:"مکاتبه و پیگیری اداری",invoice:"پرونده فاکتور",service:"درخواست خدمات"};
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}
-form.addEventListener("submit",async e=>{e.preventDefault();const token=input.value.trim();result.replaceChildren();result.className="result";button.disabled=true;button.textContent="در حال بررسی…";try{const response=await fetch("/api/v1/orders/track/"+encodeURIComponent(token),{headers:{Accept:"application/json"}});const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.message||"کد رهگیری معتبر نیست یا سفارش پیدا نشد.");result.append(el("h2","", "وضعیت سفارش"));const summary=el("div","status");summary.append(el("strong","", "شماره سفارش: "+data.orderNumber));summary.append(el("p","",statuses[data.status]||data.message||"وضعیت به‌روزرسانی شده است."));result.append(summary);result.append(el("p","muted","نوع خدمت: "+(serviceTypes[data.serviceType]||data.serviceType||"ثبت نشده")));if(data.requestDetails)result.append(el("div","status", "شرح درخواست شما: "+data.requestDetails));const hist=el("div","history");hist.append(el("h3","","تاریخچه وضعیت"));for(const item of (data.history||[])){const row=el("div","entry");row.append(el("div","",statuses[item.status]||item.message||"به‌روزرسانی وضعیت"));if(item.at)row.append(el("small","",new Date(item.at).toLocaleString("fa-IR")));hist.append(row)}result.append(hist);result.className="result"}catch(err){result.append(el("p","error",err.message||"ارتباط با سامانه برقرار نشد."));}finally{button.disabled=false;button.textContent="پیگیری سفارش"}});
+function dateText(value){if(!value)return "";const d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleString("fa-IR")}
+function renderHistory(title,items,invoice=false){const box=el("div","history");box.append(el("h3","",title));if(!Array.isArray(items)||!items.length){box.append(el("p","muted","هنوز مرحله دیگری در سامانه ثبت نشده است."));return box}for(const item of items){const row=el("div","entry");row.append(el("div","",statuses[item.status]||item.note||item.message||"به‌روزرسانی ثبت شد."));if(item.note&&statuses[item.status])row.append(el("div","muted",item.note));if(item.at)row.append(el("small","",dateText(item.at)));box.append(row)}return box}
+function renderGlobal(data){
+ result.replaceChildren();result.className="result";
+ result.append(el("h2","","پرونده پیدا شد"));
+ const summary=el("div","panel");summary.append(el("div","badge",statuses[data.status]||data.status||"وضعیت ثبت‌شده"));
+ const grid=el("div","grid");grid.append(el("div","","شماره پرونده: "+(data.orderNumber||"—")));grid.append(el("div","","نوع پرونده: "+(serviceTypes[data.serviceType]||data.serviceType||"درخواست")));
+ if(data.invoice&&data.invoice.invoiceNumber)grid.append(el("div","","شماره فاکتور: "+data.invoice.invoiceNumber));
+ grid.append(el("div","","آخرین به‌روزرسانی: "+dateText(data.updatedAt)));
+ summary.append(grid);result.append(summary);
+ result.append(renderHistory("مراحل درخواست / مکاتبه",data.history));
+ if(data.invoice){const inv=data.invoice;const box=el("div","panel");box.append(el("h3","","وضعیت فاکتور"));box.append(el("p","", "وضعیت: "+(invoiceStatuses[inv.status]||statuses[inv.status]||inv.status||"ثبت نشده")));
+ if(inv.amount!==null&&inv.amount!==undefined)box.append(el("p","", "مبلغ ثبت‌شده پس از بررسی: "+Number(inv.amount).toLocaleString("fa-IR")+" "+(inv.currency||"")));
+ else box.append(el("p","muted","مبلغ هنوز نهایی نشده؛ تا بررسی و تأیید انسانی، مبلغی قطعی اعلام نمی‌شود."));
+ if(inv.humanVerified===true)box.append(el("p","badge","اطلاعات فاکتور توسط انسان بررسی شده است."));
+ if(inv.estimatedCompletionAt)box.append(el("p","", "زمان تخمینی ثبت‌شده: "+dateText(inv.estimatedCompletionAt)));
+ result.append(box);result.append(renderHistory("تاریخچه فاکتور",data.invoiceHistory,true))}
+ result.append(el("p","muted","این صفحه فقط وضعیت‌هایی را نشان می‌دهد که در سامانه ثبت شده‌اند؛ مشاهده فاکتور به معنی پرداخت یا صدور قطعی سند نیست."));
+}
+function renderLegacy(data){
+ result.replaceChildren();result.className="result";result.append(el("h2","","وضعیت سفارش"));
+ const box=el("div","panel");box.append(el("strong","","شماره سفارش: "+(data.orderNumber||"—")));box.append(el("p","",statuses[data.status]||data.message||"وضعیت به‌روزرسانی شده است."));result.append(box);
+ result.append(el("p","muted","نوع خدمت: "+(serviceTypes[data.serviceType]||data.serviceType||"ثبت نشده")));
+ if(Array.isArray(data.history))result.append(renderHistory("تاریخچه وضعیت",data.history));
+ result.append(el("p","muted","این کد متعلق به سامانه پیگیری سفارش قدیمی است؛ برای این پرونده هنوز اطلاعات فاکتور یکپارچه در دسترس نیست."));
+}
+form.addEventListener("submit",async e=>{e.preventDefault();const token=input.value.trim();result.replaceChildren();result.className="result";button.disabled=true;button.textContent="در حال بررسی همه پرونده‌ها…";try{
+ let response=await fetch("/api/v1/global-orders/track/"+encodeURIComponent(token),{headers:{Accept:"application/json","Cache-Control":"no-cache"}});
+ let data=await response.json().catch(()=>({ok:false,message:"پاسخ سامانه قابل خواندن نیست."}));
+ if(response.ok&&data.ok){renderGlobal(data);return}
+ if(response.status===404){
+   response=await fetch("/api/v1/orders/track/"+encodeURIComponent(token),{headers:{Accept:"application/json","Cache-Control":"no-cache"}});
+   data=await response.json().catch(()=>({ok:false,message:"پاسخ سامانه قابل خواندن نیست."}));
+   if(response.ok&&data.ok){renderLegacy(data);return}
+ }
+ throw new Error(data.message||"پرونده‌ای با این کد پیدا نشد. کد را دوباره بررسی کنید.");
+ }catch(err){result.replaceChildren(el("p","error",err.message||"ارتباط با سامانه برقرار نشد؛ بعداً دوباره تلاش کنید."));result.className="result"}finally{button.disabled=false;button.textContent="پیگیری همه مراحل"}});
 const params=new URLSearchParams(location.search);if(params.get("code"))input.value=params.get("code");
 </script></body></html>
