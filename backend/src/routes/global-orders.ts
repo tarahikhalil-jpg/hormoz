@@ -294,7 +294,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     try {
       await ensureTable();
       const result = await db.query("SELECT id, order_number, invoice_number, customer_label, contact, customer_language, service_type, request_details, status, invoice_status, currency, amount, commission_rate, hormoz_fee, provider_share, estimated_completion_at, publication_duration, target_region, human_verified, created_at, updated_at FROM hormoz_global_orders ORDER BY created_at DESC LIMIT 200");
-      return { orders: result.rows.map(row => ({ id: String(row.id), orderNumber: String(row.order_number), customerLabel: String(row.customer_label), contact: String(row.contact), language: String(row.customer_language), serviceType: String(row.service_type), details: row.request_details ?? {}, status: String(row.status), invoice: invoiceFromRow(row), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() })) };
+      return { orders: result.rows.map(row => ({ id: String(row.id), orderNumber: String(row.order_number), customerLabel: session.role === "viewer" ? "مخفی برای نقش مشاهده‌گر" : String(row.customer_label), contact: session.role === "viewer" ? "" : String(row.contact), language: String(row.customer_language), serviceType: String(row.service_type), details: row.request_details ?? {}, status: String(row.status), invoice: invoiceFromRow(row), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() })) };
     } catch (error) {
       request.log.error(error);
       return reply.code(503).send({ message: "دریافت سفارش‌ها ناموفق بود." });
