@@ -127,7 +127,7 @@ function render(){
   const inferred=inferCategory(raw);
   const query=raw.split(" ").filter(word=>word.length>1);
   const list=providers.map(p=>{const fields=normalize([p.businessName,p.serviceType,p.city,p.description].join(" "));const providerLocation=normalize(p.city||"");let score=0;if(raw&&fields.includes(raw))score+=8;if(inferred&&p.serviceType===inferred)score+=5;if(type&&p.serviceType===type)score+=10;for(const word of query){if(fields.includes(word))score+=2;}return {p,score,providerLocation};})
-  .filter(x=>(!type||x.p.serviceType===type)&&(!raw||x.score>0)&&(!requestedLocation||x.providerLocation.includes(requestedLocation)))
+  .filter(x=>(!type||x.p.serviceType===type)&&(!raw||x.score>0)&&(!requestedLocation||requestedLocation.split(/[،,\s]+/).filter(Boolean).every(part=>x.providerLocation.includes(part))))
   .sort((a,b)=>b.score-a.score).map(x=>x.p);
   results.replaceChildren();
   if(!list.length){state.style.display="block";state.textContent=providers.length?"در این مکان و با این فیلتر مورد تأییدشده‌ای پیدا نشد. مکان یا عبارت جست‌وجو را تغییر بده یا درخواستت را ثبت کن.":"هنوز کسب‌وکار تأییدشده‌ای برای نمایش عمومی ثبت نشده است. با ثبت درخواست خدمت می‌توانی نیازت را اعلام کنی؛ ارائه‌دهندگان پس از بررسی و اجازه انتشار اینجا دیده می‌شوند.";return;}
