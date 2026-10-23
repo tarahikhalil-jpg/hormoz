@@ -49,33 +49,21 @@ export class MockIntelligenceEngine implements IntelligenceEngine {
     try {
       let content = await this.provider.generate(requestWithSystemPrompt);
 
-      // Give the real provider one chance to repair a response that fails the Persian guard.
+      // Keep chat latency predictable: do not make a second, slow provider call.
+      // If the response fails the Persian guard, report it honestly rather than returning poor or fabricated text.
       if (isLikelyCorruptedPersian(content, userMessage)) {
-        console.warn("Nava response failed Persian language quality guard; requesting one Persian rewrite.");
-        content = await this.provider.generate({
-          ...requestWithSystemPrompt,
-          messages: [
-            ...messages,
-            {
-              role: "system",
-              content: "پاسخ قبلی از نظر زبان فارسی قابل قبول نبود. پاسخ را از نو، روان و کاملاً به فارسی درست بنویس. فقط پاسخ نهایی را ارائه کن.",
-            },
-          ],
-        });
-        if (isLikelyCorruptedPersian(content, userMessage)) {
-          console.error("Nava provider response still failed the Persian language quality guard.");
-          return {
+        console.warn("Nava response failed Persian language quality guard; refusing low-quality answer without retry.");
+        return {
+          correlationId: request.correlationId,
+          status: "failed",
+          error: {
+            code: "PERSIAN_QUALITY_CHECK_FAILED",
+            category: "unknown",
+            retryable: true,
+            message: "پاسخ موتور هوش مصنوعی از بررسی کیفیت زبان فارسی عبور نکرد. لطفاً دوباره تلاش کنید.",
             correlationId: request.correlationId,
-            status: "failed",
-            error: {
-              code: "PERSIAN_QUALITY_CHECK_FAILED",
-              category: "unknown",
-              retryable: true,
-              message: "پاسخ موتور هوش مصنوعی از بررسی کیفیت زبان فارسی عبور نکرد.",
-              correlationId: request.correlationId,
-            },
-          };
-        }
+          },
+        };
       }
 
       return { content, correlationId: request.correlationId, status: "completed" };
