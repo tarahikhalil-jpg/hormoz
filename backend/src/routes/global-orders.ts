@@ -304,6 +304,23 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
+  app.delete("/api/v1/global-admin/members/test-account/hormoztest777", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند حساب آزمایشی را حذف کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTable();
+      const result = await db.query("DELETE FROM hormoz_global_members WHERE username=$1 RETURNING username", ["hormoztest777"]);
+      if (!result.rows.length) return reply.code(404).send({ message: "حساب آزمایشی hormoztest777 پیدا نشد؛ حسابی حذف نشد." });
+      for (const [token, value] of sessions) if (value.username === "hormoztest777") sessions.delete(token);
+      return { ok: true, message: "حساب آزمایشی hormoztest777 حذف شد و نشست‌های آن باطل شدند." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "حذف حساب آزمایشی انجام نشد؛ لطفاً دوباره تلاش کنید." });
+    }
+  });
+
   app.post("/api/v1/global-admin/members/:id/reset-password", async (request, reply) => {
     const session = adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
