@@ -113,6 +113,12 @@ form.addEventListener("submit", async (event) => {
       trackLink.href = "/track-order.html?code=" + encodeURIComponent(data.trackingCode);
       trackLink.textContent = (lang === "en" ? "Track this request" : "پیگیری همین سفارش");
       result.append(trackLink);
+      const invoiceLink = document.createElement("a");
+      invoiceLink.className = "btn secondary";
+      invoiceLink.href = "/invoice.html?code=" + encodeURIComponent(data.trackingCode);
+      invoiceLink.textContent = (lang === "en" ? "View invoice / receipt" : "مشاهده و چاپ فاکتور");
+      invoiceLink.style.marginInlineStart = "8px";
+      result.append(invoiceLink);
       const copyButton = document.createElement("button");
       copyButton.type = "button";
       copyButton.className = "btn secondary";
