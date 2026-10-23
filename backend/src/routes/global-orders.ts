@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import crypto from "node:crypto";
 import { Pool } from "pg";
 
-type GlobalSession = { expiresAt: number };
+type GlobalSession = { expiresAt: number; role: "owner" | "invoice_approver" | "viewer"; username: string };
 const sessions = new Map<string, GlobalSession>();
 function normalizeDatabaseUrl(value: string | undefined): string {
   if (!value) return "";
@@ -102,7 +102,7 @@ function adminSession(request: any) {
     if (token) sessions.delete(token);
     return false;
   }
-  return true;
+  return session;
 }
 
 function invoiceFromRow(row: any) {
@@ -216,12 +216,14 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     }
     loginFailures.delete(ipKey);
     const token = crypto.randomBytes(32).toString("hex");
-    sessions.set(token, { expiresAt: Date.now() + SESSION_TTL });
+    sessions.set(token, { expiresAt: Date.now() + SESSION_TTL, role: "owner", username: "owner" });
     return { ok: true, token, expiresInSeconds: SESSION_TTL / 1000 };
   });
 
   app.get("/api/v1/global-admin/orders", async (request, reply) => {
-    if (!adminSession(request)) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود لازم است." });
+    if (!["owner", "invoice_approver"].includes(session.role)) return reply.code(403).send({ message: "سطح دسترسی شما اجازه تأیید فاکتور را نمی‌دهد." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
     try {
       await ensureTable();
