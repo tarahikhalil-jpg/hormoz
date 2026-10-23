@@ -318,6 +318,14 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
         if (canSpeakOnDevice) {
           try {
             const synth = window.speechSynthesis;
+            const voices = synth.getVoices();
+            const persianVoice = voices.find((voice) =>
+              /^fa([_-]|$)/i.test(voice.lang) || /persian|فارسی/i.test(voice.name)
+            );
+            if (!persianVoice) {
+              finish("سرویس آنلاین صدا در دسترس نیست و صدای فارسی روی گوشی پیدا نشد. متن پاسخ آماده است؛ در تنظیمات گفتار گوشی، صدای فارسی را نصب کن.");
+              return;
+            }
             synth.cancel();
             let browserIndex = 0;
             const speakNextOnDevice = () => {
@@ -329,10 +337,7 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
               const utterance = new SpeechSynthesisUtterance(chunks[browserIndex++]);
               utterance.lang = "fa-IR";
               utterance.rate = 0.88;
-              const persianVoice = synth.getVoices().find((voice) =>
-                /^fa([_-]|$)/i.test(voice.lang) || /persian|فارسی/i.test(voice.name)
-              );
-              if (persianVoice) utterance.voice = persianVoice;
+              utterance.voice = persianVoice;
               utterance.onstart = () => {
                 speaking = true;
                 setVoiceStatus("سرویس آنلاین در دسترس نیست؛ نوا با صدای گوشی صحبت می‌کند…");
@@ -366,12 +371,16 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
   }
 
   const synthAvailable = ("speechSynthesis" in window) && typeof SpeechSynthesisUtterance !== "undefined";
-  if (!synthAvailable) {
+  const synth = synthAvailable ? window.speechSynthesis : null;
+  const hasPersianVoice = !!synth && synth.getVoices().some((voice) =>
+    /^fa([_-]|$)/i.test(voice.lang) || /persian|فارسی/i.test(voice.name)
+  );
+  // Avoid silently reading Persian text with an unrelated default voice.
+  if (!synthAvailable || !hasPersianVoice) {
     playOnlinePersianAudio();
     return;
   }
 
-  const synth = window.speechSynthesis;
   const startNext = () => {
     if (finished) return;
     if (index >= chunks.length) {
@@ -382,8 +391,14 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
     utterance.lang = "fa-IR";
     utterance.rate = 0.88;
     utterance.pitch = 1;
-    const persianVoice = synth.getVoices().find((voice) => /^fa([_-]|$)/i.test(voice.lang));
-    if (persianVoice) utterance.voice = persianVoice;
+    const persianVoice = synth.getVoices().find((voice) =>
+      /^fa([_-]|$)/i.test(voice.lang) || /persian|فارسی/i.test(voice.name)
+    );
+    if (!persianVoice) {
+      playOnlinePersianAudio();
+      return;
+    }
+    utterance.voice = persianVoice;
 
     utterance.onstart = () => {
       browserStarted = true;
