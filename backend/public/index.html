@@ -275,6 +275,7 @@
     let navaAnswerAudio = null;
     let navaAnswerAudioUrl = null;
     let navaAudioRequestId = 0;
+    let navaFallbackSpeaking = false;
     const answerAudioControls = document.getElementById("answerAudioControls");
     const speakAnswerButton = document.getElementById("speakAnswerButton");
     const stopAnswerAudioButton = document.getElementById("stopAnswerAudioButton");
@@ -292,13 +293,14 @@
         navaAnswerAudioUrl = null;
       }
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      navaFallbackSpeaking = false;
       if (speakAnswerButton) speakAnswerButton.disabled = false;
     }
 
     async function speakNavaAnswer() {
       const answer = document.getElementById("answer");
       const text = (answer.textContent || "").trim();
-      if (!text || !speakAnswerButton) return;
+      if (!text || !speakAnswerButton || speakAnswerButton.disabled) return;
       stopNavaAnswerAudio();
       const requestId = navaAudioRequestId;
       speakAnswerButton.disabled = true;
@@ -367,13 +369,16 @@
               const voices = window.speechSynthesis.getVoices();
               const persianVoice = voices.find(v => /^fa([-_]|$)/i.test(v.lang) || /persian|فارسی/i.test(v.name));
               let voiceIndex = 0;
+              navaFallbackSpeaking = true;
               answerAudioStatus.textContent = persianVoice
                 ? "صدای آنلاین در دسترس نیست؛ نوا با صدای گوشی صحبت می‌کند…"
                 : "صدای آنلاین در دسترس نیست؛ در حال امتحان صدای گوشی هستیم…";
               const speakNext = () => {
                 if (requestId !== navaAudioRequestId) return;
                 if (voiceIndex >= voiceChunks.length) {
+                  navaFallbackSpeaking = false;
                   answerAudioStatus.textContent = "پاسخ نوا با صدای گوشی پخش شد.";
+                  speakAnswerButton.disabled = false;
                   return;
                 }
                 const utterance = new SpeechSynthesisUtterance(voiceChunks[voiceIndex++]);
@@ -382,7 +387,9 @@
                 utterance.rate = 0.92;
                 utterance.onend = speakNext;
                 utterance.onerror = () => {
+                  navaFallbackSpeaking = false;
                   if (requestId === navaAudioRequestId) {
+                    speakAnswerButton.disabled = false;
                     answerAudioStatus.textContent = "صدای آنلاین قطع است و گوشی هم صدای فارسی آماده ندارد. در تنظیمات تبدیل متن به گفتار گوشی، صدای فارسی را نصب کن.";
                   }
                 };
@@ -390,6 +397,8 @@
               };
               speakNext();
             } catch (fallbackError) {
+              navaFallbackSpeaking = false;
+              speakAnswerButton.disabled = false;
               answerAudioStatus.textContent = "سرویس صدای آنلاین در دسترس نیست و صدای گوشی هم فعال نشد.";
             }
           } else {
@@ -397,7 +406,8 @@
           }
         }
       } finally {
-        if (requestId === navaAudioRequestId) speakAnswerButton.disabled = false;
+        // Keep the button locked while device TTS is speaking, preventing overlapping/echoed playback.
+        if (requestId === navaAudioRequestId && !navaFallbackSpeaking) speakAnswerButton.disabled = false;
       }
     }
 
