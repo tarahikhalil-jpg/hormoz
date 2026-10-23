@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071b2b">
+<meta name="description" content="مشاهده و چاپ پیش‌فاکتور و فاکتور هوش هرمز با کد رهگیری محرمانه">
+<title>فاکتور مشتری | هوش هرمز</title>
+<style>
+:root{color-scheme:dark;--bg:#071522;--panel:#102b40;--line:#35566c;--text:#f3f8fc;--muted:#c3d4e1;--teal:#70f1e6;--gold:#ffd782}
+*{box-sizing:border-box}body{margin:0;padding:14px;background:radial-gradient(ellipse at top,#17435a 0,#071522 65%);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.9}main{max-width:820px;margin:auto}.hero{text-align:center;padding:20px 8px}.hero h1{margin:0;color:var(--gold);font-size:clamp(25px,5vw,38px)}.panel{background:linear-gradient(145deg,#12344a,#0b1d2b);border:1px solid var(--line);border-radius:18px;padding:clamp(15px,3vw,25px);margin:14px 0}.muted{color:var(--muted);font-size:13px}.field{display:flex;flex-direction:column;gap:6px}input{width:100%;padding:12px;border:1px solid #47667a;border-radius:10px;background:#071522;color:var(--text);font:inherit}.ltr{direction:ltr;text-align:left}.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border:0;border-radius:11px;background:linear-gradient(145deg,#fff0bc,#c88b2f);color:#142333;font:inherit;font-weight:bold;text-decoration:none;cursor:pointer}.btn:disabled{opacity:.6}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px}.result{margin-top:13px}.error{border:1px solid #9b5252;background:#401f25;padding:12px;border-radius:12px}.notice{border:1px solid #7e6a3a;background:#302a1a;border-radius:12px;padding:12px;color:#ffebba;font-size:13px}.invoice{background:#fff;color:#182531;border-radius:12px;padding:clamp(16px,4vw,30px);margin-top:16px}.invoice h2{margin-top:0;color:#12344a}.invoice-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:2px solid #d6e0e8;padding-bottom:12px}.badge{display:inline-block;border-radius:20px;padding:3px 10px;background:#e9f0f5;color:#243849;font-size:13px}.rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}.row{border:1px solid #d9e2e9;border-radius:8px;padding:10px;overflow-wrap:anywhere}.row small{display:block;color:#526575}.row strong{display:block}.total{font-size:22px;color:#12344a}.history{padding-right:20px}.history li{margin:6px 0}footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
+@media(max-width:560px){body{padding:8px}.rows{grid-template-columns:1fr}.actions .btn{flex:1 1 100%}}
+@media print{body{background:#fff;color:#182531;padding:0}.hero,.lookup,.actions,.screen-only,footer{display:none!important}main{max-width:none}.panel{background:#fff;border:0;box-shadow:none;padding:0;margin:0}.invoice{display:block!important;border:1px solid #ddd;box-shadow:none;margin:0;padding:18px}.invoice .row{break-inside:avoid}.muted{color:#455}}
+</style></head>
+<body><main>
+<header class="hero"><div style="font-size:38px">💡</div><h1>فاکتور هوشمند هرمز</h1><p class="muted">فاکتور و وضعیت سفارش با کد رهگیری محرمانه</p></header>
+<section class="panel lookup">
+<h2>🔎 مشاهده فاکتور</h2>
+<p class="muted">کد رهگیری را که از زمان ثبت سفارش دریافت کرده‌اید وارد کنید. این کد را فقط با مشتری یا فرد مجاز به مشاهده پرونده به اشتراک بگذارید.</p>
+<form id="lookupForm"><div class="field"><label for="trackingCode">کد رهگیری</label><input id="trackingCode" class="ltr" maxlength="60" required autocomplete="off" placeholder="کد رهگیری را وارد کنید"></div><div class="actions"><button class="btn" id="lookupButton" type="submit">نمایش فاکتور</button><a class="btn" style="background:transparent;border:1px solid #35566c;color:#f3f8fc" href="/orders.html">ثبت درخواست جدید</a></div></form>
+<div id="result" class="result" aria-live="polite"></div>
+</section>
+<section id="invoiceArea" class="panel" hidden>
+<div id="invoiceContent" class="invoice"></div>
+<div class="actions screen-only"><button class="btn" type="button" onclick="window.print()">🖨️ چاپ / ذخیره PDF</button><button class="btn" type="button" id="shareButton" style="background:#d5f7f2">🔗 آماده‌سازی پیوند برای مشتری</button></div>
+<p class="muted screen-only">برای ذخیره PDF، در پنجره چاپ گوشی یا رایانه گزینه «ذخیره به‌صورت PDF» را انتخاب کنید.</p>
+</section>
+<footer>هوش هرمز • نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const statusLabels={submitted:"درخواست ثبت شده؛ در انتظار بررسی",quoted:"پیش‌فاکتور آماده بررسی مشتری",accepted:"پذیرفته‌شده",in_progress:"در حال انجام",completed:"انجام‌شده",cancelled:"لغوشده",awaiting_review:"در انتظار بررسی مدیر",awaiting_customer_approval:"در انتظار تأیید مشتری",approved:"تأییدشده",paid:"پرداخت‌شده",unpaid:"پرداخت‌نشده",issued:"صادرشده",cancelled:"لغوشده"};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const date=s=>{if(!s)return "تعیین نشده";const d=new Date(s);return Number.isNaN(d.getTime())?"تعیین نشده":d.toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"})};
+const money=(n,c)=>n==null?"پس از بررسی مدیر مشخص می‌شود":Number(n).toLocaleString("fa-IR")+" "+(c==="IRR"?"ریال":esc(c||"")) ;
+function render(data,token){
+ const i=data.invoice||{};const verified=i.humanVerified===true;
+ const isFinal=["issued","approved","paid"].includes(i.status);
+ const title=verified?"پیش‌فاکتور تأییدشده توسط مدیر":"رسید ثبت درخواست و پرونده فاکتور";
+ const invoiceStatus=statusLabels[i.status]||i.status||"در انتظار بررسی";
+ const rows=[
+  ["شماره فاکتور",i.invoiceNumber||"در دسترس نیست"],
+  ["شماره سفارش",data.orderNumber||"—"],
+  ["نوع خدمت",data.serviceType||"—"],
+  ["وضعیت سفارش",statusLabels[data.status]||data.status||"—"],
+  ["وضعیت فاکتور",invoiceStatus],
+  ["مبلغ خدمت",money(i.amount,i.currency)],
+  ["نرخ کارمزد هرمز",i.commissionRate==null?"تعیین نشده":Number(i.commissionRate).toLocaleString("fa-IR")+"٪"],
+  ["کارمزد هرمز",money(i.hormozFee,i.currency)],
+  ["سهم ارائه‌دهنده",money(i.providerShare,i.currency)],
+  ["زمان تقریبی انجام",date(i.estimatedCompletionAt)],
+  ["محدوده خدمت",i.targetRegion||"تعیین نشده"],
+  ["مدت انتشار / خدمت",i.publicationDuration||"تعیین نشده"],
+  ["تاریخ ثبت",date(data.createdAt)],
+  ["آخرین به‌روزرسانی",date(data.updatedAt)]
+ ];
+ const history=[...(Array.isArray(data.history)?data.history:[]),...(Array.isArray(data.invoiceHistory)?data.invoiceHistory:[])].sort((a,b)=>new Date(a.at)-new Date(b.at));
+ $("invoiceContent").innerHTML='<div class="invoice-head"><div><h2>💡 هوش هرمز</h2><strong>'+title+'</strong><div>شماره: '+esc(i.invoiceNumber||"در انتظار تکمیل")+'</div></div><div><span class="badge">'+esc(invoiceStatus)+'</span><p style="margin-bottom:0"><small>وضعیت انسانی: '+(verified?"بررسی مدیر انجام شده":"هنوز تأیید نهایی مدیر ثبت نشده")+'</small></p></div></div>'+
+ (!verified?'<p class="notice" style="color:#7a4c00;background:#fff5d8;border-color:#e3c36a">این مدرک هنوز فاکتور مالی نهایی نیست. مبلغ و کارمزد تا تأیید مدیر قطعی نیست و ثبت سفارش به معنی پرداخت یا رزرو نیست.</p>':'<p class="notice" style="color:#16513d;background:#e9fff5;border-color:#7bc6a8">اطلاعات قیمت توسط مدیر بررسی شده است. این سامانه پرداخت بانکی را انجام نمی‌دهد؛ وضعیت پرداخت تنها پس از ثبت تأیید معتبر پرداخت قابل تغییر است.</p>')+
+ '<div class="rows">'+rows.map(r=>'<div class="row"><small>'+esc(r[0])+'</small><strong>'+esc(r[1])+'</strong></div>').join("")+'</div>'+
+ '<p class="total">مبلغ کل: '+esc(money(i.amount,i.currency))+'</p>'+
+ '<h3>تاریخچه پیگیری</h3>'+(history.length?'<ol class="history">'+history.map(h=>'<li><strong>'+esc(statusLabels[h.status]||h.status||"به‌روزرسانی")+'</strong> — '+esc(date(h.at))+(h.note?' <br><small>'+esc(h.note)+'</small>':'')+'</li>').join("")+'</ol>':'<p>تاریخچه‌ای ثبت نشده است.</p>')+
+ '<p><small>کد رهگیری: <span style="direction:ltr;display:inline-block;overflow-wrap:anywhere">'+esc(token)+'</span></small></p><p><small>این سند وضعیت ثبت‌شده در سامانه را نمایش می‌دهد؛ برای امور مالیاتی یا حقوقی رسمی، ضوابط مربوط و اطلاعات صادرکننده باید جداگانه بررسی شوند.</small></p>';
+ $("invoiceArea").hidden=false;
+}
+async function load(code){
+ $("result").textContent="در حال دریافت اطلاعات…";$("invoiceArea").hidden=true;$("lookupButton").disabled=true;
+ try{
+  const r=await fetch("/api/v1/global-orders/track/"+encodeURIComponent(code),{cache:"no-store"});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.message||"دریافت فاکتور موفق نبود؛ کد را بررسی کنید.");
+  render(d,code);$("result").textContent="";
+ }catch(e){$("result").innerHTML='<div class="error">'+esc(e.message||"ارتباط با سامانه برقرار نشد.")+'</div>'}
+ finally{$("lookupButton").disabled=false}
+}
+$("lookupForm").addEventListener("submit",e=>{e.preventDefault();const code=$("trackingCode").value.trim();if(code)load(code)});
+$("shareButton").addEventListener("click",async()=>{const code=$("trackingCode").value.trim();const url=location.origin+"/invoice.html?code="+encodeURIComponent(code);try{if(navigator.share){await navigator.share({title:"فاکتور هوش هرمز",text:"برای مشاهده فاکتور و وضعیت سفارش از این پیوند استفاده کنید.",url})}else if(navigator.clipboard){await navigator.clipboard.writeText(url);alert("پیوند فاکتور کپی شد؛ آن را فقط برای مشتری مجاز بفرستید.")}else{prompt("این پیوند را کپی کنید:",url)}}catch{}});
+const params=new URLSearchParams(location.search);const initial=params.get("code");if(initial){$("trackingCode").value=initial;load(initial)}
+</script></body></html>
