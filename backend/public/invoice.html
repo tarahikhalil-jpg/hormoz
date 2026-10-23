@@ -28,51 +28,69 @@
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const statusLabels={submitted:"درخواست ثبت شده؛ در انتظار بررسی",quoted:"پیش‌فاکتور آماده بررسی مشتری",accepted:"پذیرفته‌شده",in_progress:"در حال انجام",completed:"انجام‌شده",cancelled:"لغوشده",awaiting_review:"در انتظار بررسی مدیر",awaiting_customer_approval:"در انتظار تأیید مشتری",approved:"تأییدشده",paid:"پرداخت‌شده",unpaid:"پرداخت‌نشده",issued:"صادرشده",cancelled:"لغوشده"};
+const dictionaries={
+fa:{
+dir:"rtl",title:"فاکتور هوشمند هرمز",subtitle:"فاکتور و وضعیت سفارش با کد رهگیری محرمانه",lookup:"مشاهده فاکتور",codeLabel:"کد رهگیری",placeholder:"کد رهگیری را وارد کنید",submit:"نمایش فاکتور",newRequest:"ثبت درخواست جدید",loading:"در حال دریافت اطلاعات…",badCode:"دریافت فاکتور موفق نبود؛ کد را بررسی کنید.",connection:"ارتباط با سامانه برقرار نشد.",waiting:"در انتظار بررسی",notAvailable:"در دسترس نیست",notSet:"تعیین نشده",afterReview:"پس از بررسی مدیر مشخص می‌شود",invoiceNo:"شماره فاکتور",orderNo:"شماره سفارش",service:"نوع خدمت",orderStatus:"وضعیت سفارش",invoiceStatus:"وضعیت فاکتور",amount:"مبلغ خدمت",commissionRate:"نرخ کارمزد هرمز",fee:"کارمزد هرمز",providerShare:"سهم ارائه‌دهنده",estimated:"زمان تقریبی انجام",region:"محدوده خدمت",duration:"مدت انتشار / خدمت",created:"تاریخ ثبت",updated:"آخرین به‌روزرسانی",total:"مبلغ کل",history:"تاریخچه پیگیری",noHistory:"تاریخچه‌ای ثبت نشده است.",tracking:"کد رهگیری",managerChecked:"بررسی مدیر انجام شده",managerPending:"هنوز تأیید نهایی مدیر ثبت نشده",verifiedTitle:"پیش‌فاکتور تأییدشده توسط مدیر",receiptTitle:"رسید ثبت درخواست و پرونده فاکتور",pendingNotice:"این مدرک هنوز فاکتور مالی نهایی نیست. مبلغ و کارمزد تا تأیید مدیر قطعی نیست و ثبت سفارش به معنی پرداخت یا رزرو نیست.",verifiedNotice:"اطلاعات قیمت توسط مدیر بررسی شده است. این سامانه پرداخت بانکی را انجام نمی‌دهد؛ وضعیت پرداخت تنها پس از ثبت تأیید معتبر پرداخت قابل تغییر است.",humanStatus:"وضعیت بررسی انسانی",printHelp:"برای ذخیره PDF، در پنجره چاپ گوشی یا رایانه گزینه «ذخیره به‌صورت PDF» را انتخاب کنید.",share:"آماده‌سازی پیوند برای مشتری",print:"چاپ / ذخیره PDF",shareTitle:"فاکتور هوش هرمز",shareText:"برای مشاهده فاکتور و وضعیت سفارش از این پیوند استفاده کنید.",copied:"پیوند فاکتور کپی شد؛ آن را فقط برای مشتری مجاز بفرستید.",documentNote:"این سند وضعیت ثبت‌شده در سامانه را نمایش می‌دهد؛ برای امور مالیاتی یا حقوقی رسمی، ضوابط مربوط و اطلاعات صادرکننده باید جداگانه بررسی شوند.",labels:{submitted:"درخواست ثبت شده؛ در انتظار بررسی",quoted:"پیش‌فاکتور آماده بررسی مشتری",accepted:"پذیرفته‌شده",in_progress:"در حال انجام",completed:"انجام‌شده",cancelled:"لغوشده",awaiting_review:"در انتظار بررسی مدیر",awaiting_customer_approval:"در انتظار تأیید مشتری",approved:"تأییدشده",paid:"پرداخت‌شده",unpaid:"پرداخت‌نشده",issued:"صادرشده",other:"به‌روزرسانی"},services:{accommodation:"اقامت",hotel:"هتل",transport:"حمل‌ونقل",taxi:"تاکسی",tourism:"گردشگری و راهنما",restaurant:"رستوران و غذا",cafe:"کافه",repair:"تعمیرات",electrician:"برق‌کار",skill:"معرفی مهارت و اشتغال",letter:"نامه و مکاتبه / پیگیری اداری",invoice:"پیگیری پرونده فاکتور",other:"سایر خدمات",provider:"خدمت ارائه‌دهنده"}},
+en:{
+dir:"ltr",title:"Hormoz Smart Invoice",subtitle:"Invoice and order status using a private tracking code",lookup:"View invoice",codeLabel:"Tracking code",placeholder:"Enter your tracking code",submit:"View invoice",newRequest:"Submit a new request",loading:"Loading invoice details…",badCode:"Could not retrieve the invoice. Check the tracking code.",connection:"Could not connect to the service.",waiting:"Pending review",notAvailable:"Not available",notSet:"Not specified",afterReview:"Available after manager review",invoiceNo:"Invoice number",orderNo:"Order number",service:"Service type",orderStatus:"Order status",invoiceStatus:"Invoice status",amount:"Service amount",commissionRate:"Hormoz commission rate",fee:"Hormoz fee",providerShare:"Provider share",estimated:"Estimated completion",region:"Service area",duration:"Publication / service duration",created:"Date created",updated:"Last updated",total:"Total amount",history:"Tracking history",noHistory:"No history has been recorded.",tracking:"Tracking code",managerChecked:"Reviewed by manager",managerPending:"Final manager approval has not been recorded",verifiedTitle:"Manager-reviewed pro forma invoice",receiptTitle:"Request receipt and invoice record",pendingNotice:"This is not a final financial invoice. The amount and fee are not final until reviewed by a manager. Submitting a request does not confirm payment or booking.",verifiedNotice:"Pricing has been reviewed by a manager. This system does not process bank payments; payment status changes only after valid payment confirmation is recorded.",humanStatus:"Human review status",printHelp:"To save as PDF, choose “Save as PDF” in your device’s print dialog.",share:"Prepare customer link",print:"Print / Save PDF",shareTitle:"Hormoz invoice",shareText:"Use this link to view the invoice and order status.",copied:"Invoice link copied. Share it only with the authorized customer.",documentNote:"This document displays the status recorded in the system. For official tax or legal use, verify applicable rules and issuer details separately.",labels:{submitted:"Request submitted — pending review",quoted:"Pro forma invoice ready for customer review",accepted:"Accepted",in_progress:"In progress",completed:"Completed",cancelled:"Cancelled",awaiting_review:"Pending manager review",awaiting_customer_approval:"Awaiting customer approval",approved:"Approved",paid:"Paid",unpaid:"Unpaid",issued:"Issued",other:"Updated"},services:{accommodation:"Accommodation",hotel:"Hotel",transport:"Transportation",taxi:"Taxi",tourism:"Tourism and guide",restaurant:"Restaurant and food",cafe:"Café",repair:"Repairs",electrician:"Electrician",skill:"Skills and employment",letter:"Letter / administrative follow-up",invoice:"Invoice case follow-up",other:"Other services",provider:"Provider service"}}
+};
+let L=dictionaries.fa;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const date=s=>{if(!s)return "تعیین نشده";const d=new Date(s);return Number.isNaN(d.getTime())?"تعیین نشده":d.toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"})};
-const money=(n,c)=>n==null?"پس از بررسی مدیر مشخص می‌شود":Number(n).toLocaleString("fa-IR")+" "+(c==="IRR"?"ریال":esc(c||"")) ;
+const date=s=>{if(!s)return L.notSet;const d=new Date(s);return Number.isNaN(d.getTime())?L.notSet:d.toLocaleString(L===dictionaries.fa?"fa-IR":"en-GB",{dateStyle:"medium",timeStyle:"short"})};
+const money=(n,c)=>n==null?L.afterReview:Number(n).toLocaleString(L===dictionaries.fa?"fa-IR":"en-GB")+" "+(c==="IRR"?(L===dictionaries.fa?"ریال":"IRR"):esc(c||""));
+const status=s=>L.labels[s]||s||L.waiting;
+const service=s=>L.services[s]||s||L.notSet;
+function setLanguage(lang){
+ L=dictionaries[lang==="en"?"en":"fa"];
+ document.documentElement.lang=lang==="en"?"en":"fa";document.documentElement.dir=L.dir;
+ document.title=L.title+" | Hormoz";
+ document.querySelector(".hero h1").textContent=L.title;
+ document.querySelector(".hero p").textContent=L.subtitle;
+ document.querySelector(".lookup h2").textContent="🔎 "+L.lookup;
+ document.querySelector(".lookup .muted").textContent=lang==="en"?"Enter the tracking code provided when the request was submitted. Share it only with the customer or a person authorized to view the case.":"کد رهگیری را که هنگام ثبت درخواست دریافت کرده‌اید وارد کنید. این کد را فقط با مشتری یا فرد مجاز به مشاهده پرونده به اشتراک بگذارید.";
+ document.querySelector('label[for="trackingCode"]').textContent=L.codeLabel;
+ $("trackingCode").placeholder=L.placeholder;$("lookupButton").textContent=L.submit;
+ document.querySelector('a[href="/orders.html"]').textContent=L.newRequest;
+ document.querySelector(".screen-only .muted").textContent=L.printHelp;
+ $("shareButton").textContent="🔗 "+L.share;
+ document.querySelector('button[onclick="window.print()"]').textContent="🖨️ "+L.print;
+}
 function render(data,token){
+ setLanguage(data.language||"fa");
  const i=data.invoice||{};const verified=i.humanVerified===true;
- const isFinal=["issued","approved","paid"].includes(i.status);
- const title=verified?"پیش‌فاکتور تأییدشده توسط مدیر":"رسید ثبت درخواست و پرونده فاکتور";
- const invoiceStatus=statusLabels[i.status]||i.status||"در انتظار بررسی";
+ const title=verified?L.verifiedTitle:L.receiptTitle;
+ const invoiceStatus=status(i.status);
  const rows=[
-  ["شماره فاکتور",i.invoiceNumber||"در دسترس نیست"],
-  ["شماره سفارش",data.orderNumber||"—"],
-  ["نوع خدمت",data.serviceType||"—"],
-  ["وضعیت سفارش",statusLabels[data.status]||data.status||"—"],
-  ["وضعیت فاکتور",invoiceStatus],
-  ["مبلغ خدمت",money(i.amount,i.currency)],
-  ["نرخ کارمزد هرمز",i.commissionRate==null?"تعیین نشده":Number(i.commissionRate).toLocaleString("fa-IR")+"٪"],
-  ["کارمزد هرمز",money(i.hormozFee,i.currency)],
-  ["سهم ارائه‌دهنده",money(i.providerShare,i.currency)],
-  ["زمان تقریبی انجام",date(i.estimatedCompletionAt)],
-  ["محدوده خدمت",i.targetRegion||"تعیین نشده"],
-  ["مدت انتشار / خدمت",i.publicationDuration||"تعیین نشده"],
-  ["تاریخ ثبت",date(data.createdAt)],
-  ["آخرین به‌روزرسانی",date(data.updatedAt)]
+ [L.invoiceNo,i.invoiceNumber||L.notAvailable],[L.orderNo,data.orderNumber||"—"],
+ [L.service,service(data.serviceType)],[L.orderStatus,status(data.status)],
+ [L.invoiceStatus,invoiceStatus],[L.amount,money(i.amount,i.currency)],
+ [L.commissionRate,i.commissionRate==null?L.notSet:Number(i.commissionRate).toLocaleString(L===dictionaries.fa?"fa-IR":"en-GB")+"%"],
+ [L.fee,money(i.hormozFee,i.currency)],[L.providerShare,money(i.providerShare,i.currency)],
+ [L.estimated,date(i.estimatedCompletionAt)],[L.region,i.targetRegion||L.notSet],
+ [L.duration,i.publicationDuration||L.notSet],[L.created,date(data.createdAt)],[L.updated,date(data.updatedAt)]
  ];
  const history=[...(Array.isArray(data.history)?data.history:[]),...(Array.isArray(data.invoiceHistory)?data.invoiceHistory:[])].sort((a,b)=>new Date(a.at)-new Date(b.at));
- $("invoiceContent").innerHTML='<div class="invoice-head"><div><h2>💡 هوش هرمز</h2><strong>'+title+'</strong><div>شماره: '+esc(i.invoiceNumber||"در انتظار تکمیل")+'</div></div><div><span class="badge">'+esc(invoiceStatus)+'</span><p style="margin-bottom:0"><small>وضعیت انسانی: '+(verified?"بررسی مدیر انجام شده":"هنوز تأیید نهایی مدیر ثبت نشده")+'</small></p></div></div>'+
- (!verified?'<p class="notice" style="color:#7a4c00;background:#fff5d8;border-color:#e3c36a">این مدرک هنوز فاکتور مالی نهایی نیست. مبلغ و کارمزد تا تأیید مدیر قطعی نیست و ثبت سفارش به معنی پرداخت یا رزرو نیست.</p>':'<p class="notice" style="color:#16513d;background:#e9fff5;border-color:#7bc6a8">اطلاعات قیمت توسط مدیر بررسی شده است. این سامانه پرداخت بانکی را انجام نمی‌دهد؛ وضعیت پرداخت تنها پس از ثبت تأیید معتبر پرداخت قابل تغییر است.</p>')+
+ const note=h=>{if(!h.note)return "";if(L===dictionaries.en){if(h.note.includes("درخواست ثبت شد"))return "Request submitted; booking or payment is not confirmed.";if(h.note.includes("پرونده فاکتور خودکار ساخته شد"))return "Invoice record created automatically; amount pending human verification.";}return h.note};
+ $("invoiceContent").innerHTML='<div class="invoice-head"><div><h2>💡 '+esc(L.title)+'</h2><strong>'+esc(title)+'</strong><div>'+esc(L.invoiceNo)+': '+esc(i.invoiceNumber||L.waiting)+'</div></div><div><span class="badge">'+esc(invoiceStatus)+'</span><p style="margin-bottom:0"><small>'+esc(L.humanStatus)+': '+(verified?esc(L.managerChecked):esc(L.managerPending))+'</small></p></div></div>'+
+ (!verified?'<p class="notice" style="color:#7a4c00;background:#fff5d8;border-color:#e3c36a">'+esc(L.pendingNotice)+'</p>':'<p class="notice" style="color:#16513d;background:#e9fff5;border-color:#7bc6a8">'+esc(L.verifiedNotice)+'</p>')+
  '<div class="rows">'+rows.map(r=>'<div class="row"><small>'+esc(r[0])+'</small><strong>'+esc(r[1])+'</strong></div>').join("")+'</div>'+
- '<p class="total">مبلغ کل: '+esc(money(i.amount,i.currency))+'</p>'+
- '<h3>تاریخچه پیگیری</h3>'+(history.length?'<ol class="history">'+history.map(h=>'<li><strong>'+esc(statusLabels[h.status]||h.status||"به‌روزرسانی")+'</strong> — '+esc(date(h.at))+(h.note?' <br><small>'+esc(h.note)+'</small>':'')+'</li>').join("")+'</ol>':'<p>تاریخچه‌ای ثبت نشده است.</p>')+
- '<p><small>کد رهگیری: <span style="direction:ltr;display:inline-block;overflow-wrap:anywhere">'+esc(token)+'</span></small></p><p><small>این سند وضعیت ثبت‌شده در سامانه را نمایش می‌دهد؛ برای امور مالیاتی یا حقوقی رسمی، ضوابط مربوط و اطلاعات صادرکننده باید جداگانه بررسی شوند.</small></p>';
+ '<p class="total">'+esc(L.total)+': '+esc(money(i.amount,i.currency))+'</p>'+
+ '<h3>'+esc(L.history)+'</h3>'+(history.length?'<ol class="history">'+history.map(h=>'<li><strong>'+esc(status(h.status))+'</strong> — '+esc(date(h.at))+(note(h)?' <br><small>'+esc(note(h))+'</small>':'')+'</li>').join("")+'</ol>':'<p>'+esc(L.noHistory)+'</p>')+
+ '<p><small>'+esc(L.tracking)+': <span style="direction:ltr;display:inline-block;overflow-wrap:anywhere">'+esc(token)+'</span></small></p><p><small>'+esc(L.documentNote)+'</small></p>';
  $("invoiceArea").hidden=false;
 }
 async function load(code){
- $("result").textContent="در حال دریافت اطلاعات…";$("invoiceArea").hidden=true;$("lookupButton").disabled=true;
+ $("result").textContent=L.loading;$("invoiceArea").hidden=true;$("lookupButton").disabled=true;
  try{
   const r=await fetch("/api/v1/global-orders/track/"+encodeURIComponent(code),{cache:"no-store"});
   const d=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(d.message||"دریافت فاکتور موفق نبود؛ کد را بررسی کنید.");
+  if(!r.ok)throw new Error(d.message||L.badCode);
   render(d,code);$("result").textContent="";
- }catch(e){$("result").innerHTML='<div class="error">'+esc(e.message||"ارتباط با سامانه برقرار نشد.")+'</div>'}
+ }catch(e){$("result").innerHTML='<div class="error">'+esc(e.message||L.connection)+'</div>'}
  finally{$("lookupButton").disabled=false}
 }
 $("lookupForm").addEventListener("submit",e=>{e.preventDefault();const code=$("trackingCode").value.trim();if(code)load(code)});
-$("shareButton").addEventListener("click",async()=>{const code=$("trackingCode").value.trim();const url=location.origin+"/invoice.html?code="+encodeURIComponent(code);try{if(navigator.share){await navigator.share({title:"فاکتور هوش هرمز",text:"برای مشاهده فاکتور و وضعیت سفارش از این پیوند استفاده کنید.",url})}else if(navigator.clipboard){await navigator.clipboard.writeText(url);alert("پیوند فاکتور کپی شد؛ آن را فقط برای مشتری مجاز بفرستید.")}else{prompt("این پیوند را کپی کنید:",url)}}catch{}});
+$("shareButton").addEventListener("click",async()=>{const code=$("trackingCode").value.trim();const url=location.origin+"/invoice.html?code="+encodeURIComponent(code);try{if(navigator.share){await navigator.share({title:L.shareTitle,text:L.shareText,url})}else if(navigator.clipboard){await navigator.clipboard.writeText(url);alert(L.copied)}else{prompt(L.share+":",url)}}catch{}});
+setLanguage("fa");
 const params=new URLSearchParams(location.search);const initial=params.get("code");if(initial){$("trackingCode").value=initial;load(initial)}
 </script></body></html>
