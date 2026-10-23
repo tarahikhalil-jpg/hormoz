@@ -41,6 +41,26 @@ main{max-width:980px;margin:auto}.hero{text-align:center;padding:25px 10px 15px}
 <form id="memberRegisterForm"><div class="grid">
 <div class="field"><label for="registerFullName">نام و نام خانوادگی</label><input id="registerFullName" maxlength="100" required autocomplete="name"></div>
 <div class="field"><label for="registerContact">راه تماس (اختیاری)</label><input id="registerContact" maxlength="160" autocomplete="email" placeholder="ایمیل یا راه تماس"></div>
+<div class="field full"><label>در کدام بخش‌ها می‌توانی همکاری کنی؟ (حداقل یک مورد)</label>
+<div class="grid" id="collaborationAreas">
+<label class="check"><input type="checkbox" name="collaborationArea" value="technology"><span>فناوری، برنامه‌نویسی و پشتیبانی فنی</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="nava_content"><span>نوا، تولید محتوا، نوشتن و ترجمه</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="business_outreach"><span>معرفی کسب‌وکارها و جذب آگهی</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="customer_support"><span>پاسخ‌گویی و راهنمایی کاربران</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="order_coordination"><span>هماهنگی سفارش‌ها و پیگیری خدمات</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="service_provider"><span>ارائه مستقیم خدمت یا تخصص خودم</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="sales_products"><span>فروش کالا و معرفی محصولات</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="tourism"><span>گردشگری، اقامت و راهنمای محلی</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="education"><span>آموزش، تدریس و مشاوره</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="design_media"><span>طراحی، پوستر، عکس و ویدیو</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="delivery"><span>تحویل، ارسال و هماهنگی محلی</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="community_support"><span>کمک اجتماعی و حمایت از افراد نیازمند دیده‌شدن</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="testing_security"><span>آزمایش سامانه، گزارش خطا و امنیت</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="accounting_admin"><span>حسابداری یا کارهای اداری (فقط با تأیید ویژه مدیر)</span></label>
+<label class="check"><input type="checkbox" name="collaborationArea" value="other"><span>سایر توانایی‌ها</span></label>
+</div></div>
+<div class="field full"><label for="registerSkills">چه مهارت یا کمکی می‌توانی ارائه کنی؟</label><textarea id="registerSkills" maxlength="1500" placeholder="مثلاً زبان‌ها، تجربه، تخصص، منطقه‌ای که می‌شناسی یا نوع کاری که می‌توانی انجام بدهی"></textarea></div>
+<div class="field full"><label for="registerAvailability">چه زمانی و به چه صورتی می‌توانی همکاری کنی؟ (اختیاری)</label><input id="registerAvailability" maxlength="300" placeholder="مثلاً چند ساعت در هفته، دورکاری یا حضوری، روزها یا ساعات مناسب"></div>
 <div class="field"><label for="registerUsername">نام کاربری انگلیسی</label><input id="registerUsername" minlength="3" maxlength="40" pattern="[A-Za-z0-9._-]+" required autocomplete="username"></div>
 <div class="field"><label for="registerPassword">گذرواژه (حداقل ۱۲ نویسه)</label><input id="registerPassword" type="password" minlength="12" maxlength="200" required autocomplete="new-password"></div>
 <div class="field"><label for="registerPasswordConfirm">تکرار گذرواژه</label><input id="registerPasswordConfirm" type="password" minlength="12" maxlength="200" required autocomplete="new-password"></div>
@@ -86,7 +106,9 @@ $("memberRegisterForm").addEventListener("submit",async e=>{
  try{
   const r=await fetch("/api/v1/global-admin/member-register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
    fullName:$("registerFullName").value.trim(),contact:$("registerContact").value.trim(),
-   username:$("registerUsername").value.trim(),password:$("registerPassword").value
+   username:$("registerUsername").value.trim(),password:$("registerPassword").value,
+   collaborationAreas:[...document.querySelectorAll('input[name="collaborationArea"]:checked')].map(el=>el.value),
+   collaborationSkills:$("registerSkills").value.trim(),collaborationAvailability:$("registerAvailability").value.trim()
   })});
   const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.message||"ثبت درخواست ناموفق بود.");
   $("memberRegisterForm").reset();show(out,d.message||"درخواست ثبت شد و پس از تأیید مدیر امکان ورود فراهم می‌شود.");
@@ -149,6 +171,11 @@ async function loadMembers(){
    const card=document.createElement("div");card.className="order-card";
    card.append(safe("strong",(m.full_name?m.full_name+" — ":"")+m.username));
    if(m.contact)card.append(safe("p","راه تماس: "+m.contact));
+   const areaLabels={technology:"فناوری و پشتیبانی فنی",nava_content:"نوا و تولید محتوا",business_outreach:"معرفی کسب‌وکار و آگهی",customer_support:"پشتیبانی کاربران",order_coordination:"هماهنگی سفارش‌ها",service_provider:"ارائه خدمت تخصصی",sales_products:"فروش کالا و محصولات",tourism:"گردشگری و اقامت",education:"آموزش و مشاوره",design_media:"طراحی و رسانه",delivery:"تحویل و ارسال",community_support:"کمک اجتماعی",testing_security:"آزمایش و امنیت",accounting_admin:"حسابداری و امور اداری",other:"سایر"};
+   const areas=Array.isArray(m.collaboration_areas)?m.collaboration_areas:[];
+   card.append(safe("p","بخش‌های موردعلاقه: "+(areas.map(a=>areaLabels[a]||a).join("، ")||"ثبت نشده")));
+   if(m.collaboration_skills)card.append(safe("p","توانایی‌ها و پیشنهاد همکاری: "+m.collaboration_skills));
+   if(m.collaboration_availability)card.append(safe("p","زمان و شیوه همکاری: "+m.collaboration_availability));
    card.append(safe("p","وضعیت: "+({pending:"در انتظار تأیید شما",approved:"تأیید شده",rejected:"رد شده"}[m.status]||m.status||"نامشخص")));
    card.append(safe("p","نقش: "+(m.role==="invoice_approver"?"تأییدکننده سفارش و فاکتور":"مشاهده‌گر فقط‌خواندنی")));
    if(m.status==="pending"){
