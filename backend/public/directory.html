@@ -17,6 +17,11 @@ main{max-width:980px;margin:18px auto}.top{display:flex;align-items:center;gap:1
 <section class="panel">
 <p>این فهرست فقط کسب‌وکارهایی را نمایش می‌دهد که هرمز تأیید کرده و اجازه انتشار عمومی داده‌اند. پیش از هر توافق، قیمت، زمان دسترسی و شرایط خدمت را مستقیماً تأیید کنید؛ این صفحه رزرو یا پرداخت قطعی انجام نمی‌دهد.</p>
 <div class="searchbox"><span class="searchicon" aria-hidden="true">⌕</span><input id="search" type="search" autocomplete="off" placeholder="چی لازم داری؟ مثلاً سوئیت در قشم، ماشین با راننده، تعمیر کولر…" aria-label="جست‌وجوی هوشمند خدمات"><p class="helper">با زبان خودت بنویس؛ نام خدمت، شهر یا توضیح نیازت را وارد کن.</p></div>
+ <div class="filters" style="margin-top:14px">
+  <div><input id="location" type="search" autocomplete="address-level2" placeholder="مکان موردنظر: شهر، استان یا کشور" aria-label="فیلتر خدمات بر اساس شهر یا کشور"><p class="helper">خدمات بر اساس محل فعالیت ثبت‌شده ارائه‌دهنده فیلتر می‌شوند.</p></div>
+  <button id="useLocation" class="btn secondary" type="button">📍 استفاده از مکان من</button>
+ </div>
+ <p id="locationStatus" class="helper" role="status" aria-live="polite">می‌توانی شهر و کشور را خودت بنویسی؛ دسترسی به مکان فقط با اجازه خودت انجام می‌شود.</p>
 <div class="chips" aria-label="جست‌وجوهای سریع">
 <button class="chip" type="button" data-query="اقامتگاه و سوئیت">🏡 سوئیت و اقامتگاه</button>
 <button class="chip" type="button" data-query="راننده و خودرو">🚗 خودرو و راننده</button>
@@ -37,7 +42,7 @@ main{max-width:980px;margin:18px auto}.top{display:flex;align-items:center;gap:1
 <footer>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.<br>چراغ ۷۷۷ برای خاموش شدن ساخته نشده ❤️</footer>
 </main>
 <script>
-const state=document.getElementById("state"),results=document.getElementById("results"),search=document.getElementById("search"),typeFilter=document.getElementById("type"),navigationResults=document.getElementById("navigationResults");
+const state=document.getElementById("state"),results=document.getElementById("results"),search=document.getElementById("search"),typeFilter=document.getElementById("type"),navigationResults=document.getElementById("navigationResults"),locationFilter=document.getElementById("location"),locationStatus=document.getElementById("locationStatus");
 const normalize=value=>String(value||"").toLocaleLowerCase("fa").replace(/[\u064B-\u065F\u0670]/g,"").replace(/ي/g,"ی").replace(/ك/g,"ک").replace(/\s+/g," ").trim();
 const synonyms=[
  [["سوئیت","سوییت","هتل","اقامت","جا برای خواب","شب مانی","شب‌مانی"],"اقامتگاه و سوئیت"],
@@ -117,30 +122,51 @@ function renderNavigation(raw){
  }
 }
 function render(){
- const raw=normalize(search.value),type=typeFilter.value;
- renderNavigation(raw);
- const inferred=inferCategory(raw);
- const query=raw.split(" ").filter(word=>word.length>1);
- const list=providers.map(p=>{const fields=normalize([p.businessName,p.serviceType,p.city,p.description].join(" "));let score=0;if(raw&&fields.includes(raw))score+=8;if(inferred&&p.serviceType===inferred)score+=5;if(type&&p.serviceType===type)score+=10;for(const word of query){if(fields.includes(word))score+=2;}return {p,score};})
- .filter(x=>(!type||x.p.serviceType===type)&&(!raw||x.score>0))
- .sort((a,b)=>b.score-a.score).map(x=>x.p);
- results.replaceChildren();
- if(!list.length){state.style.display="block";state.textContent=providers.length?"موردی دقیق پیدا نشد. عبارت دیگری بنویس، دسته‌بندی را عوض کن یا درخواستت را ثبت کن تا در صورت امکان پیگیری شود.":"هنوز کسب‌وکار تأییدشده‌ای برای نمایش عمومی ثبت نشده است. با ثبت درخواست خدمت می‌توانی نیازت را اعلام کنی؛ ارائه‌دهندگان پس از بررسی و اجازه انتشار اینجا دیده می‌شوند.";return;}
- state.style.display="none";
- for(const p of list){
-  const card=document.createElement("article");card.className="provider";
-  const badge=document.createElement("span");badge.className="badge";badge.textContent=p.serviceType;
-  const title=document.createElement("h3");title.textContent=p.businessName;
-  const city=document.createElement("div");city.className="muted";city.textContent=p.city||"محدوده فعالیت اعلام نشده";
-  const price=document.createElement("div");price.className="badge";price.style.marginTop="8px";price.textContent=p.startingPrice>0?"قیمت پایه: "+Number(p.startingPrice).toLocaleString("fa-IR")+" تومان · "+p.priceUnit:"قیمت نیازمند استعلام";
-  const desc=document.createElement("p");desc.textContent=p.description||"توضیح بیشتری ثبت نشده است.";
-  const orderTypes={"اقامتگاه و سوئیت":"stay","راننده و خودرو":"driver","قایق و شناور":"boat","رستوران و غذا":"food","راهنمای گردشگری":"tourism","بلیت و سفر":"other","تعمیرکار و برق‌کار":"repair","مهارت و خدمات تخصصی":"skill","سایر":"other"};const orderType=orderTypes[p.serviceType]||"other";const link=document.createElement("a");link.className="btn";link.href="/orders.html?providerNumber="+encodeURIComponent(p.providerNumber)+"&provider="+encodeURIComponent(p.businessName)+"&serviceType="+encodeURIComponent(orderType);link.textContent="انتخاب این ارائه‌دهنده";
-  card.append(badge,title,city,price,desc,link);results.append(card);
- }
+  const raw=normalize(search.value),type=typeFilter.value,requestedLocation=normalize(locationFilter.value);
+  renderNavigation(raw);
+  const inferred=inferCategory(raw);
+  const query=raw.split(" ").filter(word=>word.length>1);
+  const list=providers.map(p=>{const fields=normalize([p.businessName,p.serviceType,p.city,p.description].join(" "));const providerLocation=normalize(p.city||"");let score=0;if(raw&&fields.includes(raw))score+=8;if(inferred&&p.serviceType===inferred)score+=5;if(type&&p.serviceType===type)score+=10;for(const word of query){if(fields.includes(word))score+=2;}return {p,score,providerLocation};})
+  .filter(x=>(!type||x.p.serviceType===type)&&(!raw||x.score>0)&&(!requestedLocation||x.providerLocation.includes(requestedLocation)))
+  .sort((a,b)=>b.score-a.score).map(x=>x.p);
+  results.replaceChildren();
+  if(!list.length){state.style.display="block";state.textContent=providers.length?"در این مکان و با این فیلتر مورد تأییدشده‌ای پیدا نشد. مکان یا عبارت جست‌وجو را تغییر بده یا درخواستت را ثبت کن.":"هنوز کسب‌وکار تأییدشده‌ای برای نمایش عمومی ثبت نشده است. با ثبت درخواست خدمت می‌توانی نیازت را اعلام کنی؛ ارائه‌دهندگان پس از بررسی و اجازه انتشار اینجا دیده می‌شوند.";return;}
+  state.style.display="none";
+  for(const p of list){
+   const card=document.createElement("article");card.className="provider";
+   const badge=document.createElement("span");badge.className="badge";badge.textContent=p.serviceType;
+   const title=document.createElement("h3");title.textContent=p.businessName;
+   const city=document.createElement("div");city.className="muted";city.textContent=p.city||"محدوده فعالیت اعلام نشده";
+   const price=document.createElement("div");price.className="badge";price.style.marginTop="8px";price.textContent=p.startingPrice>0?"قیمت پایه: "+Number(p.startingPrice).toLocaleString("fa-IR")+" تومان · "+p.priceUnit:"قیمت نیازمند استعلام";
+   const desc=document.createElement("p");desc.textContent=p.description||"توضیح بیشتری ثبت نشده است.";
+   const orderTypes={"اقامتگاه و سوئیت":"stay","راننده و خودرو":"driver","قایق و شناور":"boat","رستوران و غذا":"food","راهنمای گردشگری":"tourism","بلیت و سفر":"other","تعمیرکار و برق‌کار":"repair","مهارت و خدمات تخصصی":"skill","سایر":"other"};const orderType=orderTypes[p.serviceType]||"other";const link=document.createElement("a");link.className="btn";link.href="/orders.html?providerNumber="+encodeURIComponent(p.providerNumber)+"&provider="+encodeURIComponent(p.businessName)+"&serviceType="+encodeURIComponent(orderType);link.textContent="انتخاب این ارائه‌دهنده";
+   card.append(badge,title,city,price,desc,link);results.append(card);
+  }
 }
-search.addEventListener("input",render);typeFilter.addEventListener("change",render);
+search.addEventListener("input",render);typeFilter.addEventListener("change",render);locationFilter.addEventListener("input",render);
+document.getElementById("useLocation").addEventListener("click",()=>{
+ if(!navigator.geolocation){locationStatus.textContent="مکان‌یابی در این مرورگر پشتیبانی نمی‌شود؛ شهر و کشور را دستی وارد کن.";return;}
+ locationStatus.textContent="در انتظار اجازه مکان‌یابی گوشی…";
+ navigator.geolocation.getCurrentPosition(async position=>{
+  locationStatus.textContent="مکان پیدا شد؛ در حال تشخیص نام شهر و کشور…";
+  try{
+   const url="https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="+encodeURIComponent(position.coords.latitude)+"&lon="+encodeURIComponent(position.coords.longitude)+"&zoom=10&accept-language=fa";
+   const response=await fetch(url,{headers:{Accept:"application/json"}});
+   if(!response.ok)throw new Error("سرویس تشخیص مکان پاسخ نداد");
+   const data=await response.json(),address=data.address||{};
+   const place=address.city||address.town||address.village||address.municipality||address.county||address.state||"";
+   const country=address.country||"";
+   if(!place&&!country)throw new Error("نام مکان پیدا نشد");
+   locationFilter.value=[place,country].filter(Boolean).join("، ");
+   locationStatus.textContent="مکان شناسایی شد: "+locationFilter.value+"؛ فقط ارائه‌دهندگانی نمایش داده می‌شوند که محل فعالیتشان با این عبارت ثبت شده باشد.";
+   render();
+  }catch(error){locationStatus.textContent="مختصات دریافت شد، اما نام شهر تشخیص داده نشد. لطفاً شهر و کشور را دستی بنویس."; }
+ },error=>{
+  locationStatus.textContent=error.code===1?"اجازه مکان‌یابی داده نشد؛ شهر و کشور را دستی وارد کن.":"مکان‌یابی ناموفق بود؛ شهر و کشور را دستی وارد کن.";
+ },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
+});
 document.querySelectorAll("[data-query]").forEach(button=>button.addEventListener("click",()=>{const category=button.dataset.query;search.value=category;typeFilter.value="";render();search.focus();}));
-document.getElementById("clearSearch").addEventListener("click",()=>{search.value="";typeFilter.value="";render();search.focus();});
-const initialQuery=new URLSearchParams(location.search).get("q");if(initialQuery)search.value=initialQuery;
+document.getElementById("clearSearch").addEventListener("click",()=>{search.value="";typeFilter.value="";locationFilter.value="";locationStatus.textContent="فیلتر مکان پاک شد؛ شهر و کشور را می‌توانی دوباره وارد کنی.";render();search.focus();});
+const directoryParams=new URLSearchParams(location.search);const initialQuery=directoryParams.get("q");if(initialQuery)search.value=initialQuery;const initialLocation=directoryParams.get("location");if(initialLocation)locationFilter.value=initialLocation;
 fetch("/api/v1/providers",{headers:{Accept:"application/json"}}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.message||"فهرست خدمات در دسترس نیست.");providers=Array.isArray(d.providers)?d.providers:[];render();}).catch(e=>{state.style.display="block";state.textContent="فهرست خدمات اکنون از سرور دریافت نشد. "+(e.message||"لطفاً بعداً دوباره تلاش کنید.");});
 </script></body></html>
