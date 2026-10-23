@@ -439,24 +439,39 @@
         return;
       }
 
-      // Handle simple in-site navigation locally; this must not depend on the AI backend.
-      const normalizedRequest = message.replace(/[ي]/g, "ی").replace(/[ك]/g, "ک").toLowerCase();
-      const asksForServices = /خدمات|سرویس/.test(normalizedRequest);
-      const asksToNavigate = /ببر|هدایت|برو|باز کن|نشان بده|وارد شو|دسترسی|بخش/.test(normalizedRequest);
-      if (asksForServices && asksToNavigate) {
-        const target = /خدمات هوش|خدمات هرمز|فهرست خدمات|جست.?وجوی خدمات|خدمات تأیید/.test(normalizedRequest)
-          ? document.getElementById("tools")
-          : document.getElementById("services");
+      // Route clear action requests to real pages already served by Hormoz.
+      // This local router stays available even when the AI provider is temporarily offline.
+      const normalizedRequest = message.replace(/[ي]/g, "ی").replace(/[ك]/g, "ک").replace(/\u200c/g, " ").toLowerCase();
+      const asksToNavigate = /ببر|هدایت|برو|باز کن|نشان بده|وارد شو|دسترسی|بخش|میخواهم|می خواهم|می‌خواهم|لازم دارم|پیدا کن|پیگیری|ثبت کن|ثبت نام/.test(normalizedRequest);
+      const routeIntents = [
+        { test: /پیگیری|رهگیری|کد رهگیری|وضعیت سفارش|وضعیت درخواست/, href: "/track-order.html", title: "پیگیری سفارش و درخواست", description: "در این صفحه می‌توانی کد رهگیری واقعی درخواستت را وارد کنی." },
+        { test: /ثبت سفارش|ثبت درخواست|درخواست خدمت|سفارش خدمت|خدمت لازم دارم|خدمت میخواهم|خدمت می خواهم/, href: "/orders.html", title: "ثبت درخواست خدمت", description: "فرم ثبت درخواست باز می‌شود؛ ثبت درخواست به‌تنهایی به معنی رزرو یا پرداخت قطعی نیست." },
+        { test: /کسب.?و.?کار|ارائه.?دهنده|ثبت مهارت|معرفی کسب.?و.?کار|همکاری با هرمز|ثبت خدمت/, href: "/providers.html", title: "ثبت کسب‌وکار و مهارت", description: "درخواست معرفی برای بررسی مدیر ثبت می‌شود؛ انتشار عمومی پس از تأیید انجام می‌شود." },
+        { test: /بازار هرمز|بازار کالا|آگهی|تبلیغات|فروش محصول|فروش خرما/, href: "/market.html", title: "بازار هرمز", description: "وارد بازار آزمایشی کالا و خدمات می‌شوی." },
+        { test: /پوستر|تصویر|عکس|کلیپ|ویدئو|ویدیو|طراحی گرافیک/, href: "/creative-studio.html", title: "کارگاه تصویر و کلیپ", description: "کارگاه ساخت محتوای تصویری را باز می‌کنم؛ تولید هوش مصنوعی ممکن است به اعتبار سرویس نیاز داشته باشد." },
+        { test: /خدمات تأیید|خدمات تایید|فهرست خدمات|جست.?وجوی خدمات|ارائه.?دهنده.? تأیید|خدمات هوش هرمز|خدمات هرمز/, href: "/directory.html", title: "فهرست خدمات تأییدشده", description: "فهرست از سرور بارگذاری می‌شود و فقط ارائه‌دهندگان تأییدشده را نمایش می‌دهد." },
+        { test: /خدمات|سرویس|خدمت/, href: "#services", title: "بخش خدمات هوش هرمز", description: "به دسته‌بندی خدمات می‌رویم تا مسیر مناسب را انتخاب کنی." }
+      ];
+      const requestedRoute = asksToNavigate ? routeIntents.find(item => item.test.test(normalizedRequest)) : null;
+      if (requestedRoute) {
         addConversationTurn(message, "user");
         input.value = "";
-        if (target) {
-          target.scrollIntoView({behavior: "smooth", block: "start"});
-          const destination = target.id === "tools" ? "ابزارها و خدمات قابل استفاده هوش هرمز" : "بخش خدمات هوش هرمز";
-          addConversationTurn("حتماً! تو را به «" + destination + "» هدایت کردم. اگر منظورت فهرست خدمات قابل استفاده است، کمی پایین‌تر بخش «جست‌وجوی خدمات تأییدشده» را هم می‌بینی.", "nava");
-          answer.textContent = "به " + destination + " هدایت شدی.";
-        } else {
-          addConversationTurn("بخش خدمات را پیدا نکردم؛ از منوی بالای صفحه گزینه «خدمات» را انتخاب کن.", "nava");
+        if (requestedRoute.href === "#services") {
+          const target = document.getElementById("services");
+          if (target) target.scrollIntoView({behavior: "smooth", block: "start"});
         }
+        const bubble = addConversationTurn(requestedRoute.description, "nava");
+        const link = document.createElement("a");
+        link.href = requestedRoute.href;
+        link.textContent = "باز کردن «" + requestedRoute.title + "»";
+        link.className = "btn";
+        link.style.display = "inline-block";
+        link.style.marginTop = "8px";
+        link.style.textDecoration = "none";
+        link.setAttribute("aria-label", "باز کردن " + requestedRoute.title);
+        bubble.appendChild(document.createElement("br"));
+        bubble.appendChild(link);
+        answer.textContent = requestedRoute.description;
         return;
       }
 
