@@ -91,6 +91,7 @@ async function ensureTable() {
     )
   `);
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_global_orders_created_idx ON hormoz_global_orders (created_at DESC)");
+  await db.query("CREATE TABLE IF NOT EXISTS hormoz_global_members (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('invoice_approver','viewer')), active BOOLEAN NOT NULL DEFAULT TRUE, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
   tableReady = true;
 }
 
