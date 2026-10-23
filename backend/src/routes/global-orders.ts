@@ -181,12 +181,13 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     if (!/^[A-Za-z0-9_-]{25,40}$/.test(token)) return reply.code(404).send({ ok: false, message: "کد رهگیری معتبر نیست." });
     try {
       await ensureTable();
-      const result = await db.query("SELECT order_number, invoice_number, service_type, status, invoice_status, currency, amount, commission_rate, hormoz_fee, provider_share, estimated_completion_at, publication_duration, target_region, human_verified, status_history, invoice_history, created_at, updated_at FROM hormoz_global_orders WHERE tracking_token=$1 LIMIT 1", [token]);
+      const result = await db.query("SELECT order_number, invoice_number, customer_language, service_type, status, invoice_status, currency, amount, commission_rate, hormoz_fee, provider_share, estimated_completion_at, publication_duration, target_region, human_verified, status_history, invoice_history, created_at, updated_at FROM hormoz_global_orders WHERE tracking_token=$1 LIMIT 1", [token]);
       if (!result.rows.length) return reply.code(404).send({ ok: false, message: "سفارش پیدا نشد." });
       const row = result.rows[0];
       return {
         ok: true,
         orderNumber: String(row.order_number),
+        language: String(row.customer_language ?? "fa"),
         serviceType: String(row.service_type),
         status: String(row.status),
         invoice: invoiceFromRow(row),
