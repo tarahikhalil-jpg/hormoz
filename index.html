@@ -98,9 +98,39 @@ function addChatBubble(role,text,pending=false){const bubble=document.createElem
 function saveConversation(){try{localStorage.setItem("hormoz_nava_chat_history",JSON.stringify(conversationHistory.slice(-10)))}catch{}}
 function guestId(){try{let id=localStorage.getItem("hormoz_guest_id");if(!id){id="guest-"+(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36));localStorage.setItem("hormoz_guest_id",id)}return id}catch{return "guest-"+Math.random().toString(36).slice(2)}}
 function askWith(prompt){input.value=prompt; $("nava").scrollIntoView({behavior:"smooth"});input.focus()}
+// مسیر خدمت را از متن فارسی کاربر تشخیص می‌دهیم و بعد از پاسخ نوا، دکمه ادامه همان خدمت را نشان می‌دهیم.
+function detectServiceRoute(text){
+ const t=String(text||"").toLowerCase().replace(/[ي]/g,"ی").replace(/[ك]/g,"ک");
+ const rules=[
+  {type:"stay",label:"اقامت؛ هتل یا سوئیت",test:/سوئیت|سوییت|سوییت|اقامتگاه|اقامت|هتل|مهمان.?خانه|بوم.?گردی|اجاره.{0,12}(خانه|اتاق|ویلا)/},
+  {type:"flight",label:"بلیت هواپیما",test:/بلیت هواپیما|بلیط هواپیما|پرواز|هواپیما/},
+  {type:"train",label:"بلیت قطار",test:/بلیت قطار|بلیط قطار|قطار/},
+  {type:"bus",label:"بلیت اتوبوس",test:/بلیت اتوبوس|بلیط اتوبوس|اتوبوس بین.?شهری/},
+  {type:"boat",label:"شناور یا قایق",test:/قایق|شناور|لنج|تور دریایی/},
+  {type:"driver",label:"راننده و حمل‌ونقل",test:/تاکسی|راننده|حمل.?ونقل|ماشین دربست|ترانسفر/},
+  {type:"food",label:"غذا و رستوران",test:/رستوران|غذا سفارش|سفارش غذا|کافه|صبحانه|ناهار|شام/},
+  {type:"electrician",label:"برق‌کار",test:/برق.?کار|قطعی برق خانه|تعمیر برق/},
+  {type:"repair",label:"تعمیرکار یا نیروی فنی",test:/تعمیرکار|تعمیر.{0,12}(گوشی|موبایل|لپ.?تاپ|کامپیوتر|کولر|یخچال)|دوربین مداربسته|نصب.{0,10}(اینترنت|دوربین)|لوله.?کش|تعمیر فنی/},
+  {type:"tourism",label:"گردشگری و راهنما",test:/گردشگری|راهنمای گردش|تور گردش|جاهای دیدنی|برنامه سفر|راهنمای سفر/},
+  {type:"skill",label:"مهارت و اشتغال",test:/دنبال کار|دنبال شغل|کاریابی|استخدام|پیدا کردن کار|معرفی مهارت|مهارت دارم|رزومه|همکاری شغلی/},
+  {type:"letter",label:"نامه و پیگیری اداری",test:/نامه اداری|پیگیری اداری|کار اداری|شهرداری|مشکل شهری|شکایت|مکاتبه|پیگیری پرونده/},
+  {type:"invoice",label:"پیگیری فاکتور",test:/فاکتور|صورتحساب|صورت.?حساب/},
+  {type:"other",label:"ثبت درخواست خدمت",test:/درخواست خدمت|خدمت محلی|خدمات محلی|اینترنت|تلفن|آب.?وبرق|آب و برق|گاز|بیمه|محصول|کسب.?وکار|تبلیغ|آگهی|سفارش/}
+ ];
+ const found=rules.find(r=>r.test.test(t));
+ return found||null;
+}
+function addServiceRoute(message){
+ const route=detectServiceRoute(message);if(!route)return;
+ const wrap=document.createElement("div");wrap.className="chat-turn chat-nava";wrap.style.maxWidth="100%";
+ const title=document.createElement("strong");title.textContent="برای تکمیل این درخواست، وارد بخش «"+route.label+"» شو.";
+ const note=document.createElement("p");note.textContent="در فرم بعدی، جزئیات لازم را وارد و در صورت تمایل درخواست را ثبت کن. هیچ رزرو یا سفارشی تا زمان تأیید نهایی قطعی نیست.";note.style.margin="6px 0 10px";
+ const link=document.createElement("a");link.className="btn";link.href=API+"/orders.html?serviceType="+encodeURIComponent(route.type);link.textContent="ادامه به بخش "+route.label+" ↗";link.style.textDecoration="none";
+ wrap.append(title,note,link);historyBox.appendChild(wrap);historyBox.scrollTop=historyBox.scrollHeight;
+}
 document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>askWith(b.dataset.prompt)));
 $("clearBtn").addEventListener("click",()=>{input.value="";input.focus()});
-async function sendMessage(){const message=input.value.trim();if(!message){input.focus();return}stopAudio();audioActions.classList.add("hidden");$("audioStatus").textContent="";sendBtn.disabled=true;$("connectionStatus").textContent="نوا در حال پاسخ‌گویی است…";$("connectionStatus").className="pill neutral";addChatBubble("user",message);input.value="";const pending=addChatBubble("assistant","نوا در حال آماده شدن است؛ بار اول ممکن است کمی زمان ببرد.",true);try{const res=await fetch(API+"/api/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-user-id":guestId()},body:JSON.stringify({message,history:conversationHistory.slice(-10)})});let data;try{data=await res.json()}catch{throw Error("پاسخ قابل خواندن از سرور دریافت نشد.")}if(!res.ok)throw Error(data.error||"ارتباط با نوا ناموفق بود.");const reply=data.response||data.message||"";if(!reply)throw Error("نوا این بار پاسخ متنی دریافت نکرد.");pending.classList.remove("chat-pending");pending.textContent=reply;answer.textContent=reply;conversationHistory.push({role:"user",content:message},{role:"assistant",content:reply});conversationHistory=conversationHistory.slice(-10);saveConversation();audioActions.classList.remove("hidden");$("connectionStatus").textContent="پاسخ دریافت شد";$("connectionStatus").className="pill";input.focus();historyBox.scrollTop=historyBox.scrollHeight}catch(e){pending.classList.remove("chat-pending");pending.textContent="ارتباط با نوا برقرار نشد. می‌توانی همین‌جا دوباره تلاش کنی. ("+(e.message||"خطای ارتباط")+")";$("connectionStatus").textContent="ارتباط برقرار نشد";$("connectionStatus").className="pill neutral";input.focus()}finally{sendBtn.disabled=false}}
+async function sendMessage(){const message=input.value.trim();if(!message){input.focus();return}stopAudio();audioActions.classList.add("hidden");$("audioStatus").textContent="";sendBtn.disabled=true;$("connectionStatus").textContent="نوا در حال پاسخ‌گویی است…";$("connectionStatus").className="pill neutral";addChatBubble("user",message);input.value="";const pending=addChatBubble("assistant","نوا در حال آماده شدن است؛ بار اول ممکن است کمی زمان ببرد.",true);try{const res=await fetch(API+"/api/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-user-id":guestId()},body:JSON.stringify({message,history:conversationHistory.slice(-10)})});let data;try{data=await res.json()}catch{throw Error("پاسخ قابل خواندن از سرور دریافت نشد.")}if(!res.ok)throw Error(data.error||"ارتباط با نوا ناموفق بود.");const reply=data.response||data.message||"";if(!reply)throw Error("نوا این بار پاسخ متنی دریافت نکرد.");pending.classList.remove("chat-pending");pending.textContent=reply;answer.textContent=reply;conversationHistory.push({role:"user",content:message},{role:"assistant",content:reply});conversationHistory=conversationHistory.slice(-10);saveConversation();addServiceRoute(message);audioActions.classList.remove("hidden");$("connectionStatus").textContent="پاسخ دریافت شد";$("connectionStatus").className="pill";input.focus();historyBox.scrollTop=historyBox.scrollHeight}catch(e){pending.classList.remove("chat-pending");pending.textContent="ارتباط با نوا برقرار نشد. می‌توانی همین‌جا دوباره تلاش کنی. ("+(e.message||"خطای ارتباط")+")";$("connectionStatus").textContent="ارتباط برقرار نشد";$("connectionStatus").className="pill neutral";input.focus()}finally{sendBtn.disabled=false}}
 sendBtn.addEventListener("click",sendMessage);
 input.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();sendMessage()}});
 function stopAudio(){requestId++;if(audio){audio.pause();audio.removeAttribute("src");audio=null}if(audioUrl){URL.revokeObjectURL(audioUrl);audioUrl=null}if("speechSynthesis"in window)window.speechSynthesis.cancel();$("speakBtn").disabled=false}
