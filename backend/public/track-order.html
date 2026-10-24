@@ -20,7 +20,7 @@
 const form=document.getElementById("trackForm"),input=document.getElementById("trackingCode"),button=document.getElementById("submitBtn"),result=document.getElementById("result");
 const statuses={submitted:"درخواست ثبت شده است.",awaiting_provider:"در انتظار هماهنگی با ارائه‌دهنده خدمت.",quoted:"پیش‌فاکتور یا پیشنهاد برای بررسی آماده است.",confirmed:"درخواست تأیید شده است.",payment_pending:"در انتظار پرداخت؛ پرداخت هنوز تأیید نشده است.",payment_confirmed:"پرداخت توسط سامانه تأیید شده است.",in_progress:"در حال انجام یا پیگیری.",completed:"این پرونده تکمیل شده است.",cancelled:"این پرونده لغو شده است.",refund_pending:"درخواست بازپرداخت در حال بررسی است.",refunded:"بازپرداخت ثبت شده است.",awaiting_review:"پرونده فاکتور در انتظار بررسی انسانی است.",awaiting_customer_approval:"پیش‌فاکتور پس از بررسی انسانی آماده تأیید مشتری است.",issued:"فاکتور صادر شده است.",paid:"پرداخت فاکتور تأیید شده است.",disputed:"درباره فاکتور درخواست بررسی ثبت شده است."};
 const invoiceStatuses={awaiting_review:"در انتظار بررسی انسانی",awaiting_customer_approval:"در انتظار تأیید مشتری",issued:"صادرشده",paid:"پرداخت‌شده",payment_pending:"در انتظار پرداخت",cancelled:"لغوشده",disputed:"نیازمند بررسی"};
-const serviceTypes={flight:"بلیت هواپیما",train:"بلیت قطار",bus:"بلیت اتوبوس",stay:"هتل، سوئیت یا مهمان‌خانه",boat:"شناور یا قایق",driver:"راننده و حمل‌ونقل",food:"غذا و رستوران",electrician:"برق‌کار",repair:"تعمیرکار یا نیروی فنی",tourism:"گردشگری و راهنما",skill:"معرفی مهارت و اشتغال",other:"سایر خدمات",letter:"نامه و مکاتبه",correspondence:"مکاتبه و پیگیری اداری",invoice:"پرونده فاکتور",service:"درخواست خدمات"};
+const serviceTypes={flight:"بلیت هواپیما",train:"بلیت قطار",bus:"بلیت اتوبوس",stay:"هتل، سوئیت یا مهمان‌خانه",accommodation:"اقامت",hotel:"هتل",boat:"شناور یا قایق",driver:"راننده و حمل‌ونقل",transport:"حمل‌ونقل",taxi:"تاکسی",food:"غذا و رستوران",restaurant:"رستوران و غذا",cafe:"کافه",electrician:"برق‌کار",repair:"تعمیرکار یا نیروی فنی",tourism:"گردشگری و راهنما",skill:"معرفی مهارت و اشتغال",letter:"نامه و مکاتبه / پیگیری اداری",correspondence:"مکاتبه و پیگیری اداری",urban_issue:"پیگیری مشکل شهری",internet:"اینترنت و تلفن",invoice:"پرونده فاکتور",provider:"خدمت ارائه‌دهنده",service:"درخواست خدمات",other:"سایر خدمات"};\nfunction displayServiceType(value){const raw=String(value??"").trim();if(!raw)return "ثبت نشده";if(serviceTypes[raw])return serviceTypes[raw];if(/[A-Za-z]/.test(raw))return "سایر خدمات";return raw;}
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}
 function dateText(value){if(!value)return "";const d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleString("fa-IR")}
 function renderHistory(title,items,invoice=false){const box=el("div","history");box.append(el("h3","",title));if(!Array.isArray(items)||!items.length){box.append(el("p","muted","هنوز مرحله دیگری در سامانه ثبت نشده است."));return box}for(const item of items){const row=el("div","entry");row.append(el("div","",statuses[item.status]||item.note||item.message||"به‌روزرسانی ثبت شد."));if(item.note&&statuses[item.status])row.append(el("div","muted",item.note));if(item.at)row.append(el("small","",dateText(item.at)));box.append(row)}return box}
@@ -28,7 +28,7 @@ function renderGlobal(data){
  result.replaceChildren();result.className="result";
  result.append(el("h2","","پرونده پیدا شد"));
  const summary=el("div","panel");summary.append(el("div","badge",statuses[data.status]||data.status||"وضعیت ثبت‌شده"));
- const grid=el("div","grid");grid.append(el("div","","شماره پرونده: "+(data.orderNumber||"—")));grid.append(el("div","","نوع پرونده: "+(serviceTypes[data.serviceType]||data.serviceType||"درخواست")));
+ const grid=el("div","grid");grid.append(el("div","","شماره پرونده: "+(data.orderNumber||"—")));grid.append(el("div","","نوع پرونده: "+displayServiceType(data.serviceType)));
  if(data.invoice&&data.invoice.invoiceNumber)grid.append(el("div","","شماره فاکتور: "+data.invoice.invoiceNumber));
  grid.append(el("div","","آخرین به‌روزرسانی: "+dateText(data.updatedAt)));
  summary.append(grid);result.append(summary);
@@ -44,7 +44,7 @@ function renderGlobal(data){
 function renderLegacy(data){
  result.replaceChildren();result.className="result";result.append(el("h2","","وضعیت سفارش"));
  const box=el("div","panel");box.append(el("strong","","شماره سفارش: "+(data.orderNumber||"—")));box.append(el("p","",statuses[data.status]||data.message||"وضعیت به‌روزرسانی شده است."));result.append(box);
- result.append(el("p","muted","نوع خدمت: "+(serviceTypes[data.serviceType]||data.serviceType||"ثبت نشده")));
+ result.append(el("p","muted","نوع خدمت: "+displayServiceType(data.serviceType)));
  if(Array.isArray(data.history))result.append(renderHistory("تاریخچه وضعیت",data.history));
  result.append(el("p","muted","این کد متعلق به سامانه پیگیری سفارش قدیمی است؛ برای این پرونده هنوز اطلاعات فاکتور یکپارچه در دسترس نیست."));
 }
