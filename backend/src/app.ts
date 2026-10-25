@@ -2097,25 +2097,31 @@ return reply.type("application/xml; charset=utf-8").send(content);
       let lastStatus = 502;
       for (const client of clients) {
         const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: "fa", client });
-        const upstream = await fetch("https://translate.google.com/translate_tts?" + params.toString(), {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36",
-            "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.8",
-            "Referer": "https://translate.google.com/"
-          },
-          signal: controller.signal
-        });
-        if (!upstream.ok) {
-          lastStatus = upstream.status;
-          request.log.warn({ status: upstream.status, client }, "Nava fallback TTS provider rejected request");
-          continue;
+        try {
+          const upstream = await fetch("https://translate.google.com/translate_tts?" + params.toString(), {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36",
+              "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.8",
+              "Referer": "https://translate.google.com/"
+            },
+            signal: controller.signal
+          });
+          if (!upstream.ok) {
+            lastStatus = upstream.status;
+            request.log.warn({ status: upstream.status, client }, "Nava fallback TTS provider rejected request");
+            continue;
+          }
+          const audio = Buffer.from(await upstream.arrayBuffer());
+          const contentType = upstream.headers.get("content-type") || "";
+          if (audio.length && contentType.toLowerCase().includes("audio")) {
+            return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
+          }
+          request.log.warn({ client, contentType, bytes: audio.length }, "Nava fallback TTS returned invalid audio");
+        } catch (error) {
+          lastStatus = controller.signal.aborted ? 504 : lastStatus;
+          request.log.warn({ err: error, client }, "Nava fallback TTS request failed; trying next voice endpoint");
+          if (controller.signal.aborted) break;
         }
-        const audio = Buffer.from(await upstream.arrayBuffer());
-        const contentType = upstream.headers.get("content-type") || "";
-        if (audio.length && contentType.toLowerCase().includes("audio")) {
-          return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
-        }
-        request.log.warn({ client, contentType, bytes: audio.length }, "Nava fallback TTS returned invalid audio");
       }
       request.log.error({ lastStatus }, "All Nava fallback TTS modes failed");
       return reply.code(502).send({ error: "سرویس رایگان صدای فارسی در دسترس نیست؛ پاسخ متنی آماده است." });
