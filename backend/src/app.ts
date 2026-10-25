@@ -2091,67 +2091,6 @@ return reply.type("application/xml; charset=utf-8").send(content);
         request.log.warn({ err: error }, "Nava Edge Persian TTS unavailable; trying legacy fallback");
       }
 
-      // TTS.ai hosted Persian voice fallback (anonymous free tier; server-side only).
-      // Piper's Persian voice is used after Edge TTS, before the legacy Google fallback.
-      try {
-        const hosted = await fetch("https://api.tts.ai/v1/tts/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Accept": "audio/mpeg, application/json" },
-          body: JSON.stringify({
-            model: "piper",
-            text,
-            voice: "fa_IR-amir-medium",
-            language: "fa",
-            format: "mp3",
-            speed: 0.92
-          }),
-          signal: controller.signal
-        });
-        const hostedType = (hosted.headers.get("content-type") || "").toLowerCase();
-        if (hosted.ok && hostedType.includes("audio")) {
-          const audio = Buffer.from(await hosted.arrayBuffer());
-          if (audio.length) {
-            return reply.header("Cache-Control", "no-store").type(hostedType.split(";")[0] || "audio/mpeg").send(audio);
-          }
-        } else if (hosted.ok && hostedType.includes("json")) {
-          const job = await hosted.json() as { uuid?: string; status?: string; result_url?: string; error?: string };
-          // Some TTS.ai deployments queue the job and return a UUID; others return audio directly.
-          if (job.uuid) {
-            for (let attempt = 0; attempt < 12; attempt++) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              const resultResponse = await fetch("https://api.tts.ai/v1/speech/results/?uuid=" + encodeURIComponent(job.uuid), {
-                headers: { "Accept": "application/json" },
-                signal: controller.signal
-              });
-              if (!resultResponse.ok) continue;
-              const result = await resultResponse.json() as { status?: string; result_url?: string; error?: string };
-              if (result.status === "failed") {
-                request.log.warn({ error: result.error }, "TTS.ai Persian speech job failed");
-                break;
-              }
-              if (result.status === "completed" && result.result_url) {
-                const downloaded = await fetch(result.result_url, { signal: controller.signal });
-                const downloadType = (downloaded.headers.get("content-type") || "").toLowerCase();
-                if (downloaded.ok && downloadType.includes("audio")) {
-                  const audio = Buffer.from(await downloaded.arrayBuffer());
-                  if (audio.length) {
-                    return reply.header("Cache-Control", "no-store").type(downloadType.split(";")[0] || "audio/mpeg").send(audio);
-                  }
-                }
-                request.log.warn({ status: downloaded.status, contentType: downloadType }, "TTS.ai result download was not audio");
-                break;
-              }
-            }
-          } else {
-            request.log.warn({ status: hosted.status, error: job.error }, "TTS.ai returned no audio job");
-          }
-        } else {
-          request.log.warn({ status: hosted.status, contentType: hostedType }, "TTS.ai Persian voice unavailable; trying legacy fallback");
-        }
-      } catch (error) {
-        request.log.warn({ err: error }, "TTS.ai Persian voice request failed; trying legacy fallback");
-      }
-
       // Try Google's currently supported Translate TTS client modes. One mode may
       // return HTTP 400 while the other still returns a valid Persian audio stream.
       const clients = ["gtx", "tw-ob"];
