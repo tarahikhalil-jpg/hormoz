@@ -2014,7 +2014,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
     if (text.length > 220) return reply.code(413).send({ error: "برای پخش پایدار، متن صوتی باید کوتاه‌تر باشد." });
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12_000);
+    const timeout = setTimeout(() => controller.abort(), 25_000);
     try {
       // If a verified Google Cloud TTS key is configured, prefer its official API.
       const apiKey = process.env.GOOGLE_TTS_API_KEY;
@@ -2036,6 +2036,39 @@ return reply.type("application/xml; charset=utf-8").send(content);
           }
         } else {
           request.log.warn({ status: official.status }, "Official TTS unavailable; trying fallback provider");
+        }
+      }
+
+      // Pollinations hosted speech: use the project's existing server-side key when configured.
+      // Multilingual voice is preferred for Persian; keep the key on the server only.
+      const pollinationsKey = process.env.POLLINATIONS_API_KEY;
+      if (pollinationsKey) {
+        try {
+          const pollinations = await fetch("https://gen.pollinations.ai/v1/audio/speech", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + pollinationsKey,
+              "Content-Type": "application/json",
+              "Accept": "audio/mpeg, audio/*"
+            },
+            body: JSON.stringify({
+              model: "elevenlabs/eleven-multilingual-v2",
+              input: text,
+              voice: "nova",
+              response_format: "mp3"
+            }),
+            signal: controller.signal
+          });
+          const contentType = pollinations.headers.get("content-type") || "";
+          if (pollinations.ok && contentType.toLowerCase().includes("audio")) {
+            const audio = Buffer.from(await pollinations.arrayBuffer());
+            if (audio.length > 0) {
+              return reply.header("Cache-Control", "no-store").type(contentType.split(";")[0] || "audio/mpeg").send(audio);
+            }
+          }
+          request.log.warn({ status: pollinations.status, contentType }, "Pollinations Nava TTS unavailable; trying Microsoft Edge");
+        } catch (error) {
+          request.log.warn({ err: error }, "Pollinations Nava TTS request failed; trying Microsoft Edge");
         }
       }
 
