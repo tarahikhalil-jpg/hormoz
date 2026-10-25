@@ -40,7 +40,9 @@ export class OpenRouterIntelligenceProvider
             body: JSON.stringify({
               model,
               messages: request.messages,
-              max_tokens: attempt === 1 ? 500 : 700,
+              // Some OpenRouter models spend part of the completion budget on internal reasoning.
+              // Give the first response enough room, with one larger retry if no final answer is returned.
+              max_tokens: attempt === 1 ? 800 : 1200,
             }),
           },
         );
