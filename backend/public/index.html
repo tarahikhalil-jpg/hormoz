@@ -6,13 +6,13 @@
   <meta name="theme-color" content="#082f49">
   <meta name="description" content="هوش هرمز؛ درگاه هوشمند دسترسی به خدمات، فناوری، فرصت‌های شغلی و کسب‌وکارهای محلی برای همه.">
   <meta name="robots" content="index,follow,max-image-preview:large">
-  <link rel="canonical" href="https://hormoz-portal-public-777.onrender.com/">
+  <link rel="canonical" href="https://hormoz-ai-backend-777.onrender.com/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="fa_IR">
   <meta property="og:site_name" content="هوش هرمز">
   <meta property="og:title" content="هوش هرمز | فناوری و فرصت برای همه">
   <meta property="og:description" content="فناوری برای همه؛ فرصت برای هر استعداد. نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.">
-  <meta property="og:url" content="https://hormoz-portal-public-777.onrender.com/">
+  <meta property="og:url" content="https://hormoz-ai-backend-777.onrender.com/">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="هوش هرمز | فناوری و فرصت برای همه">
   <meta name="twitter:description" content="فناوری برای همه؛ فرصت برای هر استعداد.">
@@ -22,7 +22,7 @@
     "@type": "WebSite",
     "name": "هوش هرمز",
     "alternateName": "Hormoz Intelligence",
-    "url": "https://hormoz-portal-public-777.onrender.com/",
+    "url": "https://hormoz-ai-backend-777.onrender.com/",
     "inLanguage": "fa-IR",
     "description": "درگاه هوشمند دسترسی به خدمات، فناوری، فرصت‌های شغلی و کسب‌وکارهای محلی."
   }
@@ -101,6 +101,9 @@
         <a href="#local">کسب‌وکارهای محلی</a>
         <a href="./market.html">🌍 بازار آزمایشی کالا و خدمات</a>
         <a href="#nova">گفت‌وگو با نوا</a>
+        <a href="/orders.html">ثبت درخواست</a>
+        <a href="/track-order.html">پیگیری درخواست</a>
+        <a href="/directory.html">فهرست خدمات</a>
         <a href="/global-office.html" style="color:var(--gold);font-weight:bold">🧾 دفتر هوشمند هرمز</a>
       </nav>
     </header>
@@ -115,6 +118,8 @@
           <a class="btn" href="./market.html">🌍 ورود به بازار آزمایشی کالا و خدمات</a>
           <a class="btn secondary" href="#services">پیدا کردن خدمت موردنیاز</a>
           <a class="btn secondary" href="#work">پیدا کردن فرصت همکاری</a>
+          <a class="btn secondary" href="/orders.html">📝 ثبت درخواست خدمت</a>
+          <a class="btn secondary" href="/track-order.html">🎫 پیگیری با کد رهگیری</a>
           <a class="btn secondary" href="./portal.html">درگاه ورود همیشگی</a>
           <a class="btn secondary" href="/global-office.html">🧾 دفتر سفارش و فاکتور هوشمند</a>
         </div>
@@ -148,6 +153,21 @@
           <article class="card"><div class="icon">🏠</div><h3>خانه و خدمات محلی</h3><p>جست‌وجوی مسیر برای اقامت، تعمیرات، خودرو و خدمات موردنیاز.</p><button onclick="startPrompt('به یک خدمت محلی مثل اقامت، تعمیرکار یا خودرو نیاز دارم. کمک کن نیازم را دقیق کنم و راه امن پیدا کنم.')">پیدا کردن خدمت</button></article>
           <article class="card"><div class="icon">🏛️</div><h3>خدمات اداری و دولتی</h3><p>کمک برای فهم مراحل، مدارک و پیدا کردن درگاه رسمی سازمان مربوطه.</p><button onclick="startPrompt('برای یک خدمت اداری یا دولتی راهنمایی می‌خواهم. اول بپرس کدام خدمت و شهر مدنظرم است و سپس مسیر رسمی را توضیح بده.')">راهنمایی اداری</button></article>
           <article class="card"><div class="icon">🩺</div><h3>سلامت و بیمه</h3><p>راهنمایی عمومی برای پیدا کردن خدمات و مسیرهای رسمی مرتبط.</p><button onclick="startPrompt('برای پیدا کردن خدمت سلامت یا بیمه و مسیر رسمی دسترسی به آن راهنمایی می‌خواهم.')">یافتن مسیر خدمت</button></article>
+        </div>
+      </section>
+
+      <section class="section" id="quick-services">
+        <div class="section-head">
+          <h2>دسترسی سریع به خدمات پرکاربرد</h2>
+          <p class="hint">یک گزینه را انتخاب کن؛ فهرست خدمات از سامانه بارگذاری می‌شود و فقط موارد تأییدشده نمایش داده می‌شوند.</p>
+        </div>
+        <div class="grid">
+          <article class="card"><div class="icon">🏠</div><h3>سوئیت و اقامتگاه</h3><p>جست‌وجوی اقامت، هتل و بوم‌گردی در فهرست خدمات.</p><a class="btn" href="/directory.html?q=سوئیت">جست‌وجوی اقامت</a></article>
+          <article class="card"><div class="icon">☕</div><h3>کافه و رستوران</h3><p>یافتن خدمات غذایی و کسب‌وکارهای محلی تأییدشده.</p><a class="btn" href="/directory.html?q=کافه">جست‌وجوی کافه</a></article>
+          <article class="card"><div class="icon">🧰</div><h3>تعمیرکار و خدمات فنی</h3><p>مسیر جست‌وجوی تعمیرات، برق‌کار و خدمات فنی.</p><a class="btn" href="/directory.html?q=تعمیرکار">جست‌وجوی تعمیرکار</a></article>
+          <article class="card"><div class="icon">🚤</div><h3>گردشگری و سفر</h3><p>بررسی خدمات گردشگری و راهنمای سفر.</p><a class="btn" href="/directory.html?q=گردشگری">جست‌وجوی گردشگری</a></article>
+          <article class="card"><div class="icon">🛍️</div><h3>بازار و فروش محصولات</h3><p>مشاهده ویترین آزمایشی کالاها، محصولات محلی و آگهی‌ها.</p><a class="btn" href="/market.html">ورود به بازار هرمز</a></article>
+          <article class="card"><div class="icon">🎫</div><h3>پیگیری درخواست</h3><p>کد رهگیری را وارد کن تا وضعیت ثبت‌شده درخواستت را ببینی.</p><a class="btn" href="/track-order.html">پیگیری با کد رهگیری</a></article>
         </div>
       </section>
 
