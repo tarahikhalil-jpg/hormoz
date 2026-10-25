@@ -442,7 +442,7 @@
 
       // Route clear action requests to real pages already served by Hormoz.
       // This local router stays available even when the AI provider is temporarily offline.
-      const normalizedRequest = message.replace(/[ي]/g, "ی").replace(/[ك]/g, "ک").replace(/\u200c/g, " ").toLowerCase();
+      const normalizedRequest = message.replace(/[ي]/g, "ی").replace(/[ك]/g, "ک").replace(/\u200c/g, " ").replace(/می\s*خوام/g, "می خواهم").replace(/میخوام/g, "می خواهم").replace(/یه\s+/g, "یک ").replace(/سوئیت|سوییت/g, "سوئیت").toLowerCase();
       const asksToNavigate = /ببر|هدایت|برو|باز کن|نشان بده|وارد شو|دسترسی|بخش|میخواهم|می خواهم|می‌خواهم|میخوام|می‌خوام|لازم دارم|نیاز دارم|پیدا کن|پیگیری|رهگیری|ثبت کن|ثبت نام|ثبت سفارش|ثبت درخواست|سفارش|آگهی|جست.?وجو|پوستر بساز/.test(normalizedRequest);
       const routeIntents = [
         { test: /پیگیری|رهگیری|کد رهگیری|وضعیت سفارش|وضعیت درخواست/, href: "/track-order.html", title: "پیگیری سفارش و درخواست", description: "در این صفحه می‌توانی کد رهگیری واقعی درخواستت را وارد کنی." },
