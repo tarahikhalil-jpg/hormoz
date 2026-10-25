@@ -4,7 +4,7 @@ import multipart from "@fastify/multipart";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { EdgeTTS } from "node-edge-tts";
+import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 
 import { chatRoutes } from "./routes/chat.js";
 import { ActionDispatcher } from "./modules/action/dispatcher.js";
@@ -2039,27 +2039,23 @@ return reply.type("application/xml; charset=utf-8").send(content);
         }
       }
 
-      // Primary no-key Persian neural voice fallback: Microsoft Edge Read Aloud service.
-      // This is an unofficial online endpoint, so retain a clear failure path if it is unavailable.
-      const tempAudioPath = path.join("/tmp", `nava-tts-${Date.now()}-${Math.random().toString(36).slice(2)}.mp3`);
+      // Primary no-key Persian neural voice: Microsoft Edge Read Aloud.
+      // The newer msedge-tts client sends the current Edge-compatible handshake headers.
       try {
-        const edgeTts = new EdgeTTS({
-          voice: "fa-IR-DilaraNeural",
-          lang: "fa-IR",
-          outputFormat: "audio-24khz-96kbitrate-mono-mp3",
-          rate: "-8%",
-          timeout: 10_000
-        });
-        await edgeTts.ttsPromise(text, tempAudioPath);
-        const audio = await fs.readFile(tempAudioPath);
-        if (audio.length > 0) {
-          return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
+        const edgeTts = new MsEdgeTTS();
+        await edgeTts.setMetadata("fa-IR-DilaraNeural", OUTPUT_FORMAT.WEBM_24KHZ_16BIT_MONO_OPUS);
+        const { audioStream } = edgeTts.toStream(text, { rate: 0.92 });
+        const audioChunks: Buffer[] = [];
+        for await (const chunk of audioStream) {
+          audioChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
         }
-        request.log.warn("Edge TTS returned an empty audio file");
+        const audio = Buffer.concat(audioChunks);
+        if (audio.length > 0) {
+          return reply.header("Cache-Control", "no-store").type("audio/webm").send(audio);
+        }
+        request.log.warn("Edge TTS returned an empty audio stream");
       } catch (error) {
         request.log.warn({ err: error }, "Nava Edge Persian TTS unavailable; trying legacy fallback");
-      } finally {
-        await fs.unlink(tempAudioPath).catch(() => undefined);
       }
 
       // Try Google's currently supported Translate TTS client modes. One mode may
