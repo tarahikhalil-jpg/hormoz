@@ -4,7 +4,6 @@ import multipart from "@fastify/multipart";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 import { EdgeTTS } from "edge-tts-universal";
 
 import { chatRoutes } from "./routes/chat.js";
