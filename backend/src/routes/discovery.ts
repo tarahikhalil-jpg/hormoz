@@ -28,7 +28,7 @@ export const discoveryRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(400).send({ success: false, error: "عبارت جست‌وجو را وارد کنید." });
     }
 
-    const placeQuery = place && place !== "همه مناطق" ? place : "هرمزگان";
+    const placeQuery = place && place !== "همه مناطق" ? place : ""; // Empty scope means search across Iran and worldwide.
     const fullQuery = [query, placeQuery].filter(Boolean).join(" ");
     const googleUrl = "https://www.google.com/search?q=" + encodeURIComponent(fullQuery);
 
