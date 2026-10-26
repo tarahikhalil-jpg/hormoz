@@ -6,7 +6,7 @@
 (async()=>{
  const status=document.getElementById('status'),params=new URLSearchParams(location.search);
  const code=params.get('code'),returnedState=params.get('state'),error=params.get('error');
- const verifier=sessionStorage.getItem('hormoz_polli_verifier'),expectedState=sessionStorage.getItem('hormoz_polli_state'),clientId=localStorage.getItem('hormoz_pollinations_app_key');
+ const verifier=sessionStorage.getItem('hormoz_polli_verifier')||localStorage.getItem('hormoz_polli_verifier'),expectedState=sessionStorage.getItem('hormoz_polli_state')||localStorage.getItem('hormoz_polli_state'),clientId=localStorage.getItem('hormoz_pollinations_app_key');
  const redirectUri=location.origin+'/pollinations-callback.html';
  if(error){status.textContent='اتصال لغو شد یا سرویس خطا داد: '+error;return;}
  if(!code||!returnedState||!verifier||!expectedState||!clientId){status.textContent='اطلاعات اتصال ناقص است یا نشست مرورگر از دست رفته. به کارگاه برگرد و دوباره اتصال را شروع کن.';return;}
@@ -15,8 +15,8 @@
   const response=await fetch('https://enter.pollinations.ai/api/oauth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',code,client_id:clientId,redirect_uri:redirectUri,code_verifier:verifier})});
   const data=await response.json();
   if(!response.ok||!data.access_token)throw new Error(data.error_description||data.error||'تبادل کد اتصال ناموفق بود.');
-  sessionStorage.setItem('hormoz_pollinations_user_token',data.access_token);
-  sessionStorage.removeItem('hormoz_polli_verifier');sessionStorage.removeItem('hormoz_polli_state');
+  sessionStorage.setItem('hormoz_pollinations_user_token',data.access_token);localStorage.setItem('hormoz_pollinations_user_token',data.access_token);
+  sessionStorage.removeItem('hormoz_polli_verifier');sessionStorage.removeItem('hormoz_polli_state');localStorage.removeItem('hormoz_polli_verifier');localStorage.removeItem('hormoz_polli_state');
   status.textContent='اتصال موفق شد. در حال بازگشت به کارگاه تولید تصویر...';
   history.replaceState({},'',location.pathname);
   location.replace('/creative-studio.html?connected=1');
