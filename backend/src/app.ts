@@ -2073,27 +2073,62 @@ return reply.type("application/xml; charset=utf-8").send(content);
         }
       }
 
-      // Free anonymous Persian neural TTS via TTS.ai; no API key required.
-      // Free-tier limit is provider-controlled (documented as 5,000 chars/day per IP).
-      // Try Persian Piper voices; only accept an actual audio response.
+      // Free anonymous Persian TTS.ai fallback; no API key required.
+      // Their API returns a queued JSON job, so poll for the completed audio URL.
       const freeTtsVoices = ["fa_IR-ganji_adabi-medium", "fa_IR-gyro-medium", "fa_IR-amir-medium"];
       for (const voice of freeTtsVoices) {
         try {
-          const freeTts = await fetch("https://api.tts.ai/v1/tts/", {
+          const submit = await fetch("https://api.tts.ai/v1/tts/", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Accept": "audio/mpeg, audio/*, application/json" },
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
             body: JSON.stringify({ model: "piper", text, voice, language: "fa", format: "mp3", speed: 0.92 }),
             signal: controller.signal
           });
-          const contentType = freeTts.headers.get("content-type") || "";
-          if (freeTts.ok && contentType.toLowerCase().includes("audio")) {
-            const audio = Buffer.from(await freeTts.arrayBuffer());
-            if (audio.length > 0) {
-              request.log.info({ voice, bytes: audio.length }, "Nava free Persian TTS succeeded via TTS.ai");
-              return reply.header("Cache-Control", "no-store").type(contentType.split(";")[0] || "audio/mpeg").send(audio);
+          const submittedType = submit.headers.get("content-type") || "";
+          if (!submit.ok) {
+            request.log.warn({ status: submit.status, voice }, "TTS.ai free Persian voice unavailable; trying next voice");
+            continue;
+          }
+          if (submittedType.toLowerCase().includes("audio")) {
+            const audio = Buffer.from(await submit.arrayBuffer());
+            if (audio.length > 0) return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
+          }
+          const job = await submit.json() as { uuid?: string; status?: string; result_url?: string; error?: string };
+          if (!job.uuid && !job.result_url) {
+            request.log.warn({ voice, status: job.status, error: job.error }, "TTS.ai did not return a speech job; trying next voice");
+            continue;
+          }
+          let audioUrl = job.result_url;
+          for (let attempt = 0; !audioUrl && job.uuid && attempt < 8; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            const result = await fetch("https://api.tts.ai/v1/speech/results/?uuid=" + encodeURIComponent(job.uuid), {
+              headers: { "Accept": "application/json" },
+              signal: controller.signal
+            });
+            if (!result.ok) {
+              request.log.warn({ status: result.status, voice }, "TTS.ai result polling failed");
+              break;
             }
+            const data = await result.json() as { status?: string; result_url?: string; error?: string };
+            if (data.status === "failed") {
+              request.log.warn({ voice, error: data.error }, "TTS.ai speech job failed");
+              break;
+            }
+            audioUrl = data.result_url;
+          }
+          if (audioUrl) {
+            const audioResponse = await fetch(audioUrl, { signal: controller.signal });
+            const audioType = audioResponse.headers.get("content-type") || "";
+            if (audioResponse.ok && audioType.toLowerCase().includes("audio")) {
+              const audio = Buffer.from(await audioResponse.arrayBuffer());
+              if (audio.length > 0) {
+                request.log.info({ voice, bytes: audio.length }, "Nava free Persian TTS succeeded via TTS.ai");
+                return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
+              }
+            }
+            request.log.warn({ status: audioResponse.status, audioType, voice }, "TTS.ai audio download was not valid audio");
           } else {
-            request.log.warn({ status: freeTts.status, contentType, voice }, "TTS.ai free Persian voice unavailable; trying next voice");
+            request.log.warn({ voice }, "TTS.ai speech job did not complete before timeout window");
           }
         } catch (error) {
           request.log.warn({ err: error, voice }, "TTS.ai free Persian request failed; trying next voice");
