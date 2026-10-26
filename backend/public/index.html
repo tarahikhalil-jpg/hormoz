@@ -477,7 +477,8 @@
       ];
       const isServiceSearch = /سوئیت|سوییت|اقامتگاه|هتل|راننده|خودرو|ماشین|قایق|لنج|رستوران|کافه|تعمیرکار|برق.?کار|لوله.?کش|راهنمای گردشگری|اقامت|تعمیر/.test(normalizedRequest)
         && /پیدا|جست.?وجو|نیاز|لازم|میخواهم|می خواهم|می‌خواهم|میخوام|می‌خوام|ببر|هدایت|باز کن/.test(normalizedRequest);
-      undefined
+      const requestedRoute = isServiceSearch
+        ? {href: "/discover.html?q=" + encodeURIComponent(message), title: "جست‌وجوی خدمات در وب", description: "جست‌وجوی اینترنتی را باز می‌کنم. نتایج عمومی هستند؛ مجوز، قیمت و ظرفیت باید جداگانه بررسی شود."}
         : (asksToNavigate ? routeIntents.find(item => item.test.test(normalizedRequest)) : null);
       if (requestedRoute) {
         addConversationTurn(message, "user");
