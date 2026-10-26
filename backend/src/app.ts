@@ -2092,16 +2092,20 @@ return reply.type("application/xml; charset=utf-8").send(content);
         request.log.warn({ err: error }, "Nava Edge Persian TTS unavailable; trying legacy fallback");
       }
 
-      // Try Google's currently supported Translate TTS client modes. One mode may
-      // return HTTP 400 while the other still returns a valid Persian audio stream.
-      const clients = ["gtx", "tw-ob"];
+      // Free Google Translate speech fallback. Try both public hostnames and
+      // include dt=t, which some current Google TTS frontends require.
+      const ttsTargets = [
+        { host: "https://translate.googleapis.com/translate_tts", client: "gtx" },
+        { host: "https://translate.google.com/translate_tts", client: "tw-ob" },
+        { host: "https://translate.google.com/translate_tts", client: "gtx" }
+      ];
       let lastStatus = 502;
-      for (const client of clients) {
-        const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: "fa", client });
+      for (const target of ttsTargets) {
+        const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: "fa", client: target.client, dt: "t" });
         try {
-          const upstream = await fetch("https://translate.google.com/translate_tts?" + params.toString(), {
+          const upstream = await fetch(target.host + "?" + params.toString(), {
             headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36",
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
               "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.8",
               "Referer": "https://translate.google.com/"
             },
@@ -2109,7 +2113,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
           });
           if (!upstream.ok) {
             lastStatus = upstream.status;
-            request.log.warn({ status: upstream.status, client }, "Nava fallback TTS provider rejected request");
+            request.log.warn({ status: upstream.status, client: target.client, host: target.host }, "Nava fallback TTS provider rejected request");
             continue;
           }
           const audio = Buffer.from(await upstream.arrayBuffer());
@@ -2117,10 +2121,10 @@ return reply.type("application/xml; charset=utf-8").send(content);
           if (audio.length && contentType.toLowerCase().includes("audio")) {
             return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
           }
-          request.log.warn({ client, contentType, bytes: audio.length }, "Nava fallback TTS returned invalid audio");
+          request.log.warn({ client: target.client, host: target.host, contentType, bytes: audio.length }, "Nava fallback TTS returned invalid audio");
         } catch (error) {
           lastStatus = controller.signal.aborted ? 504 : lastStatus;
-          request.log.warn({ err: error, client }, "Nava fallback TTS request failed; trying next voice endpoint");
+          request.log.warn({ err: error, client: target.client, host: target.host }, "Nava fallback TTS request failed; trying next voice endpoint");
           if (controller.signal.aborted) break;
         }
       }
