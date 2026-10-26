@@ -2073,6 +2073,34 @@ return reply.type("application/xml; charset=utf-8").send(content);
         }
       }
 
+      // Free anonymous Persian neural TTS via TTS.ai; no API key required.
+      // Free-tier limit is provider-controlled (documented as 5,000 chars/day per IP).
+      // Try Persian Piper voices; only accept an actual audio response.
+      const freeTtsVoices = ["fa_IR-ganji_adabi-medium", "fa_IR-gyro-medium", "fa_IR-amir-medium"];
+      for (const voice of freeTtsVoices) {
+        try {
+          const freeTts = await fetch("https://api.tts.ai/v1/tts/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "audio/mpeg, audio/*, application/json" },
+            body: JSON.stringify({ model: "piper", text, voice, language: "fa", format: "mp3", speed: 0.92 }),
+            signal: controller.signal
+          });
+          const contentType = freeTts.headers.get("content-type") || "";
+          if (freeTts.ok && contentType.toLowerCase().includes("audio")) {
+            const audio = Buffer.from(await freeTts.arrayBuffer());
+            if (audio.length > 0) {
+              request.log.info({ voice, bytes: audio.length }, "Nava free Persian TTS succeeded via TTS.ai");
+              return reply.header("Cache-Control", "no-store").type(contentType.split(";")[0] || "audio/mpeg").send(audio);
+            }
+          } else {
+            request.log.warn({ status: freeTts.status, contentType, voice }, "TTS.ai free Persian voice unavailable; trying next voice");
+          }
+        } catch (error) {
+          request.log.warn({ err: error, voice }, "TTS.ai free Persian request failed; trying next voice");
+          if (controller.signal.aborted) break;
+        }
+      }
+
       // Primary no-key Persian neural voice: Microsoft Edge Read Aloud.
       // The newer msedge-tts client sends the current Edge-compatible handshake headers.
       try {
