@@ -23,7 +23,7 @@ export const discoveryRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const query = text((request.query as { q?: unknown }).q);
-    const place = text((request.query as { place?: unknown }).place, 40);
+    const place = text((request.query as { place?: unknown }).place, 120);
     if (query.length < 2) {
       return reply.code(400).send({ success: false, error: "عبارت جست‌وجو را وارد کنید." });
     }
