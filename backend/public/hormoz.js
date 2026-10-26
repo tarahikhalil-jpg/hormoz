@@ -308,11 +308,58 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
           finish("فایل صوتی نوا دریافت شد اما پخش آن در گوشی ناموفق بود.");
         };
         return fallbackAudio.play();
-      }).catch((error) => {
-        console.warn("Hormoz Nava TTS failed:", error);
-        // If the server-side Persian TTS provider is down, do not stop at an error:
-        // retry the same response through the phone/browser speech engine.
+      }).catch(async (error) => {
+        console.warn("Hormoz Nava server TTS failed; trying direct online Persian audio:", error);
         if (finished) return;
+
+        // The Render server's outbound IP may be rejected by public TTS providers.
+        // Try Google's public Persian audio directly from the user's browser before
+        // considering any local voice. The audio element does not require CORS access.
+        const directTargets = [
+          "https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=fa&q=",
+          "https://translate.google.com/translate_tts?client=tw-ob&ie=UTF-8&tl=fa&q="
+        ];
+        const playDirectTarget = (targetIndex) => new Promise((resolve, reject) => {
+          if (finished) { reject(new Error("playback cancelled")); return; }
+          if (targetIndex >= directTargets.length) { reject(new Error("online Persian audio unavailable")); return; }
+          const audioUrl = directTargets[targetIndex] + encodeURIComponent(chunk);
+          fallbackAudio.src = audioUrl;
+          let settled = false;
+          const cleanup = () => {
+            fallbackAudio.onended = null;
+            fallbackAudio.onerror = null;
+          };
+          fallbackAudio.onended = () => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            resolve(true);
+          };
+          fallbackAudio.onerror = () => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            playDirectTarget(targetIndex + 1).then(resolve, reject);
+          };
+          fallbackAudio.play().catch(() => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            playDirectTarget(targetIndex + 1).then(resolve, reject);
+          });
+        });
+
+        try {
+          setVoiceStatus("اتصال مستقیم به سرویس آنلاین صدای فارسی…");
+          await playDirectTarget(0);
+          if (!finished) playNextAudioChunk();
+          return;
+        } catch (directError) {
+          console.warn("Direct online Persian audio failed:", directError);
+        }
+
+        // Do not substitute an unrelated voice. Only use a verified Persian voice
+        // if the device has one; otherwise report the actual limitation.
         const canSpeakOnDevice = ("speechSynthesis" in window) &&
           typeof SpeechSynthesisUtterance !== "undefined";
         if (canSpeakOnDevice) {
