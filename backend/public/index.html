@@ -103,7 +103,8 @@
         <a href="#nova">گفت‌وگو با نوا</a>
         <a href="/orders.html">ثبت درخواست</a>
         <a href="/track-order.html">پیگیری درخواست</a>
-        <a href="/directory.html">فهرست خدمات</a>
+        <a href="/directory.html">فهرست خدمات تأییدشده</a>
+        <a href="/discover.html">🔎 جست‌وجوی عمومی وب</a>
         <a href="/global-office.html" style="color:var(--gold);font-weight:bold">🧾 دفتر هوشمند هرمز</a>
       </nav>
     </header>
@@ -117,6 +118,7 @@
         <div class="actions">
           <a class="btn" href="./market.html">🌍 ورود به بازار آزمایشی کالا و خدمات</a>
           <a class="btn secondary" href="#services">پیدا کردن خدمت موردنیاز</a>
+          <a class="btn secondary" href="/discover.html">🔎 پیدا کردن خدمات در اینترنت</a>
           <a class="btn secondary" href="#work">پیدا کردن فرصت همکاری</a>
           <a class="btn secondary" href="/orders.html">📝 ثبت درخواست خدمت</a>
           <a class="btn secondary" href="/track-order.html">🎫 پیگیری با کد رهگیری</a>
@@ -162,7 +164,7 @@
           <p class="hint">یک گزینه را انتخاب کن؛ فهرست خدمات از سامانه بارگذاری می‌شود و فقط موارد تأییدشده نمایش داده می‌شوند.</p>
         </div>
         <div class="grid">
-          <article class="card"><div class="icon">🏠</div><h3>سوئیت و اقامتگاه</h3><p>جست‌وجوی اقامت، هتل و بوم‌گردی در فهرست خدمات.</p><a class="btn" href="/directory.html?q=سوئیت">جست‌وجوی اقامت</a></article>
+          <article class="card"><div class="icon">🏠</div><h3>سوئیت و اقامتگاه</h3><p>جست‌وجوی اقامت، هتل و بوم‌گردی در فهرست خدمات.</p><a class="btn" href="/discover.html?q=سوئیت">جست‌وجوی اقامت</a></article>
           <article class="card"><div class="icon">☕</div><h3>کافه و رستوران</h3><p>یافتن خدمات غذایی و کسب‌وکارهای محلی تأییدشده.</p><a class="btn" href="/directory.html?q=کافه">جست‌وجوی کافه</a></article>
           <article class="card"><div class="icon">🧰</div><h3>تعمیرکار و خدمات فنی</h3><p>مسیر جست‌وجوی تعمیرات، برق‌کار و خدمات فنی.</p><a class="btn" href="/directory.html?q=تعمیرکار">جست‌وجوی تعمیرکار</a></article>
           <article class="card"><div class="icon">🚤</div><h3>گردشگری و سفر</h3><p>بررسی خدمات گردشگری و راهنمای سفر.</p><a class="btn" href="/directory.html?q=گردشگری">جست‌وجوی گردشگری</a></article>
@@ -475,8 +477,7 @@
       ];
       const isServiceSearch = /سوئیت|سوییت|اقامتگاه|هتل|راننده|خودرو|ماشین|قایق|لنج|رستوران|کافه|تعمیرکار|برق.?کار|لوله.?کش|راهنمای گردشگری|اقامت|تعمیر/.test(normalizedRequest)
         && /پیدا|جست.?وجو|نیاز|لازم|میخواهم|می خواهم|می‌خواهم|میخوام|می‌خوام|ببر|هدایت|باز کن/.test(normalizedRequest);
-      const requestedRoute = isServiceSearch
-        ? {href: "/directory.html?q=" + encodeURIComponent(message), title: "جست‌وجوی خدمات", description: "جست‌وجوی واقعی در فهرست خدمات تأییدشده را با عبارت خودت باز می‌کنم. اگر موردی تأیید نشده باشد، آن را به‌عنوان موجود معرفی نمی‌کنیم."}
+      undefined
         : (asksToNavigate ? routeIntents.find(item => item.test.test(normalizedRequest)) : null);
       if (requestedRoute) {
         addConversationTurn(message, "user");
