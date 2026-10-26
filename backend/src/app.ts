@@ -2072,6 +2072,28 @@ return reply.type("application/xml; charset=utf-8").send(content);
               return reply.header("Cache-Control", "no-store").type(contentType.split(";")[0] || "audio/mpeg").send(audio);
             }
           }
+          // Pollinations also exposes a simpler GET audio route. Use it as a fallback
+          // for keys/providers that reject the OpenAI-compatible POST request.
+          try {
+            const simpleUrl = "https://gen.pollinations.ai/audio/" + encodeURIComponent(text) +
+              "?voice=nova&model=elevenlabs/eleven-v3&response_format=mp3";
+            const simpleResponse = await fetch(simpleUrl, {
+              headers: { "Authorization": "Bearer " + pollinationsKey, "Accept": "audio/mpeg, audio/*" },
+              signal: controller.signal
+            });
+            const simpleType = simpleResponse.headers.get("content-type") || "";
+            if (simpleResponse.ok && simpleType.toLowerCase().includes("audio")) {
+              const simpleAudio = Buffer.from(await simpleResponse.arrayBuffer());
+              if (simpleAudio.length > 1000) {
+                request.log.info({ bytes: simpleAudio.length }, "Nava TTS succeeded via Pollinations GET audio fallback");
+                return reply.header("Cache-Control", "no-store").type(simpleType.split(";")[0] || "audio/mpeg").send(simpleAudio);
+              }
+            }
+            request.log.warn({ status: simpleResponse.status, contentType: simpleType }, "Pollinations GET audio fallback unavailable");
+          } catch (error) {
+            request.log.warn({ err: error }, "Pollinations GET audio fallback failed");
+            if (controller.signal.aborted) break;
+          }
           request.log.warn({ status: pollinations.status, contentType }, "Pollinations Nava TTS key/provider unavailable; trying next configured key");
         } catch (error) {
           request.log.warn({ err: error }, "Pollinations Nava TTS request failed; trying next configured key");
