@@ -2189,44 +2189,10 @@ return reply.type("application/xml; charset=utf-8").send(content);
         }
       }
 
-      // Use the minimal public Translate TTS query. Extra player-only fields
-      // (sl/total/idx/textlen/ttsspeed) can cause HTTP 400 on current endpoints.
-      const ttsTargets = [
-        { host: "https://translate.google.com/translate_tts", client: "tw-ob" },
-        { host: "https://translate.googleapis.com/translate_tts", client: "gtx" }
-      ];
-      let lastStatus = 502;
-      for (const target of ttsTargets) {
-        const params = new URLSearchParams({
-          ie: "UTF-8", oe: "UTF-8", q: text, tl: "fa", client: target.client
-        });
-        try {
-          const upstream = await fetch(target.host + "?" + params.toString(), {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-              "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.8",
-              "Referer": "https://translate.google.com/"
-            },
-            signal: controller.signal
-          });
-          if (!upstream.ok) {
-            lastStatus = upstream.status;
-            request.log.warn({ status: upstream.status, client: target.client, host: target.host }, "Nava fallback TTS provider rejected request");
-            continue;
-          }
-          const audio = Buffer.from(await upstream.arrayBuffer());
-          const contentType = upstream.headers.get("content-type") || "";
-          if (audio.length && contentType.toLowerCase().includes("audio")) {
-            return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(audio);
-          }
-          request.log.warn({ client: target.client, host: target.host, contentType, bytes: audio.length }, "Nava fallback TTS returned invalid audio");
-        } catch (error) {
-          lastStatus = controller.signal.aborted ? 504 : lastStatus;
-          request.log.warn({ err: error, client: target.client, host: target.host }, "Nava fallback TTS request failed; trying next voice endpoint");
-          if (controller.signal.aborted) break;
-        }
-      }
-      request.log.error({ lastStatus }, "All Nava fallback TTS modes failed");
+      // Do not use Google Translate as a fallback: its Persian voice gender is not guaranteed.
+      // If no verified female Persian provider is available, report that honestly instead of speaking with a male voice.
+      request.log.error("No verified female Persian TTS provider succeeded");
+      return reply.code(503).send({ error: "صدای زنانهٔ فارسی نوا فعلاً در دسترس نیست؛ پاسخ متنی آماده است." });
       return reply.code(502).send({ error: "سرویس رایگان صدای فارسی در دسترس نیست؛ پاسخ متنی آماده است." });
     } catch (error) {
       request.log.warn({ err: error }, "Nava TTS request failed");
