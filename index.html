@@ -164,8 +164,8 @@ function addServiceRoute(message){
  const wrap=document.createElement("div");wrap.className="chat-turn chat-nava";wrap.style.maxWidth="100%";
  const title=document.createElement("strong");title.textContent="برای تکمیل این درخواست، وارد بخش «"+route.label+"» شو.";
  const note=document.createElement("p");note.textContent="در فرم بعدی، جزئیات لازم را وارد و در صورت تمایل درخواست را ثبت کن. هیچ رزرو یا سفارشی تا زمان تأیید نهایی قطعی نیست.";note.style.margin="6px 0 10px";
- const link=document.createElement("a");link.className="btn";link.href=route.type==="stay"?API+"/discover.html?q="+encodeURIComponent(message):API+"/orders.html?serviceType="+encodeURIComponent(route.type);link.textContent=route.type==="stay"?"جست‌وجوی اینترنتی اقامتگاه‌ها ↗":"ادامه به بخش "+route.label+" ↗";link.style.textDecoration="none";
- if(route.type==="stay"){note.textContent="سرنخ‌های عمومی اینترنت نمایش داده می‌شوند؛ مجوز، قیمت و ظرفیت باید مستقیم بررسی شوند. هیچ رزروی خودکار انجام نمی‌شود.";}
+ const link=document.createElement("a");link.className="btn";link.href=API+"/orders.html?serviceType="+encodeURIComponent(route.type)+"&request="+encodeURIComponent(message);link.textContent=route.type==="stay"?"ثبت درخواست سوئیت یا اقامتگاه ↗":"ادامه به بخش "+route.label+" ↗";link.style.textDecoration="none";
+ if(route.type==="stay"){title.textContent="درخواست سوئیت تشخیص داده شد؛ از اینجا سفارش را ثبت کن.";note.textContent="فرم سفارش سوئیت باز می‌شود و درخواست اولیه‌ات داخل فرم قرار می‌گیرد. ثبت فرم، رزرو قطعی نیست؛ بعد از بررسی باید ظرفیت و قیمت تأیید شود.";}
  wrap.append(title,note,link);historyBox.appendChild(wrap);scrollConversationToBottom();
 }
 document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>askWith(b.dataset.prompt)));
