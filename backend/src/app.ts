@@ -2040,14 +2040,14 @@ return reply.type("application/xml; charset=utf-8").send(content);
         }
       }
 
-      // Pollinations hosted speech: use the project's existing server-side key when configured.
-      // Multilingual voice is preferred for Persian; keep the key on the server only.
+      // Try both the server key and the user's public app key. A stale server key
+      // must not mask a valid browser app key; never accept browser-supplied sk_ secrets.
       const browserAppKey = request.headers["x-pollinations-app-key"];
-      // A user's public Pollinations app key may be sent from the same Hormoz browser.
-      // Accept only pk_ app keys here; never accept a browser-supplied sk_ secret.
-      const pollinationsKey = process.env.POLLINATIONS_API_KEY ||
-        (typeof browserAppKey === "string" && /^pk_[A-Za-z0-9_-]+$/.test(browserAppKey) ? browserAppKey : undefined);
-      if (pollinationsKey) {
+      const browserKey = typeof browserAppKey === "string" && /^pk_[A-Za-z0-9_-]+$/.test(browserAppKey)
+        ? browserAppKey
+        : "";
+      const pollinationsKeys = [...new Set([process.env.POLLINATIONS_API_KEY || "", browserKey].filter(Boolean))];
+      for (const pollinationsKey of pollinationsKeys) {
         try {
           const pollinations = await fetch("https://gen.pollinations.ai/v1/audio/speech", {
             method: "POST",
@@ -2068,12 +2068,14 @@ return reply.type("application/xml; charset=utf-8").send(content);
           if (pollinations.ok && contentType.toLowerCase().includes("audio")) {
             const audio = Buffer.from(await pollinations.arrayBuffer());
             if (audio.length > 0) {
+              request.log.info({ bytes: audio.length }, "Nava TTS succeeded via Pollinations");
               return reply.header("Cache-Control", "no-store").type(contentType.split(";")[0] || "audio/mpeg").send(audio);
             }
           }
-          request.log.warn({ status: pollinations.status, contentType }, "Pollinations Nava TTS unavailable; trying Microsoft Edge");
+          request.log.warn({ status: pollinations.status, contentType }, "Pollinations Nava TTS key/provider unavailable; trying next configured key");
         } catch (error) {
-          request.log.warn({ err: error }, "Pollinations Nava TTS request failed; trying Microsoft Edge");
+          request.log.warn({ err: error }, "Pollinations Nava TTS request failed; trying next configured key");
+          if (controller.signal.aborted) break;
         }
       }
 
