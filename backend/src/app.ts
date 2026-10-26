@@ -2042,7 +2042,11 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
       // Pollinations hosted speech: use the project's existing server-side key when configured.
       // Multilingual voice is preferred for Persian; keep the key on the server only.
-      const pollinationsKey = process.env.POLLINATIONS_API_KEY;
+      const browserAppKey = request.headers["x-pollinations-app-key"];
+      // A user's public Pollinations app key may be sent from the same Hormoz browser.
+      // Accept only pk_ app keys here; never accept a browser-supplied sk_ secret.
+      const pollinationsKey = process.env.POLLINATIONS_API_KEY ||
+        (typeof browserAppKey === "string" && /^pk_[A-Za-z0-9_-]+$/.test(browserAppKey) ? browserAppKey : undefined);
       if (pollinationsKey) {
         try {
           const pollinations = await fetch("https://gen.pollinations.ai/v1/audio/speech", {
