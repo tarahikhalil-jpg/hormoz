@@ -40,7 +40,7 @@ const $=id=>document.getElementById(id);
 const POLLI_CALLBACK=location.origin+'/pollinations-callback.html';
 const POLLI_KEY_STORE='hormoz_pollinations_app_key';
 const savedAppKey=localStorage.getItem(POLLI_KEY_STORE)||'';
-function currentToken(){return sessionStorage.getItem('hormoz_pollinations_user_token')||''}
+function currentToken(){return sessionStorage.getItem('hormoz_pollinations_user_token')||localStorage.getItem('hormoz_pollinations_user_token')||''}
 function showEngineStatus(){const token=currentToken();$('engineStatus').textContent=token?'✅ حساب در همین تب متصل است؛ تولید تصویر از اعتبار حساب خودت استفاده می‌کند.': '⚠️ حساب متصل نیست. App Key عمومی را وارد کن و «اتصال حساب خودم» را بزن.';}
 async function checkEngine(){showEngineStatus();}
 $('checkEngine').addEventListener('click',checkEngine);
