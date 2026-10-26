@@ -283,7 +283,7 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
       // If the user explicitly connected Pollinations in this browser session,
       // call Pollinations directly so the OAuth token never passes through Hormoz's server.
       const userToken = (() => {
-        try { return sessionStorage.getItem("hormoz_pollinations_user_token") || ""; }
+        try { return sessionStorage.getItem("hormoz_pollinations_user_token") || localStorage.getItem("hormoz_pollinations_user_token") || ""; }
         catch (_) { return ""; }
       })();
       const audioRequest = userToken
