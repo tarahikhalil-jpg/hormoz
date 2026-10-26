@@ -2084,7 +2084,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
         // The Edge websocket can stall on some hosts; never let it block all fallback voices.
         const edgeResult = await Promise.race([
           edgeFemale.synthesize(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Edge TTS timed out after 6 seconds")), 6000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Edge TTS timed out after 18 seconds")), 18_000))
         ]) as Awaited<ReturnType<typeof edgeFemale.synthesize>>;
         const edgeAudio = Buffer.from(await edgeResult.audio.arrayBuffer());
         if (edgeAudio.length > 0) {
@@ -2125,10 +2125,8 @@ return reply.type("application/xml; charset=utf-8").send(content);
       // Female Persian voices are tried first when the provider advertises one.
       // Otherwise preserve the known-working male voice rather than risk breaking speech.
       const freeTtsVoices: Array<{ voice: string; model: string }> = [
-        ...discoveredFemaleVoices.map((item) => ({ voice: item.id!, model: item.model! })),
-        { voice: "fa_IR-ganji_adabi-medium", model: "piper" },
-        { voice: "fa_IR-gyro-medium", model: "piper" },
-        { voice: "fa_IR-amir-medium", model: "piper" }
+        // Only use voices explicitly advertised as female; never silently switch Nava back to a male voice.
+        ...discoveredFemaleVoices.map((item) => ({ voice: item.id!, model: item.model! }))
       ];
       for (const voiceChoice of freeTtsVoices) {
         const voice = voiceChoice.voice;
