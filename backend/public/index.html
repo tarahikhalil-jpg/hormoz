@@ -542,11 +542,35 @@
         { test: /خدمات تأیید|خدمات تایید|فهرست خدمات|جست.?وجوی خدمات|ارائه.?دهنده.? تأیید|خدمات هوش هرمز|خدمات هرمز/, href: "/directory.html", title: "فهرست خدمات تأییدشده", description: "فهرست از سرور بارگذاری می‌شود و فقط ارائه‌دهندگان تأییدشده را نمایش می‌دهد." },
         { test: /خدمات|سرویس|خدمت/, href: "#services", title: "بخش خدمات هوش هرمز", description: "به دسته‌بندی خدمات می‌رویم تا مسیر مناسب را انتخاب کنی." }
       ];
-      const isServiceSearch = /سوئیت|سوییت|اقامتگاه|هتل|راننده|خودرو|ماشین|قایق|لنج|رستوران|کافه|تعمیرکار|برق.?کار|لوله.?کش|راهنمای گردشگری|اقامت|تعمیر/.test(normalizedRequest)
-        && /پیدا|جست.?وجو|نیاز|لازم|میخواهم|می خواهم|می‌خواهم|میخوام|می‌خوام|ببر|هدایت|باز کن/.test(normalizedRequest);
-      const requestedRoute = isServiceSearch
-        ? {href: "/discover.html?q=" + encodeURIComponent(message), title: "جست‌وجوی خدمات در وب", description: "جست‌وجوی اینترنتی را باز می‌کنم. نتایج عمومی هستند؛ مجوز، قیمت و ظرفیت باید جداگانه بررسی شود."}
-        : (asksToNavigate ? routeIntents.find(item => item.test.test(normalizedRequest)) : null);
+      // هر درخواست مشخص برای یک خدمت باید به فرم سفارش برسد، نه فقط جست‌وجوی وب.
+      // مسیر محلی مستقل از پاسخ هوش مصنوعی است تا حتی در قطعی موتور گفتگو کار کند.
+      const serviceTypes = [
+        {type:"stay",label:"سوئیت و اقامتگاه",test:/سوئیت|سوییت|اقامتگاه|هتل|مهمان.?خانه|بوم.?گردی|اقامت|ویلا/},
+        {type:"flight",label:"بلیت هواپیما",test:/هواپیما|پرواز|بلیت هواپیما|بلیط هواپیما/},
+        {type:"train",label:"بلیت قطار",test:/قطار|بلیت قطار|بلیط قطار/},
+        {type:"bus",label:"بلیت اتوبوس",test:/اتوبوس|بلیت اتوبوس|بلیط اتوبوس/},
+        {type:"boat",label:"شناور و قایق",test:/قایق|شناور|لنج|تور دریایی/},
+        {type:"driver",label:"راننده و حمل‌ونقل",test:/راننده|تاکسی|خودرو|ماشین|ترانسفر|حمل.?ونقل/},
+        {type:"food",label:"غذا و رستوران",test:/غذا|رستوران|کافه|صبحانه|ناهار|شام/},
+        {type:"electrician",label:"برق‌کار",test:/برق.?کار|تعمیر برق|برق خانه/},
+        {type:"repair",label:"تعمیر و خدمات فنی",test:/تعمیرکار|تعمیر|لوله.?کش|کولر|یخچال|لپ.?تاپ|موبایل|گوشی|دوربین مداربسته|اینترنت/},
+        {type:"tourism",label:"گردشگری و راهنما",test:/گردشگری|راهنما|تور|جاهای دیدنی|برنامه سفر/},
+        {type:"skill",label:"مهارت و اشتغال",test:/کار پیدا|کاریابی|استخدام|شغل|اشتغال|رزومه|مهارت/},
+        {type:"letter",label:"نامه و پیگیری اداری",test:/نامه اداری|پیگیری اداری|شهرداری|شکایت|پرونده اداری/},
+        {type:"invoice",label:"فاکتور و صورتحساب",test:/فاکتور|صورتحساب|صورت.?حساب/}
+      ];
+      const serviceIntent = /می.?خواهم|می.?خوام|میخوام|نیاز دارم|لازم دارم|دنبال|پیدا کن|جست.?وجو|ببر|هدایت|ثبت کن|ثبت سفارش|ثبت درخواست|سفارش|رزرو|اجاره|می.?توانم بگیرم|می.?خوام برم/.test(normalizedRequest);
+      const matchedService = serviceTypes.find(item => item.test.test(normalizedRequest));
+      let requestedRoute = null;
+      if (matchedService && serviceIntent) {
+        requestedRoute = {
+          href: "/orders.html?serviceType=" + encodeURIComponent(matchedService.type) + "&request=" + encodeURIComponent(message),
+          title: "ثبت درخواست «" + matchedService.label + "»",
+          description: "درخواستت را به فرم «" + matchedService.label + "» می‌برم. متن خواسته‌ات داخل فرم قرار می‌گیرد؛ پس از ثبت، کد رهگیری دریافت می‌کنی. رزرو یا ارائه خدمت پس از تأیید شرایط قطعی می‌شود."
+        };
+      } else if (asksToNavigate) {
+        requestedRoute = routeIntents.find(item => item.test.test(normalizedRequest)) || null;
+      }
       if (requestedRoute) {
         addConversationTurn(message, "user");
         input.value = "";
@@ -565,6 +589,17 @@
         link.setAttribute("aria-label", "باز کردن " + requestedRoute.title);
         bubble.appendChild(document.createElement("br"));
         bubble.appendChild(link);
+        if (matchedService && serviceIntent) {
+          const browse = document.createElement("a");
+          browse.href = "/discover.html?q=" + encodeURIComponent(message);
+          browse.textContent = "دیدن گزینه‌های موجود در اینترنت";
+          browse.className = "btn secondary";
+          browse.style.display = "inline-block";
+          browse.style.margin = "8px 6px 0 0";
+          browse.style.textDecoration = "none";
+          bubble.appendChild(document.createElement("br"));
+          bubble.appendChild(browse);
+        }
         answer.textContent = requestedRoute.description;
         return;
       }
