@@ -1,0 +1,103 @@
+name: Hormoz live smoke tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/hormoz-live-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check public pages, health, database, AI chat, and Persian audio
+        run: |
+          node <<'NODE'
+          const base = "https://hormoz-ai-backend-777.onrender.com";
+          const failures = [];
+          async function check(name, fn) {
+            try {
+              const detail = await fn();
+              console.log("PASS:", name, detail || "");
+            } catch (e) {
+              failures.push(name + ": " + (e?.message || String(e)));
+              console.error("FAIL:", name, e?.message || e);
+            }
+          }
+          async function get(path) {
+            const r = await fetch(base + path, { signal: AbortSignal.timeout(45000) });
+            const text = await r.text();
+            if (!r.ok) throw new Error("HTTP " + r.status + " " + text.slice(0, 180));
+            return { r, text };
+          }
+          await check("API health", async () => {
+            const { text } = await get("/api/v1/health");
+            const data = JSON.parse(text);
+            if (data.status !== "ok") throw new Error("unexpected response " + text.slice(0,180));
+            return "backend is responding";
+          });
+          await check("Persistent order database", async () => {
+            const { text } = await get("/api/v1/global-orders/health");
+            const data = JSON.parse(text);
+            if (data.ok !== true || data.storage !== "persistent") throw new Error("database not persistent: " + text.slice(0,180));
+            return "database query and order-table setup passed";
+          });
+          for (const path of ["/", "/orders.html", "/track-order.html", "/invoice.html"]) {
+            await check("Page " + path, async () => {
+              const { r, text } = await get(path);
+              if (!text.trim()) throw new Error("empty page");
+              return "HTTP " + r.status + ", " + text.length + " characters";
+            });
+          }
+          await check("Nava AI response", async () => {
+            const r = await fetch(base + "/api/v1/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ message: "فقط با یک کلمه فارسی پاسخ بده: سلام" }),
+              signal: AbortSignal.timeout(60000)
+            });
+            const text = await r.text();
+            let data;
+            try { data = JSON.parse(text); } catch { throw new Error("non-JSON response: " + text.slice(0,180)); }
+            if (!r.ok || data.success !== true || typeof data.response !== "string" || !data.response.trim()) {
+              throw new Error("HTTP " + r.status + ": " + (data.error || text).toString().slice(0,220));
+            }
+            return "AI returned a non-empty answer";
+          });
+          await check("Persian female online TTS", async () => {
+            const r = await fetch(base + "/api/v1/tts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "audio/*" },
+              body: JSON.stringify({ text: "سلام، من نوا هستم." }),
+              signal: AbortSignal.timeout(150000)
+            });
+            const bytes = await r.arrayBuffer();
+            const type = r.headers.get("content-type") || "";
+            if (!r.ok || !type.toLowerCase().includes("audio") || bytes.byteLength < 1000) {
+              const detail = type.includes("json") ? new TextDecoder().decode(bytes).slice(0,220) : type;
+              throw new Error("HTTP " + r.status + ", type=" + type + ", bytes=" + bytes.byteLength + ", " + detail);
+            }
+            return "audio response received (" + bytes.byteLength + " bytes)";
+          });
+          await check("Invalid order is rejected safely", async () => {
+            const r = await fetch(base + "/api/v1/global-orders", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ serviceType: "", details: {}, consent: false }),
+              signal: AbortSignal.timeout(45000)
+            });
+            const text = await r.text();
+            if (r.status !== 400) throw new Error("expected safe HTTP 400, got " + r.status + ": " + text.slice(0,180));
+            return "validation works; no production order was created";
+          });
+          if (failures.length) {
+            console.error("\nSMOKE TEST FAILURES:\n" + failures.join("\n"));
+            process.exit(1);
+          }
+          console.log("\nALL LIVE SMOKE TESTS PASSED");
+          NODE
