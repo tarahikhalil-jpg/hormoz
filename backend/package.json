@@ -17,7 +17,8 @@
     "@fastify/static": "^8.0.0",
     "@fastify/multipart": "^9.2.1",
     "pg": "^8.16.3",
-    "msedge-tts": "^2.1.0"
+    "msedge-tts": "^2.1.0",
+    "edge-tts-universal": "^1.4.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
