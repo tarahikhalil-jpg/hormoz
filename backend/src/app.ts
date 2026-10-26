@@ -2073,15 +2073,47 @@ return reply.type("application/xml; charset=utf-8").send(content);
         }
       }
 
-      // Free anonymous Persian TTS.ai fallback; no API key required.
-      // Their API returns a queued JSON job, so poll for the completed audio URL.
-      const freeTtsVoices = ["fa_IR-ganji_adabi-medium", "fa_IR-gyro-medium", "fa_IR-amir-medium"];
-      for (const voice of freeTtsVoices) {
+      // Prefer a verified female Persian voice if the free provider currently offers one.
+      // Voice availability can change, so discover it at runtime instead of guessing an ID.
+      type TtsVoice = { id?: string; model?: string; language?: string; gender?: string };
+      let discoveredFemaleVoices: TtsVoice[] = [];
+      try {
+        for (const language of ["fa", "fa-IR", "fa_IR"]) {
+          const voiceListResponse = await fetch(
+            "https://api.tts.ai/v1/voices/?language=" + encodeURIComponent(language) + "&gender=female",
+            { headers: { "Accept": "application/json" }, signal: controller.signal }
+          );
+          if (!voiceListResponse.ok) continue;
+          const voiceList = await voiceListResponse.json() as { voices?: TtsVoice[] };
+          const matches = (voiceList.voices || []).filter((item) =>
+            item.id && item.model && String(item.gender || "").toLowerCase() === "female" &&
+            /^fa([_-]|$)/i.test(String(item.language || language))
+          );
+          if (matches.length) {
+            discoveredFemaleVoices = matches;
+            break;
+          }
+        }
+      } catch (error) {
+        request.log.warn({ err: error }, "Could not discover a free female Persian TTS voice; preserving the working fallback");
+      }
+
+      // Free anonymous TTS.ai fallback; no API key required.
+      // Female Persian voices are tried first when the provider advertises one.
+      // Otherwise preserve the known-working male voice rather than risk breaking speech.
+      const freeTtsVoices: Array<{ voice: string; model: string }> = [
+        ...discoveredFemaleVoices.map((item) => ({ voice: item.id!, model: item.model! })),
+        { voice: "fa_IR-ganji_adabi-medium", model: "piper" },
+        { voice: "fa_IR-gyro-medium", model: "piper" },
+        { voice: "fa_IR-amir-medium", model: "piper" }
+      ];
+      for (const voiceChoice of freeTtsVoices) {
+        const voice = voiceChoice.voice;
         try {
           const submit = await fetch("https://api.tts.ai/v1/tts/", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify({ model: "piper", text, voice, language: "fa", format: "mp3", speed: 0.92 }),
+            body: JSON.stringify({ model: voiceChoice.model, text, voice, language: "fa", format: "mp3", speed: 0.92 }),
             signal: controller.signal
           });
           const submittedType = submit.headers.get("content-type") || "";
