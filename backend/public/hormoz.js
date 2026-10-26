@@ -282,7 +282,15 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
       setVoiceStatus("در حال تولید صدای فارسی نوا…");
       fetch("/api/v1/tts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(function () {
+            try {
+              const appKey = localStorage.getItem("hormoz_pollinations_app_key") || "";
+              return /^pk_[A-Za-z0-9_-]+$/.test(appKey) ? { "X-Pollinations-App-Key": appKey } : {};
+            } catch (_) { return {}; }
+          })()
+        },
         body: JSON.stringify({ text: chunk }),
         cache: "no-store"
       }).then(async (response) => {
