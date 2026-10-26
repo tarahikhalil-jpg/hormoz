@@ -2092,26 +2092,23 @@ return reply.type("application/xml; charset=utf-8").send(content);
         request.log.warn({ err: error }, "Nava Edge Persian TTS unavailable; trying legacy fallback");
       }
 
-      // Public Translate TTS endpoints commonly expect the full player query
-      // metadata. Keep requests short and try both hostnames without requiring a paid key.
+      // Use the minimal public Translate TTS query. Extra player-only fields
+      // (sl/total/idx/textlen/ttsspeed) can cause HTTP 400 on current endpoints.
       const ttsTargets = [
         { host: "https://translate.google.com/translate_tts", client: "tw-ob" },
-        { host: "https://translate.googleapis.com/translate_tts", client: "gtx" },
-        { host: "https://translate.google.com/translate_tts", client: "gtx" }
+        { host: "https://translate.googleapis.com/translate_tts", client: "gtx" }
       ];
       let lastStatus = 502;
       for (const target of ttsTargets) {
         const params = new URLSearchParams({
-          ie: "UTF-8", q: text, tl: "fa", sl: "auto", client: target.client,
-          total: "1", idx: "0", textlen: String(text.length), ttsspeed: "1"
+          ie: "UTF-8", oe: "UTF-8", q: text, tl: "fa", client: target.client
         });
         try {
           const upstream = await fetch(target.host + "?" + params.toString(), {
             headers: {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
               "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.8",
-              "Referer": "https://translate.google.com/",
-              "X-Requested-With": "XMLHttpRequest"
+              "Referer": "https://translate.google.com/"
             },
             signal: controller.signal
           });
