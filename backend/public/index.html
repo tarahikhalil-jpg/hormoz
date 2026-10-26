@@ -377,13 +377,20 @@
             }
           }
           if (!blob) {
+            const headers = {"Content-Type": "application/json"};
+            // Reuse only a public Pollinations App Key saved by the user on this same origin.
+            // Never send the user's OAuth bearer token or any sk_ secret through the Hormoz backend.
+            try {
+              const appKey = localStorage.getItem("hormoz_pollinations_app_key") || "";
+              if (/^pk_[A-Za-z0-9_-]+$/.test(appKey)) headers["X-Pollinations-App-Key"] = appKey;
+            } catch (_) {}
             const response = await fetch("/api/v1/tts", {
               method: "POST",
-              headers: {"Content-Type": "application/json"},
+              headers,
               body: JSON.stringify({text: chunk}),
               cache: "no-store"
             });
-            if (!response.ok) throw new Error("سرویس صدای نوا فعلاً پاسخ نداد.");
+            if (!response.ok) throw new Error("سرویس صدای نوا فعلاً پاسخ نداد (" + response.status + ").");
             blob = await response.blob();
           }
           if (!blob.size || !blob.type.toLowerCase().includes("audio")) {
