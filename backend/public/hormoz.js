@@ -417,6 +417,11 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
     return;
   }
 
+  // Nava's voice must not silently fall back to the phone's male Persian voice.
+  // Always use the server-side female-voice pipeline first.
+  playOnlinePersianAudio();
+  return;
+
   const synthAvailable = ("speechSynthesis" in window) && typeof SpeechSynthesisUtterance !== "undefined";
   const synth = synthAvailable ? window.speechSynthesis : null;
   const hasPersianVoice = !!synth && synth.getVoices().some((voice) =>
