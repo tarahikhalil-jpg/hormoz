@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
+import { EdgeTTS } from "edge-tts-universal";
 
 import { chatRoutes } from "./routes/chat.js";
 import { ActionDispatcher } from "./modules/action/dispatcher.js";
@@ -2073,6 +2074,25 @@ return reply.type("application/xml; charset=utf-8").send(content);
         }
       }
 
+      // First try Microsoft's free native Persian female neural voice (Dilara).
+      // Keep this ahead of TTS.ai's currently male-only Persian fallback voices.
+      try {
+        const edgeFemale = new EdgeTTS(text, "fa-IR-DilaraNeural", {
+          rate: "-8%",
+          pitch: "+0Hz",
+          volume: "+0%"
+        });
+        const edgeResult = await edgeFemale.synthesize();
+        const edgeAudio = Buffer.from(await edgeResult.audio.arrayBuffer());
+        if (edgeAudio.length > 0) {
+          request.log.info({ voice: "fa-IR-DilaraNeural", bytes: edgeAudio.length }, "Nava female Persian TTS succeeded via Edge neural voice");
+          return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(edgeAudio);
+        }
+        request.log.warn("Edge female Persian TTS returned empty audio; preserving fallback");
+      } catch (error) {
+        request.log.warn({ err: error }, "Edge female Persian TTS unavailable; trying free fallback voices");
+      }
+
       // Prefer a verified female Persian voice if the free provider currently offers one.
       // Voice availability can change, so discover it at runtime instead of guessing an ID.
       type TtsVoice = { id?: string; model?: string; language?: string; gender?: string };
@@ -2166,25 +2186,6 @@ return reply.type("application/xml; charset=utf-8").send(content);
           request.log.warn({ err: error, voice }, "TTS.ai free Persian request failed; trying next voice");
           if (controller.signal.aborted) break;
         }
-      }
-
-      // Primary no-key Persian neural voice: Microsoft Edge Read Aloud.
-      // The newer msedge-tts client sends the current Edge-compatible handshake headers.
-      try {
-        const edgeTts = new MsEdgeTTS();
-        await edgeTts.setMetadata("fa-IR-DilaraNeural", OUTPUT_FORMAT.WEBM_24KHZ_16BIT_MONO_OPUS);
-        const { audioStream } = edgeTts.toStream(text, { rate: 0.92 });
-        const audioChunks: Buffer[] = [];
-        for await (const chunk of audioStream) {
-          audioChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-        }
-        const audio = Buffer.concat(audioChunks);
-        if (audio.length > 0) {
-          return reply.header("Cache-Control", "no-store").type("audio/webm").send(audio);
-        }
-        request.log.warn("Edge TTS returned an empty audio stream");
-      } catch (error) {
-        request.log.warn({ err: error }, "Nava Edge Persian TTS unavailable; trying legacy fallback");
       }
 
       // Use the minimal public Translate TTS query. Extra player-only fields
