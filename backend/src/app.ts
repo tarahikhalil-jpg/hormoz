@@ -2081,7 +2081,11 @@ return reply.type("application/xml; charset=utf-8").send(content);
           pitch: "+0Hz",
           volume: "+0%"
         });
-        const edgeResult = await edgeFemale.synthesize();
+        // The Edge websocket can stall on some hosts; never let it block all fallback voices.
+        const edgeResult = await Promise.race([
+          edgeFemale.synthesize(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Edge TTS timed out after 6 seconds")), 6000))
+        ]) as Awaited<ReturnType<typeof edgeFemale.synthesize>>;
         const edgeAudio = Buffer.from(await edgeResult.audio.arrayBuffer());
         if (edgeAudio.length > 0) {
           request.log.info({ voice: "fa-IR-DilaraNeural", bytes: edgeAudio.length }, "Nava female Persian TTS succeeded via Edge neural voice");
