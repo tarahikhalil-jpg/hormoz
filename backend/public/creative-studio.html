@@ -54,7 +54,7 @@ $('connectEngine').addEventListener('click',async()=>{
  const challenge=btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
  const state=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
  sessionStorage.setItem('hormoz_polli_verifier',verifier);sessionStorage.setItem('hormoz_polli_state',state);
- const params=new URLSearchParams({response_type:'code',client_id:typed,redirect_uri:POLLI_CALLBACK,scope:'usage',models:'flux,bytedance/seedance-2.0-fast,google/veo-3.1-fast,x-ai/grok-imagine-video',budget:'5',expiry:'7',state,code_challenge:challenge,code_challenge_method:'S256'});
+ const params=new URLSearchParams({response_type:'code',client_id:typed,redirect_uri:POLLI_CALLBACK,scope:'usage',models:'flux,elevenlabs/eleven-multilingual-v2,bytedance/seedance-2.0-fast,google/veo-3.1-fast,x-ai/grok-imagine-video',budget:'5',expiry:'7',state,code_challenge:challenge,code_challenge_method:'S256'});
  location.href='https://enter.pollinations.ai/authorize?'+params.toString();
 });
 $('disconnectEngine').addEventListener('click',()=>{sessionStorage.removeItem('hormoz_pollinations_user_token');sessionStorage.removeItem('hormoz_polli_verifier');sessionStorage.removeItem('hormoz_polli_state');showEngineStatus();});
