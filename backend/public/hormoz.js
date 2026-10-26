@@ -340,8 +340,39 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
         };
         return fallbackAudio.play();
       }).catch(async (error) => {
-        console.warn("Hormoz Nava server TTS failed; trying direct online Persian audio:", error);
+        console.warn("Hormoz Nava primary TTS failed; trying the server TTS route:", error);
         if (finished) return;
+
+        // A saved Pollinations token can expire or lose permission. Retry via Hormoz
+        // so the server can use its configured providers instead of stopping immediately.
+        try {
+          const appKey = (() => {
+            try { return localStorage.getItem("hormoz_pollinations_app_key") || ""; }
+            catch (_) { return ""; }
+          })();
+          const headers = { "Content-Type": "application/json" };
+          if (/^pk_[A-Za-z0-9_-]+$/.test(appKey)) headers["X-Pollinations-App-Key"] = appKey;
+          const retry = await fetch("/api/v1/tts", {
+            method: "POST", headers, body: JSON.stringify({ text: chunk }), cache: "no-store"
+          });
+          if (!retry.ok) throw new Error("Server TTS retry HTTP " + retry.status);
+          const blob = await retry.blob();
+          if (!blob || !blob.size || !blob.type.toLowerCase().includes("audio")) {
+            throw new Error("Server retry did not return an audio file");
+          }
+          if (finished) return;
+          const audioUrl = URL.createObjectURL(blob);
+          fallbackAudio.src = audioUrl;
+          fallbackAudio.onended = () => { URL.revokeObjectURL(audioUrl); playNextAudioChunk(); };
+          fallbackAudio.onerror = () => {
+            URL.revokeObjectURL(audioUrl);
+            finish("فایل صوتی دریافت شد اما پخش آن ناموفق بود؛ پاسخ متنی آماده است.");
+          };
+          await fallbackAudio.play();
+          return;
+        } catch (retryError) {
+          console.warn("Hormoz Nava server TTS retry failed:", retryError);
+        }
 
         // Never switch to an unverified browser or Google voice; that caused male speech.
         finish("صدای زنانهٔ فارسی نوا فعلاً از سرویس آنلاین دریافت نشد؛ پاسخ متنی آماده است.");
