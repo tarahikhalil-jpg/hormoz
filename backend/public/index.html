@@ -346,14 +346,46 @@
       try {
         for (const chunk of chunks) {
           if (requestId !== navaAudioRequestId) return;
-          const response = await fetch("/api/v1/tts", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({text: chunk}),
-            cache: "no-store"
-          });
-          if (!response.ok) throw new Error("سرویس صدای نوا فعلاً پاسخ نداد.");
-          const blob = await response.blob();
+          // Prefer the user's already-authorized Pollinations speech token when available.
+          // Keep it in the browser; never send the bearer token to Hormoz's backend.
+          let blob = null;
+          const speechToken = localStorage.getItem("hormoz_pollinations_user_token")
+            || sessionStorage.getItem("hormoz_pollinations_user_token") || "";
+          if (speechToken) {
+            try {
+              const directResponse = await fetch("https://gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                  "Authorization": "Bearer " + speechToken,
+                  "Content-Type": "application/json",
+                  "Accept": "audio/mpeg, audio/*"
+                },
+                body: JSON.stringify({
+                  model: "elevenlabs/eleven-multilingual-v2",
+                  input: chunk,
+                  voice: "nova",
+                  response_format: "mp3"
+                }),
+                cache: "no-store"
+              });
+              if (directResponse.ok) {
+                const directBlob = await directResponse.blob();
+                if (directBlob.size && directBlob.type.toLowerCase().includes("audio")) blob = directBlob;
+              }
+            } catch (directError) {
+              console.warn("Direct Nava speech unavailable; trying Hormoz server TTS.", directError);
+            }
+          }
+          if (!blob) {
+            const response = await fetch("/api/v1/tts", {
+              method: "POST",
+              headers: {"Content-Type": "application/json"},
+              body: JSON.stringify({text: chunk}),
+              cache: "no-store"
+            });
+            if (!response.ok) throw new Error("سرویس صدای نوا فعلاً پاسخ نداد.");
+            blob = await response.blob();
+          }
           if (!blob.size || !blob.type.toLowerCase().includes("audio")) {
             throw new Error("فایل صوتی معتبر دریافت نشد.");
           }
