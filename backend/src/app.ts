@@ -2092,22 +2092,26 @@ return reply.type("application/xml; charset=utf-8").send(content);
         request.log.warn({ err: error }, "Nava Edge Persian TTS unavailable; trying legacy fallback");
       }
 
-      // Free Google Translate speech fallback. Try both public hostnames and
-      // include dt=t, which some current Google TTS frontends require.
+      // Public Translate TTS endpoints commonly expect the full player query
+      // metadata. Keep requests short and try both hostnames without requiring a paid key.
       const ttsTargets = [
-        { host: "https://translate.googleapis.com/translate_tts", client: "gtx" },
         { host: "https://translate.google.com/translate_tts", client: "tw-ob" },
+        { host: "https://translate.googleapis.com/translate_tts", client: "gtx" },
         { host: "https://translate.google.com/translate_tts", client: "gtx" }
       ];
       let lastStatus = 502;
       for (const target of ttsTargets) {
-        const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: "fa", client: target.client, dt: "t" });
+        const params = new URLSearchParams({
+          ie: "UTF-8", q: text, tl: "fa", sl: "auto", client: target.client,
+          total: "1", idx: "0", textlen: String(text.length), ttsspeed: "1"
+        });
         try {
           const upstream = await fetch(target.host + "?" + params.toString(), {
             headers: {
-              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
               "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.8",
-              "Referer": "https://translate.google.com/"
+              "Referer": "https://translate.google.com/",
+              "X-Requested-With": "XMLHttpRequest"
             },
             signal: controller.signal
           });
