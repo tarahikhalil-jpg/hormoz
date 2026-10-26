@@ -280,20 +280,43 @@ function speakNava(text, onDone, preferOnlineAudio = false) {
       }
       const chunk = chunks[audioIndex++];
       setVoiceStatus("در حال تولید صدای فارسی نوا…");
-      fetch("/api/v1/tts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(function () {
-            try {
-              const appKey = localStorage.getItem("hormoz_pollinations_app_key") || "";
-              return /^pk_[A-Za-z0-9_-]+$/.test(appKey) ? { "X-Pollinations-App-Key": appKey } : {};
-            } catch (_) { return {}; }
-          })()
-        },
-        body: JSON.stringify({ text: chunk }),
-        cache: "no-store"
-      }).then(async (response) => {
+      // If the user explicitly connected Pollinations in this browser session,
+      // call Pollinations directly so the OAuth token never passes through Hormoz's server.
+      const userToken = (() => {
+        try { return sessionStorage.getItem("hormoz_pollinations_user_token") || ""; }
+        catch (_) { return ""; }
+      })();
+      const audioRequest = userToken
+        ? fetch("https://gen.pollinations.ai/v1/audio/speech", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + userToken,
+              "Content-Type": "application/json",
+              "Accept": "audio/mpeg, audio/*"
+            },
+            body: JSON.stringify({
+              model: "elevenlabs/eleven-multilingual-v2",
+              input: chunk,
+              voice: "nova",
+              response_format: "mp3"
+            }),
+            cache: "no-store"
+          })
+        : fetch("/api/v1/tts", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(function () {
+                try {
+                  const appKey = localStorage.getItem("hormoz_pollinations_app_key") || "";
+                  return /^pk_[A-Za-z0-9_-]+$/.test(appKey) ? { "X-Pollinations-App-Key": appKey } : {};
+                } catch (_) { return {}; }
+              })()
+            },
+            body: JSON.stringify({ text: chunk }),
+            cache: "no-store"
+          });
+      audioRequest.then(async (response) => {
         if (!response.ok) {
           let detail = "";
           try { detail = (await response.json()).error || ""; } catch (_) {}
