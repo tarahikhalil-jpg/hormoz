@@ -2102,6 +2102,28 @@ return reply.type("application/xml; charset=utf-8").send(content);
         request.log.warn({ err: error }, "Edge female Persian TTS unavailable; trying free fallback voices");
       }
 
+      // Google Translate's Persian speech endpoint is a no-key fallback for hosts where
+      // Edge's WebSocket is blocked. It returns audio directly; the voice's gender metadata
+      // is not exposed by this endpoint, so use it only after explicitly female providers fail.
+      try {
+        const googleUrl = "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=fa&q=" + encodeURIComponent(text);
+        const googleResponse = await fetch(googleUrl, {
+          headers: { "Accept": "audio/mpeg, audio/*", "User-Agent": "Mozilla/5.0 HormozNava/1.0" },
+          signal: controller.signal
+        });
+        const googleType = googleResponse.headers.get("content-type") || "";
+        if (googleResponse.ok && googleType.toLowerCase().includes("audio")) {
+          const googleAudio = Buffer.from(await googleResponse.arrayBuffer());
+          if (googleAudio.length > 1000) {
+            request.log.info({ bytes: googleAudio.length }, "Nava Persian TTS succeeded via Google Translate fallback");
+            return reply.header("Cache-Control", "no-store").type(googleType.split(";")[0] || "audio/mpeg").send(googleAudio);
+          }
+        }
+        request.log.warn({ status: googleResponse.status, contentType: googleType }, "Google Translate Persian TTS fallback unavailable");
+      } catch (error) {
+        request.log.warn({ err: error }, "Google Translate Persian TTS fallback failed");
+      }
+
       // Prefer a verified female Persian voice if the free provider currently offers one.
       // Voice availability can change, so discover it at runtime instead of guessing an ID.
       type TtsVoice = { id?: string; model?: string; language?: string; gender?: string };
