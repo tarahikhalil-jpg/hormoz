@@ -44,6 +44,28 @@ const db = databaseUrl && host
 let tableReady = false;
 const SESSION_TTL = 4 * 60 * 60 * 1000;
 const loginFailures = new Map<string, { count: number; blockedUntil: number }>();
+const orderCreationAttempts = new Map<string, { count: number; resetAt: number }>();
+function isOrderCreationLimited(key: string) {
+  const record = orderCreationAttempts.get(key);
+  if (!record) return false;
+  if (record.resetAt <= Date.now()) { orderCreationAttempts.delete(key); return false; }
+  return record.count >= 10;
+}
+function noteOrderCreationAttempt(key: string) {
+  const now = Date.now();
+  const current = orderCreationAttempts.get(key);
+  if (!current || current.resetAt <= now) {
+    orderCreationAttempts.set(key, { count: 1, resetAt: now + 10 * 60 * 1000 });
+  } else {
+    current.count += 1;
+  }
+  // Keep the in-memory limiter bounded on a public endpoint.
+  if (orderCreationAttempts.size > 5000) {
+    for (const [ip, entry] of orderCreationAttempts) {
+      if (entry.resetAt <= now) orderCreationAttempts.delete(ip);
+    }
+  }
+}
 function isLoginBlocked(key: string) {
   const record = loginFailures.get(key);
   if (!record) return false;
@@ -137,6 +159,11 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/api/v1/global-orders", async (request, reply) => {
+    const ipKey = String(request.ip ?? "unknown");
+    if (isOrderCreationLimited(ipKey)) {
+      return reply.code(429).send({ ok: false, message: "درخواست‌های ثبت سفارش از این اتصال زیاد است؛ ۱۰ دقیقه دیگر دوباره تلاش کنید." });
+    }
+    noteOrderCreationAttempt(ipKey);
     if (!db) return reply.code(503).send({ ok: false, message: "ذخیره‌سازی دائمی سفارش روی سرور آماده نیست." });
     const body = (request.body ?? {}) as Record<string, unknown>;
     const serviceType = String(body.serviceType ?? "").trim().slice(0, 100);
