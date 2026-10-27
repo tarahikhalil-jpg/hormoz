@@ -5,6 +5,27 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/hormoz-live-smoke.yml"
+      - "backend/src/**"
+      - "backend/public/**"
+      - "backend/package.json"
+      - "index.html"
+      - "orders.html"
+      - "track-order.html"
+      - "invoice.html"
+      - "manifest.json"
+      - "sw.js"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/src/**"
+      - "backend/public/**"
+      - "backend/package.json"
+      - "index.html"
+      - "orders.html"
+      - "track-order.html"
+      - "invoice.html"
+      - "manifest.json"
+      - "sw.js"
   workflow_dispatch:
 
 permissions:
