@@ -1285,10 +1285,6 @@ export async function adminRoutes(app: FastifyInstance) {
         ok: true,
         orderNumber: String(row.order_number),
         serviceType: String(row.service_type),
-        requestDetails: (() => {
-          const details = row.details && typeof row.details === "object" && !Array.isArray(row.details) ? row.details as Record<string, unknown> : {};
-          return String(details.request ?? "").trim().slice(0, 2500);
-        })(),
         status: String(row.status),
         message: safeMessages[String(row.status)] ?? "وضعیت سفارش به‌روزرسانی شده است.",
         history,
