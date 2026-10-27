@@ -2094,6 +2094,44 @@ return reply.type("application/xml; charset=utf-8").send(content);
             request.log.warn({ err: error }, "Pollinations GET audio fallback failed");
             if (controller.signal.aborted) break;
           }
+          // If the account can access audio but not the ElevenLabs model above, try
+          // documented alternate TTS models with female-presenting voice presets.
+          // Never switch to a male voice as an implicit fallback.
+          for (const alternative of [
+            { model: "openai/tts-1", voice: "shimmer" },
+            { model: "elevenlabs/eleven-v4", voice: "nova" },
+            { model: "elevenlabs/eleven-multilingual-v2", voice: "bella" }
+          ]) {
+            try {
+              const alternateResponse = await fetch("https://gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                  "Authorization": "Bearer " + pollinationsKey,
+                  "Content-Type": "application/json",
+                  "Accept": "audio/mpeg, audio/*"
+                },
+                body: JSON.stringify({
+                  model: alternative.model,
+                  input: text,
+                  voice: alternative.voice,
+                  response_format: "mp3"
+                }),
+                signal: controller.signal
+              });
+              const alternateType = alternateResponse.headers.get("content-type") || "";
+              if (alternateResponse.ok && alternateType.toLowerCase().includes("audio")) {
+                const alternateAudio = Buffer.from(await alternateResponse.arrayBuffer());
+                if (alternateAudio.length > 1000) {
+                  request.log.info({ model: alternative.model, voice: alternative.voice, bytes: alternateAudio.length }, "Nava female-voice TTS succeeded via alternate Pollinations model");
+                  return reply.header("Cache-Control", "no-store").type(alternateType.split(";")[0] || "audio/mpeg").send(alternateAudio);
+                }
+              }
+              request.log.warn({ status: alternateResponse.status, contentType: alternateType, model: alternative.model }, "Alternate Pollinations TTS model unavailable");
+            } catch (error) {
+              request.log.warn({ err: error, model: alternative.model }, "Alternate Pollinations TTS request failed");
+              if (controller.signal.aborted) break;
+            }
+          }
           request.log.warn({ status: pollinations.status, contentType }, "Pollinations Nava TTS key/provider unavailable; trying next configured key");
         } catch (error) {
           request.log.warn({ err: error }, "Pollinations Nava TTS request failed; trying next configured key");
