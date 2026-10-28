@@ -419,6 +419,13 @@
 
 
 
+    <section class="card" id="unifiedFeedbackPanel">
+      <h2>🧭 پیام‌های یکپارچه: پیشنهاد، انتقاد، شکایت و ایراد فنی</h2>
+      <p class="subtitle">پیام‌های ثبت‌شده از درگاه اصلی؛ مدیر می‌تواند وضعیت رسیدگی و پاسخ کوتاه را ذخیره کند.</p>
+      <button type="button" onclick="loadUnifiedFeedback()">🔄 دریافت پیام‌های یکپارچه</button>
+      <div id="unifiedFeedbackList" class="result">برای دریافت پیام‌ها، دکمه را بزنید.</div>
+    </section>
+
     <!-- SERVICE PROVIDERS -->
     <section class="card" id="providersPanel">
       <h2>🏪 ثبت و مدیریت ارائه‌دهندگان خدمات</h2>
@@ -906,6 +913,56 @@ async function loadOpportunities() {
 }
 
 
+async function loadUnifiedFeedback() {
+  const box = document.getElementById("unifiedFeedbackList");
+  box.textContent = "در حال دریافت پیام‌ها…";
+  try {
+    const data = await api("/api/v1/admin/unified-feedback");
+    const items = Array.isArray(data.feedback) ? data.feedback : [];
+    if (!items.length) {
+      box.innerHTML = '<div class="empty">هنوز پیام یکپارچه‌ای ثبت نشده است.</div>';
+      return;
+    }
+    const labels = {suggestion:"پیشنهاد",complaint:"شکایت / گزارش مشکل",criticism:"انتقاد و نظر",question:"راهنمایی",technical_issue:"ایراد فنی",other:"موضوع دیگر"};
+    const statuses = {received:"دریافت شد",reviewing:"در حال بررسی",answered:"پاسخ ثبت شد",resolved:"رسیدگی تکمیل شد"};
+    box.innerHTML = items.map(item => `
+      <div class="feedback">
+        <strong>${escapeHtml(item.referenceNumber || item.id)}</strong> — ${escapeHtml(labels[item.category] || item.category)}
+        <div><small>ثبت: ${escapeHtml(formatTime(item.createdAt))} · وضعیت: ${escapeHtml(statuses[item.status] || item.status)}</small></div>
+        <div><strong>عنوان:</strong> ${escapeHtml(item.subject || "—")}</div>
+        <div><strong>نام:</strong> ${escapeHtml(item.customerLabel || "—")} · <strong>راه تماس:</strong> ${escapeHtml(item.contact || "—")}</div>
+        <p style="white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(item.message)}</p>
+        <label>وضعیت رسیدگی</label>
+        <select id="uf-status-${escapeHtml(item.id)}" class="finance-input">
+          ${Object.entries(statuses).map(([v,l]) => `<option value="${v}" ${item.status===v?"selected":""}>${l}</option>`).join("")}
+        </select>
+        <label>پاسخ یا یادداشت</label>
+        <textarea id="uf-note-${escapeHtml(item.id)}" class="finance-input" maxlength="1500" rows="3" placeholder="پاسخ کوتاه یا توضیح پیگیری">${escapeHtml(item.staffNote || "")}</textarea>
+        <button type="button" onclick="saveUnifiedFeedback('${escapeHtml(item.id)}')">💾 ذخیره وضعیت و پاسخ</button>
+      </div>
+    `).join("");
+  } catch (error) {
+    box.innerHTML = '<div class="error">' + escapeHtml(error.message || "دریافت پیام‌ها ناموفق بود.") + '</div>';
+  }
+}
+
+async function saveUnifiedFeedback(id) {
+  const box = document.getElementById("unifiedFeedbackList");
+  try {
+    const status = document.getElementById("uf-status-" + id).value;
+    const staffNote = document.getElementById("uf-note-" + id).value;
+    const data = await api("/api/v1/admin/unified-feedback/" + encodeURIComponent(id) + "/status", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({status, staffNote})
+    });
+    box.insertAdjacentHTML("afterbegin", '<div class="result success">' + escapeHtml(data.message || "ذخیره شد.") + '</div>');
+    await loadUnifiedFeedback();
+  } catch (error) {
+    box.insertAdjacentHTML("afterbegin", '<div class="result error">' + escapeHtml(error.message || "ذخیره ناموفق بود.") + '</div>');
+  }
+}
+
 async function loadFeedback() {
 
   const box =
@@ -1361,6 +1418,7 @@ async function loadAll() {
     loadStats(),
     loadStatus(),
     loadFeedback(),
+    loadUnifiedFeedback(),
     loadOpportunities(),
     loadServiceOrders(),
     loadFinanceInvoices(),
