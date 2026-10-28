@@ -1036,6 +1036,38 @@ export async function adminRoutes(app: FastifyInstance) {
     };
   });
 
+  app.get("/api/v1/admin/unified-feedback", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "نیاز به ورود مدیر دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await db.query("CREATE TABLE IF NOT EXISTS hormoz_feedback (id TEXT PRIMARY KEY, tracking_token TEXT NOT NULL UNIQUE, category TEXT NOT NULL, subject TEXT NOT NULL DEFAULT '', message TEXT NOT NULL, customer_label TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'received', staff_note TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+      const result = await db.query("SELECT id, category, subject, message, customer_label, contact, status, staff_note, created_at, updated_at FROM hormoz_feedback ORDER BY created_at DESC LIMIT 300");
+      return { feedback: result.rows.map(row => ({ id: String(row.id), referenceNumber: "HZ-MSG-" + String(row.id).slice(0,10), category: String(row.category), subject: String(row.subject ?? ""), message: String(row.message), customerLabel: String(row.customer_label ?? ""), contact: String(row.contact ?? ""), status: String(row.status), staffNote: String(row.staff_note ?? ""), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "دریافت پیام‌های یکپارچه ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/admin/unified-feedback/:id/status", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(401).send({ message: "نیاز به ورود مدیر دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const id = String((request.params as { id?: string }).id ?? "");
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const status = String(body.status ?? "");
+    const staffNote = String(body.staffNote ?? "").trim().slice(0,1500);
+    if (!["received","reviewing","answered","resolved"].includes(status)) return reply.code(400).send({ message: "وضعیت پیام معتبر نیست." });
+    try {
+      await db.query("CREATE TABLE IF NOT EXISTS hormoz_feedback (id TEXT PRIMARY KEY, tracking_token TEXT NOT NULL UNIQUE, category TEXT NOT NULL, subject TEXT NOT NULL DEFAULT '', message TEXT NOT NULL, customer_label TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'received', staff_note TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+      const result = await db.query("UPDATE hormoz_feedback SET status=$2, staff_note=$3, updated_at=NOW() WHERE id=$1 RETURNING id,status,staff_note,updated_at",[id,status,staffNote]);
+      if (!result.rows.length) return reply.code(404).send({ message: "پیام پیدا نشد." });
+      return { ok: true, message: "وضعیت پیام به‌روزرسانی شد." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "به‌روزرسانی وضعیت ناموفق بود." });
+    }
+  });
+
   /*
    * آپلود پوستر و موسیقی
    */
