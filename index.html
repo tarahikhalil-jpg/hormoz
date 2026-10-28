@@ -24,6 +24,18 @@ header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blu
 /* Unified in-page service viewer */
 #hormoz-panel{display:none;position:fixed;inset:0;z-index:9999;background:#041522f5;padding:10px}#hormoz-panel.open{display:flex}#hormoz-panel .hp-box{display:flex;flex-direction:column;width:100%;max-width:1200px;height:100%;margin:auto;border:1px solid #347086;border-radius:14px;overflow:hidden;background:#0b2638}#hormoz-panel .hp-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px;background:#082033;color:#70ead7}#hormoz-panel .hp-bar strong{flex:1}#hormoz-panel button{padding:8px 12px;border-radius:9px;border:1px solid #477086;background:#10364d;color:white}#hormoz-panel iframe{width:100%;flex:1;border:0;background:white}@media(max-width:600px){#hormoz-panel{padding:0}#hormoz-panel .hp-box{border-radius:0}}
 </style>
+
+<style id="hormoz-module-shell-style">
+#hormoz-module-shell{position:fixed;inset:0;z-index:99999;background:rgba(2,12,22,.78);display:none;align-items:center;justify-content:center;padding:12px}
+#hormoz-module-shell.open{display:flex}
+#hormoz-module-card{width:min(1100px,100%);height:min(92dvh,900px);background:#071b2b;border:1px solid #3b6478;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 80px #0009}
+#hormoz-module-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:#0c2a3e;color:#f3f8fc;font-family:Tahoma,Arial,sans-serif}
+#hormoz-module-toolbar strong{font-size:15px}
+#hormoz-module-close{border:0;border-radius:10px;padding:8px 14px;background:#63e6d1;color:#062532;font:inherit;font-weight:bold;cursor:pointer}
+#hormoz-module-frame{width:100%;height:100%;flex:1;border:0;background:#fff}
+body.hormoz-module-open{overflow:hidden}
+@media(max-width:600px){#hormoz-module-shell{padding:0}#hormoz-module-card{width:100%;height:100dvh;border-radius:0;border:0}#hormoz-module-toolbar{padding:10px}#hormoz-module-toolbar strong{font-size:13px}}
+</style>
 </head>
 <body>
 <header><div class="wrap head">
@@ -344,5 +356,10 @@ document.getElementById('hp-close').addEventListener('click',closePanel);documen
 })();
 </script>
 
+
+<div id="hormoz-module-shell" aria-hidden="true" role="dialog" aria-modal="true" aria-label="بخش یکپارچه هوش هرمز"><div id="hormoz-module-card"><div id="hormoz-module-toolbar"><strong id="hormoz-module-title">بخش‌های هوش هرمز</strong><button id="hormoz-module-close" type="button">بازگشت به صفحه اصلی ✕</button></div><iframe id="hormoz-module-frame" title="بخش یکپارچه هوش هرمز" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>
+<script id="hormoz-module-shell-script">
+(()=>{const shell=document.getElementById('hormoz-module-shell');const frame=document.getElementById('hormoz-module-frame');const title=document.getElementById('hormoz-module-title');const close=document.getElementById('hormoz-module-close');if(!shell||!frame||!close)return;const backend='https://hormoz-ai-backend-777.onrender.com/';function closeModule(){shell.classList.remove('open');shell.setAttribute('aria-hidden','true');document.body.classList.remove('hormoz-module-open');frame.src='about:blank'}function openModule(url,label){frame.src=url;title.textContent=label||'بخش‌های هوش هرمز';shell.classList.add('open');shell.setAttribute('aria-hidden','false');document.body.classList.add('hormoz-module-open');close.focus()}document.addEventListener('click',event=>{const a=event.target.closest('a[href]');if(!a)return;let url;try{url=new URL(a.href,location.href)}catch{return}if(url.origin!==new URL(backend).origin||!url.pathname.toLowerCase().endsWith('.html'))return;event.preventDefault();const label=(a.innerText||a.getAttribute('aria-label')||'بخش‌های هوش هرمز').trim().replace(/\s+/g,' ').slice(0,80);openModule(url.href,label)});close.addEventListener('click',closeModule);shell.addEventListener('click',event=>{if(event.target===shell)closeModule()});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&shell.classList.contains('open'))closeModule()});})();
+</script>
 </body>
 </html>
