@@ -2148,10 +2148,15 @@ return reply.type("application/xml; charset=utf-8").send(content);
           volume: "+0%"
         });
         // The Edge websocket can stall on some hosts; never let it block all fallback voices.
+        let edgeTimer: ReturnType<typeof setTimeout> | undefined;
         const edgeResult = await Promise.race([
           edgeFemale.synthesize(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Edge TTS timed out after 18 seconds")), 18_000))
-        ]) as Awaited<ReturnType<typeof edgeFemale.synthesize>>;
+          new Promise<never>((_, reject) => {
+            edgeTimer = setTimeout(() => reject(new Error("Edge TTS timed out after 7 seconds")), 7_000);
+          })
+        ]).finally(() => {
+          if (edgeTimer) clearTimeout(edgeTimer);
+        }) as Awaited<ReturnType<typeof edgeFemale.synthesize>>;
         const edgeAudio = Buffer.from(await edgeResult.audio.arrayBuffer());
         if (edgeAudio.length > 0) {
           request.log.info({ voice: "fa-IR-DilaraNeural", bytes: edgeAudio.length }, "Nava female Persian TTS succeeded via Edge neural voice");
@@ -2286,7 +2291,6 @@ return reply.type("application/xml; charset=utf-8").send(content);
       // If no verified female Persian provider is available, report that honestly instead of speaking with a male voice.
       request.log.error("No verified female Persian TTS provider succeeded");
       return reply.code(503).send({ error: "صدای زنانهٔ فارسی نوا فعلاً در دسترس نیست؛ پاسخ متنی آماده است." });
-      return reply.code(502).send({ error: "سرویس رایگان صدای فارسی در دسترس نیست؛ پاسخ متنی آماده است." });
     } catch (error) {
       request.log.warn({ err: error }, "Nava TTS request failed");
       return reply.code(504).send({ error: "تولید صدا به‌دلیل اتصال یا زمان‌پاسخ‌گویی ناموفق بود." });
