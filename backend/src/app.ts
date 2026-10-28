@@ -2157,13 +2157,16 @@ return reply.type("application/xml; charset=utf-8").send(content);
             volume: "+0%"
           });
           const audioChunks: Buffer[] = [];
-          const edgeAudio = await new Promise<Buffer>((resolve, reject) => {
-            audioStream.on("data", (chunk: Buffer | Uint8Array) => {
-              audioChunks.push(Buffer.from(chunk));
-            });
-            audioStream.once("end", () => resolve(Buffer.concat(audioChunks)));
-            audioStream.once("error", reject);
-          });
+          const edgeAudio = await Promise.race<Buffer>([
+            new Promise<Buffer>((resolve, reject) => {
+              audioStream.on("data", (chunk: Buffer | Uint8Array) => {
+                audioChunks.push(Buffer.from(chunk));
+              });
+              audioStream.once("end", () => resolve(Buffer.concat(audioChunks)));
+              audioStream.once("error", reject);
+            }),
+            new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error("Persian female voice stream timed out")), 8_000))
+          ]);
           if (edgeAudio.length > 1000) {
             request.log.info({ voice: "fa-IR-DilaraNeural", bytes: edgeAudio.length }, "Nava female Persian TTS succeeded via msedge-tts");
             return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(edgeAudio);
@@ -2316,11 +2319,14 @@ return reply.type("application/xml; charset=utf-8").send(content);
             volume: "+0%"
           });
           const chunks: Buffer[] = [];
-          const maleAudio = await new Promise<Buffer>((resolve, reject) => {
-            audioStream.on("data", (chunk: Buffer | Uint8Array) => chunks.push(Buffer.from(chunk)));
-            audioStream.once("end", () => resolve(Buffer.concat(chunks)));
-            audioStream.once("error", reject);
-          });
+          const maleAudio = await Promise.race<Buffer>([
+            new Promise<Buffer>((resolve, reject) => {
+              audioStream.on("data", (chunk: Buffer | Uint8Array) => chunks.push(Buffer.from(chunk)));
+              audioStream.once("end", () => resolve(Buffer.concat(chunks)));
+              audioStream.once("error", reject);
+            }),
+            new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error("Persian male voice stream timed out")), 8_000))
+          ]);
           if (maleAudio.length > 1000) {
             request.log.info({ voice: "fa-IR-FaridNeural", bytes: maleAudio.length }, "Nava Persian male voice fallback succeeded");
             return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(maleAudio);
