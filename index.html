@@ -35,8 +35,6 @@ header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blu
 .easy-toggle{font-size:18px!important;min-height:56px;padding:14px 20px!important;border:2px solid var(--gold)!important}.easy-mode .nav{display:none}.easy-mode .easy-tile{min-height:150px;padding:20px;text-align:center;justify-content:center;align-items:center}.easy-mode .easy-tile .icon{font-size:48px}.easy-mode .easy-tile h3{font-size:21px}.easy-mode .easy-tile p{font-size:16px}.easy-mode #voiceInputBtn,.easy-mode #sendBtn,.easy-mode #easyModeBtn{min-height:60px;font-size:18px}.easy-mode #message-label{font-size:18px}.easy-mode .hint{font-size:17px}.easy-mode #nava .chat{border-width:2px}.easy-tile{cursor:pointer}.easy-banner{display:none;margin:12px auto;padding:14px;border:2px solid var(--gold);border-radius:16px;background:#29271c;color:#fff1c6;text-align:center;font-size:17px}.easy-mode .easy-banner{display:block}
 @media(max-width:600px){.head{align-items:flex-start;flex-direction:column;gap:4px}.nav{width:100%;padding-bottom:3px}.hero{padding-top:22px}.section{padding:20px 0}.btn{padding:10px 12px}.chat{padding:13px}}
 
-/* Unified in-page service viewer */
-#hormoz-panel{display:none;position:fixed;inset:0;z-index:9999;background:#041522f5;padding:10px}#hormoz-panel.open{display:flex}#hormoz-panel .hp-box{display:flex;flex-direction:column;width:100%;max-width:1200px;height:100%;margin:auto;border:1px solid #347086;border-radius:14px;overflow:hidden;background:#0b2638}#hormoz-panel .hp-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px;background:#082033;color:#70ead7}#hormoz-panel .hp-bar strong{flex:1}#hormoz-panel button{padding:8px 12px;border-radius:9px;border:1px solid #477086;background:#10364d;color:white}#hormoz-panel iframe{width:100%;flex:1;border:0;background:white}@media(max-width:600px){#hormoz-panel{padding:0}#hormoz-panel .hp-box{border-radius:0}}
 </style>
 
 <style id="hormoz-module-shell-style">
@@ -329,47 +327,6 @@ $("voiceInputBtn").addEventListener("click",()=>{const SR=window.SpeechRecogniti
 fetch(API+"/api/v1/visits",{cache:"no-store"}).then(r=>r.json()).then(d=>{$("visitCount").textContent=d&&d.ok&&Number.isFinite(Number(d.visits))?Number(d.visits).toLocaleString("fa-IR"):"فعلاً در دسترس نیست"}).catch(()=>$("visitCount").textContent="فعلاً در دسترس نیست");
 if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 </script>
-
-<!-- One-page portal: open internal service pages without leaving the main gateway -->
-<div id="hormoz-panel" role="dialog" aria-modal="true" aria-label="بخش‌های هوش هرمز"><div class="hp-box"><div class="hp-bar"><strong id="hp-title">درگاه هوشمند هوش هرمز</strong><span id="hp-status">بخش در حال بارگذاری است…</span><button type="button" id="hp-new">باز کردن مستقل</button><button type="button" id="hp-close">بازگشت به صفحه اصلی ✕</button></div><iframe id="hp-frame" title="بخش انتخاب‌شده از سامانه هوش هرمز"></iframe></div></div>
-<script>
-(function(){var api='https://hormoz-ai-backend-777.onrender.com',panel=document.getElementById('hormoz-panel'),frame=document.getElementById('hp-frame'),title=document.getElementById('hp-title'),status=document.getElementById('hp-status'),current='';
-function openPanel(url,label){current=url;title.textContent=label||'بخش سامانه هوش هرمز';status.textContent='بخش در حال بارگذاری است…';frame.src=url;panel.classList.add('open');document.body.style.overflow='hidden';}
-function closePanel(){panel.classList.remove('open');document.body.style.overflow='';frame.src='about:blank';current='';}
-document.addEventListener('click',function(e){var a=e.target.closest('a[href]');if(!a)return;var u;try{u=new URL(a.href,location.href)}catch(_){return}if(u.origin===api&&u.pathname.toLowerCase().endsWith('.html')){e.preventDefault();openPanel(u.href,(a.textContent||'بخش سامانه').trim().replace(/\s+/g,' ').slice(0,90));}});
-document.getElementById('hp-close').addEventListener('click',closePanel);document.getElementById('hp-new').addEventListener('click',function(){if(current)window.open(current,'_blank','noopener');});frame.addEventListener('load',function(){if(current)status.textContent='اگر این بخش در قاب باز نشد، «باز کردن مستقل» را بزن؛ درگاه اصلی حفظ می‌شود.';});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&panel.classList.contains('open'))closePanel();});
-})();
-</script>
-
-
-<script>
-(function(){
-  var api="https://hormoz-ai-backend-777.onrender.com";
-  function show(id,text,ok){var e=document.getElementById(id);if(e){e.textContent=text;e.style.color=ok===true?"#9cf0bd":ok===false?"#ffb4a9":"#ffd68b";}}
-  async function check(url){var controller=new AbortController();var timer=setTimeout(function(){controller.abort();},12000);try{var r=await fetch(url,{cache:"no-store",signal:controller.signal});var data={};try{data=await r.json();}catch(_){}return {ok:r.ok,data:data,status:r.status};}catch(e){return {ok:false,data:{},status:0};}finally{clearTimeout(timer);}}
-  async function run(){
-    var button=document.getElementById("hormoz-check-now");if(button){button.disabled=true;button.textContent="در حال بررسی…";}
-    show("hormoz-status-portal","صفحه باز است",true);
-    show("hormoz-status-api","در حال بررسی…",null);
-    show("hormoz-status-orders","در حال بررسی…",null);
-    var results=await Promise.all([check(api+"/api/v1/health"),check(api+"/api/v1/global-orders/health")]);
-    var health=results[0],orders=results[1];
-    show("hormoz-status-api",health.ok&&health.data.status==="ok"?"متصل و پاسخ‌گو":"پاسخ‌گو نیست",health.ok&&health.data.status==="ok");
-    if(orders.ok&&orders.data.ok&&orders.data.storage==="persistent"){
-      show("hormoz-status-orders","پایگاه داده متصل است",true);
-    }else if(orders.status===503){
-      show("hormoz-status-orders","ذخیره‌سازی در دسترس نیست",false);
-    }else{
-      show("hormoz-status-orders","وضعیت تأیید نشد",false);
-    }
-    var note=document.getElementById("hormoz-status-note");
-    if(note){note.textContent=(health.ok&&health.data.status==="ok"?"اتصال بک‌اند تأیید شد. ":"اتصال بک‌اند تأیید نشد. ")+(orders.ok&&orders.data.ok?"ذخیره‌سازی سفارش‌ها نیز پاسخ‌گوست.":"ذخیره‌سازی سفارش‌ها هنوز تأیید نشده است.")+" این بررسی به‌تنهایی کامل‌بودن همه خدمات را ثابت نمی‌کند.";}
-    if(button){button.disabled=false;button.textContent="بررسی دوباره";}
-  }
-  var button=document.getElementById("hormoz-check-now");if(button)button.addEventListener("click",run);run();
-})();
-</script>
-
 
 <div id="hormoz-module-shell" aria-hidden="true" role="dialog" aria-modal="true" aria-label="بخش یکپارچه هوش هرمز"><div id="hormoz-module-card"><div id="hormoz-module-toolbar"><strong id="hormoz-module-title">بخش‌های هوش هرمز</strong><button id="hormoz-module-close" type="button">بازگشت به صفحه اصلی ✕</button></div><iframe id="hormoz-module-frame" title="بخش یکپارچه هوش هرمز" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>
 <script id="hormoz-module-shell-script">
