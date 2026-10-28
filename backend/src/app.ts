@@ -4,7 +4,7 @@ import multipart from "@fastify/multipart";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { EdgeTTS } from "edge-tts-universal";
+import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 
 import { chatRoutes } from "./routes/chat.js";
 import { ActionDispatcher } from "./modules/action/dispatcher.js";
@@ -2137,34 +2137,45 @@ return reply.type("application/xml; charset=utf-8").send(content);
           request.log.warn({ err: error }, "Pollinations Nava TTS request failed; trying next configured key");
           if (controller.signal.aborted) break;
         }
+      // Free Microsoft Edge Read Aloud TTS using the dedicated msedge-tts client.
+      // The previous wrapper repeatedly timed out at 7 seconds on Render. This client
+      // handles the current Edge user-agent/authentication handshake and has explicit
+      // connection and synthesis deadlines. Only the verified Persian female voice is used.
+      try {
+        const edgeFemale = new MsEdgeTTS({
+          connectionTimeoutMs: 10_000,
+          synthesisTimeoutMs: 12_000
+        });
+        try {
+          await edgeFemale.setMetadata(
+            "fa-IR-DilaraNeural",
+            OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3
+          );
+          const { audioStream } = edgeFemale.toStream(text, {
+            rate: "-8%",
+            pitch: "+0Hz",
+            volume: "+0%"
+          });
+          const audioChunks: Buffer[] = [];
+          const edgeAudio = await new Promise<Buffer>((resolve, reject) => {
+            audioStream.on("data", (chunk: Buffer | Uint8Array) => {
+              audioChunks.push(Buffer.from(chunk));
+            });
+            audioStream.once("end", () => resolve(Buffer.concat(audioChunks)));
+            audioStream.once("error", reject);
+          });
+          if (edgeAudio.length > 1000) {
+            request.log.info({ voice: "fa-IR-DilaraNeural", bytes: edgeAudio.length }, "Nava female Persian TTS succeeded via msedge-tts");
+            return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(edgeAudio);
+          }
+          request.log.warn({ bytes: edgeAudio.length }, "msedge-tts returned empty audio; trying other free providers");
+        } finally {
+          edgeFemale.close();
+        }
+      } catch (error) {
+        request.log.warn({ err: error }, "msedge-tts female Persian voice unavailable; trying other free providers");
       }
 
-      // First try Microsoft's free native Persian female neural voice (Dilara).
-      // Keep this ahead of TTS.ai's currently male-only Persian fallback voices.
-      try {
-        const edgeFemale = new EdgeTTS(text, "fa-IR-DilaraNeural", {
-          rate: "-8%",
-          pitch: "+0Hz",
-          volume: "+0%"
-        });
-        // The Edge websocket can stall on some hosts; never let it block all fallback voices.
-        let edgeTimer: ReturnType<typeof setTimeout> | undefined;
-        const edgeResult = await Promise.race([
-          edgeFemale.synthesize(),
-          new Promise<never>((_, reject) => {
-            edgeTimer = setTimeout(() => reject(new Error("Edge TTS timed out after 7 seconds")), 7_000);
-          })
-        ]).finally(() => {
-          if (edgeTimer) clearTimeout(edgeTimer);
-        }) as Awaited<ReturnType<typeof edgeFemale.synthesize>>;
-        const edgeAudio = Buffer.from(await edgeResult.audio.arrayBuffer());
-        if (edgeAudio.length > 0) {
-          request.log.info({ voice: "fa-IR-DilaraNeural", bytes: edgeAudio.length }, "Nava female Persian TTS succeeded via Edge neural voice");
-          return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(edgeAudio);
-        }
-        request.log.warn("Edge female Persian TTS returned empty audio; preserving fallback");
-      } catch (error) {
-        request.log.warn({ err: error }, "Edge female Persian TTS unavailable; trying free fallback voices");
       }
 
       // Google Translate may reject legacy clients on some hosts. Try the current gtx
