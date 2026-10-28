@@ -117,6 +117,45 @@ header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blu
 </div>
 </section>
 
+
+<section class="section" id="unified-center">
+  <div class="section-head"><h2>🧭 مرکز یکپارچه درخواست‌ها و بازخورد</h2><p class="hint">از همین‌جا راهنمایی بگیر، خدمت سفارش بده یا پیشنهاد، نظر، انتقاد و مشکل فنی ثبت کن.</p></div>
+  <div class="chat" style="max-width:820px">
+    <div class="notice">یک مسیر را انتخاب کن. اگر سفارش ثبت شود، کد رهگیری می‌گیری؛ اگر پیام یا انتقاد بفرستی، شماره پیگیری جداگانه دریافت می‌کنی. اطلاعات حساس بانکی، رمز و کد یک‌بارمصرف ننویس.</div>
+    <form id="unifiedRequestForm">
+      <div class="feature">
+        <div><label for="unifiedCategory">برای چه کاری آمده‌ای؟</label>
+          <select id="unifiedCategory" required>
+            <option value="question">❓ راهنمایی و سؤال</option>
+            <option value="service_order">🧾 ثبت سفارش خدمت</option>
+            <option value="suggestion">💡 پیشنهاد برای بهترشدن هرمز</option>
+            <option value="complaint">🛟 شکایت یا گزارش مشکل</option>
+            <option value="criticism">🗣️ انتقاد و نظر</option>
+            <option value="technical_issue">⚙️ گزارش ایراد فنی</option>
+            <option value="other">✉️ موضوع دیگر</option>
+          </select>
+        </div>
+        <div id="unifiedServiceWrap" class="hidden"><label for="unifiedServiceType">نوع خدمت</label>
+          <select id="unifiedServiceType">
+            <option value="">انتخاب نوع خدمت</option><option value="stay">هتل، سوئیت و اقامت</option><option value="transport">حمل‌ونقل و بلیت</option><option value="food">غذا، کافه و رستوران</option><option value="repair">تعمیر و خدمات فنی</option><option value="tourism">گردشگری و راهنما</option><option value="skill">کار، مهارت و همکاری</option><option value="provider">ثبت کسب‌وکار یا ارائه خدمت</option><option value="letter">نامه و پیگیری اداری</option><option value="other">سایر خدمات</option>
+          </select>
+        </div>
+        <div><label for="unifiedName">نام (اختیاری)</label><input id="unifiedName" maxlength="100" autocomplete="name" placeholder="نام شما"></div>
+        <div><label for="unifiedContact">راه تماس (اختیاری)</label><input id="unifiedContact" maxlength="160" autocomplete="tel" placeholder="تلفن یا ایمیل، در صورت نیاز"></div>
+        <div class="full"><label for="unifiedSubject">عنوان کوتاه (اختیاری)</label><input id="unifiedSubject" maxlength="160" placeholder="موضوع درخواست یا پیام"></div>
+        <div class="full"><label for="unifiedMessage">شرح درخواست یا پیام</label><textarea id="unifiedMessage" required maxlength="4000" placeholder="با زبان خودت بنویس چه کمکی می‌خواهی…"></textarea></div>
+        <div class="full"><label class="check" style="display:flex;gap:9px;align-items:flex-start"><input id="unifiedConsent" type="checkbox" required style="width:auto;margin-top:8px"><span>می‌دانم ثبت درخواست به‌تنهایی به معنی رزرو، پرداخت یا تأیید نهایی نیست و اجازه می‌دهم اطلاعات لازم برای پیگیری این پیام ذخیره شود.</span></label></div>
+      </div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="unifiedSubmit" type="submit">ثبت و دریافت کد پیگیری</button><button class="btn alt" type="button" id="unifiedTrackToggle">پیگیری پیام قبلی</button></div>
+      <div id="unifiedResult" class="notice hidden" role="status" aria-live="polite" style="margin-top:14px;overflow-wrap:anywhere"></div>
+    </form>
+    <form id="unifiedTrackForm" class="hidden" style="margin-top:12px">
+      <label for="unifiedTrackCode">کد پیگیری پیام</label><input id="unifiedTrackCode" required minlength="25" maxlength="40" dir="ltr" placeholder="کد رهگیری را وارد کن">
+      <button class="btn alt" type="submit" style="margin-top:10px">بررسی وضعیت پیام</button><div id="unifiedTrackResult" class="notice hidden" role="status" style="margin-top:10px"></div>
+    </form>
+  </div>
+</section>
+
 <section class="section" id="portal">
 <div class="section-head"><h2>🧭 همه بخش‌های هوش هرمز</h2><p class="hint">همه بخش‌ها را از همین صفحه انتخاب کن؛ هر بخش در پنجرهٔ داخلی باز می‌شود تا از درگاه اصلی خارج نشوی.</p></div>
 <div class="grid">
@@ -140,6 +179,69 @@ header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blu
 </section>
 </main>
 <footer class="footer"><div class="wrap"><p>نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</p><p>بازدید ثبت‌شده: <strong id="visitCount">در حال بررسی…</strong></p><p>هوش هرمز | فناوری در خدمت انسان 💚</p></div></footer>
+<script>
+(function(){
+  const api="https://hormoz-ai-backend-777.onrender.com";
+  const form=document.getElementById("unifiedRequestForm");
+  if(!form)return;
+  const category=document.getElementById("unifiedCategory");
+  const serviceWrap=document.getElementById("unifiedServiceWrap");
+  const serviceType=document.getElementById("unifiedServiceType");
+  const message=document.getElementById("unifiedMessage");
+  const result=document.getElementById("unifiedResult");
+  const submit=document.getElementById("unifiedSubmit");
+  const trackForm=document.getElementById("unifiedTrackForm");
+  category.addEventListener("change",function(){
+    const isOrder=category.value==="service_order";
+    serviceWrap.classList.toggle("hidden",!isOrder);
+    serviceType.required=isOrder;
+    submit.textContent=isOrder?"ثبت سفارش و دریافت کد رهگیری":"ثبت و دریافت کد پیگیری";
+    if(category.value==="question") message.placeholder="سؤالت را بنویس؛ برای گفت‌وگوی مستقیم با نوا، دکمهٔ گفت‌وگو با نوا را هم می‌توانی بزنی.";
+    else if(isOrder) message.placeholder="چه خدمتی، کجا و چه زمانی می‌خواهی؟ بودجه یا جزئیات لازم را هم بنویس.";
+    else message.placeholder="با زبان خودت بنویس چه اتفاقی افتاده یا چه پیشنهادی داری…";
+  });
+  document.getElementById("unifiedTrackToggle").addEventListener("click",function(){trackForm.classList.toggle("hidden");if(!trackForm.classList.contains("hidden"))document.getElementById("unifiedTrackCode").focus();});
+  form.addEventListener("submit",async function(event){
+    event.preventDefault();
+    if(category.value==="question"){
+      const navaInput=document.getElementById("message");
+      const navaSend=document.getElementById("sendBtn");
+      if(navaInput&&navaSend){navaInput.value=message.value.trim();navaInput.dispatchEvent(new Event("input",{bubbles:true}));document.getElementById("nava").scrollIntoView({behavior:"smooth"});navaSend.click();result.classList.remove("hidden");result.textContent="سؤالت به بخش گفت‌وگو با نوا منتقل شد. پاسخ نوا در همان بخش نمایش داده می‌شود.";return;}
+    }
+    submit.disabled=true;submit.textContent="در حال ثبت امن…";result.classList.remove("hidden");result.textContent="در حال ارسال و ذخیره درخواست…";
+    try{
+      let endpoint,payload;
+      if(category.value==="service_order"){
+        endpoint=api+"/api/v1/global-orders";
+        payload={serviceType:serviceType.value,language:"fa",customerLabel:document.getElementById("unifiedName").value.trim(),contact:document.getElementById("unifiedContact").value.trim(),details:{subject:document.getElementById("unifiedSubject").value.trim(),request:message.value.trim()},consent:document.getElementById("unifiedConsent").checked};
+      }else{
+        endpoint=api+"/api/v1/feedback";
+        payload={category:category.value,subject:document.getElementById("unifiedSubject").value.trim(),message:message.value.trim(),customerLabel:document.getElementById("unifiedName").value.trim(),contact:document.getElementById("unifiedContact").value.trim(),consent:document.getElementById("unifiedConsent").checked};
+      }
+      const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.message||"ثبت انجام نشد؛ لطفاً دوباره تلاش کن.");
+      result.replaceChildren();
+      const title=document.createElement("strong");title.textContent=category.value==="service_order"?"سفارش ثبت شد":"پیام ثبت شد";result.append(title);
+      const p=document.createElement("p");p.textContent=(data.orderNumber?"شماره سفارش: "+data.orderNumber+" — ":"شماره پیگیری: "+(data.referenceNumber||"ثبت شد")+" — ")+(data.message||"درخواست دریافت شد.");result.append(p);
+      if(data.trackingCode){
+        const code=document.createElement("p");code.style.direction="ltr";code.style.overflowWrap="anywhere";code.textContent="کد رهگیری: "+data.trackingCode;result.append(code);
+        const copy=document.createElement("button");copy.type="button";copy.className="btn alt";copy.textContent="کپی کد رهگیری";copy.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(data.trackingCode);copy.textContent="کپی شد";}catch{code.textContent+=" — کد را انتخاب و کپی کن";}});result.append(copy);
+        if(category.value!=="service_order"){const trackLink=document.createElement("a");trackLink.className="btn alt";trackLink.style.marginInlineStart="8px";trackLink.href="#unifiedTrackForm";trackLink.textContent="پیگیری این پیام";trackLink.addEventListener("click",()=>{trackForm.classList.remove("hidden");document.getElementById("unifiedTrackCode").value=data.trackingCode;trackForm.requestSubmit();});result.append(trackLink);}
+        else{const trackLink=document.createElement("a");trackLink.className="btn alt";trackLink.style.marginInlineStart="8px";trackLink.href=api+"/track-order.html?code="+encodeURIComponent(data.trackingCode);trackLink.target="_blank";trackLink.rel="noopener";trackLink.textContent="پیگیری سفارش";result.append(trackLink);}
+      }
+      form.reset();serviceWrap.classList.add("hidden");serviceType.required=false;submit.textContent="ثبت و دریافت کد پیگیری";
+    }catch(error){result.textContent=(error&&error.message)||"ارتباط با سامانه برقرار نشد؛ درخواست ثبت نشده است.";}
+    finally{submit.disabled=false;category.dispatchEvent(new Event("change"));}
+  });
+  trackForm.addEventListener("submit",async function(event){
+    event.preventDefault();const code=document.getElementById("unifiedTrackCode").value.trim(),out=document.getElementById("unifiedTrackResult");out.classList.remove("hidden");out.textContent="در حال بررسی…";
+    try{const response=await fetch(api+"/api/v1/feedback/track/"+encodeURIComponent(code),{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.message||"پیامی پیدا نشد.");out.textContent="وضعیت: "+data.statusLabel+(data.staffNote?" — پاسخ: "+data.staffNote:"")+(data.subject?" — موضوع: "+data.subject:"");}
+    catch(error){out.textContent=(error&&error.message)||"پیگیری انجام نشد.";}
+  });
+})();
+</script>
+
 <script>
 const API="https://hormoz-ai-backend-777.onrender.com";
 const $=id=>document.getElementById(id);
