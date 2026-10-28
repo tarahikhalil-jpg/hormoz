@@ -194,11 +194,11 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     if (!/^[A-Za-z0-9_-]{25,40}$/.test(token)) return reply.code(404).send({ ok: false, message: "کد رهگیری معتبر نیست." });
     try {
       await ensureTable();
-      const result = await db.query("SELECT category, subject, status, staff_note, created_at, updated_at FROM hormoz_feedback WHERE tracking_token=$1 LIMIT 1", [token]);
+      const result = await db.query("SELECT id, category, subject, status, staff_note, created_at, updated_at FROM hormoz_feedback WHERE tracking_token=$1 LIMIT 1", [token]);
       if (!result.rows.length) return reply.code(404).send({ ok: false, message: "پیامی با این کد پیدا نشد." });
       const row = result.rows[0];
       const statuses: Record<string,string> = { received: "دریافت شد", reviewing: "در حال بررسی", answered: "پاسخ ثبت شده", resolved: "رسیدگی تکمیل شد" };
-      return { ok: true, category: String(row.category), subject: String(row.subject ?? ""), status: String(row.status), statusLabel: statuses[String(row.status)] ?? "در حال پیگیری", staffNote: String(row.staff_note ?? ""), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() };
+      return { ok: true, referenceNumber: "HZ-MSG-" + String(row.id).slice(0,10), category: String(row.category), subject: String(row.subject ?? ""), status: String(row.status), statusLabel: statuses[String(row.status)] ?? "در حال پیگیری", staffNote: String(row.staff_note ?? ""), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() };
     } catch (error) {
       request.log.error(error);
       return reply.code(503).send({ ok: false, message: "پیگیری پیام ناموفق بود." });
