@@ -31,6 +31,20 @@ header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blu
 <nav class="nav" aria-label="رفتن به بخش‌ها"><a href="#nava">نوا</a><a href="#services">خدمات</a><a href="https://hormoz-ai-backend-777.onrender.com/discover.html">🔎 جست‌وجوی خدمات در اینترنت</a><a href="#skills">مهارت و کار</a><a href="#local">کسب‌وکارها</a><a href="#portal">همه بخش‌ها و پنل‌ها</a><a href="#about">درباره هرمز</a></nav>
 </div></header>
 <main class="wrap" id="home">
+
+<section id="hormoz-live-status" aria-label="وضعیت زنده سامانه" style="margin:14px auto 4px;padding:14px;border:1px solid #28536a;border-radius:16px;background:#0a2335">
+  <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+    <strong style="color:#70ead7">🔌 وضعیت زنده اتصال هرمز</strong>
+    <button id="hormoz-check-now" type="button" style="border:1px solid #477086;border-radius:9px;padding:7px 12px;background:#10364d;color:#fff;cursor:pointer">بررسی دوباره</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px;margin-top:10px">
+    <div style="padding:10px;border-radius:10px;background:#071d2c"><div style="color:#b8cedb;font-size:12px">درگاه اصلی</div><strong id="hormoz-status-portal">در حال بررسی…</strong></div>
+    <div style="padding:10px;border-radius:10px;background:#071d2c"><div style="color:#b8cedb;font-size:12px">اتصال نوا / بک‌اند</div><strong id="hormoz-status-api">در حال بررسی…</strong></div>
+    <div style="padding:10px;border-radius:10px;background:#071d2c"><div style="color:#b8cedb;font-size:12px">ذخیره‌سازی سفارش‌ها</div><strong id="hormoz-status-orders">در حال بررسی…</strong></div>
+  </div>
+  <p id="hormoz-status-note" style="font-size:12px;color:#b8cedb;margin:9px 0 0">این بررسی فقط اتصال سرویس‌ها را نشان می‌دهد؛ وضعیت سبز به معنی کامل‌بودن همه قابلیت‌ها نیست.</p>
+</section>
+
 <section class="hero">
 <div class="lamp" aria-hidden="true">💡🌊</div>
 <img class="poster" src="https://hormoz-ai-backend-777.onrender.com/hormoz.jpg" alt="پوستر اصلی هوش هرمز" loading="lazy" onerror="this.hidden=true">
@@ -195,6 +209,35 @@ function openPanel(url,label){current=url;title.textContent=label||'بخش سا�
 function closePanel(){panel.classList.remove('open');document.body.style.overflow='';frame.src='about:blank';current='';}
 document.addEventListener('click',function(e){var a=e.target.closest('a[href]');if(!a)return;var u;try{u=new URL(a.href,location.href)}catch(_){return}if(u.origin===api&&u.pathname.toLowerCase().endsWith('.html')){e.preventDefault();openPanel(u.href,(a.textContent||'بخش سامانه').trim().replace(/\s+/g,' ').slice(0,90));}});
 document.getElementById('hp-close').addEventListener('click',closePanel);document.getElementById('hp-new').addEventListener('click',function(){if(current)window.open(current,'_blank','noopener');});frame.addEventListener('load',function(){if(current)status.textContent='اگر این بخش در قاب باز نشد، «باز کردن مستقل» را بزن؛ درگاه اصلی حفظ می‌شود.';});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&panel.classList.contains('open'))closePanel();});
+})();
+</script>
+
+
+<script>
+(function(){
+  var api="https://hormoz-ai-backend-777.onrender.com";
+  function show(id,text,ok){var e=document.getElementById(id);if(e){e.textContent=text;e.style.color=ok===true?"#9cf0bd":ok===false?"#ffb4a9":"#ffd68b";}}
+  async function check(url){var controller=new AbortController();var timer=setTimeout(function(){controller.abort();},12000);try{var r=await fetch(url,{cache:"no-store",signal:controller.signal});var data={};try{data=await r.json();}catch(_){}return {ok:r.ok,data:data,status:r.status};}catch(e){return {ok:false,data:{},status:0};}finally{clearTimeout(timer);}}
+  async function run(){
+    var button=document.getElementById("hormoz-check-now");if(button){button.disabled=true;button.textContent="در حال بررسی…";}
+    show("hormoz-status-portal","صفحه باز است",true);
+    show("hormoz-status-api","در حال بررسی…",null);
+    show("hormoz-status-orders","در حال بررسی…",null);
+    var results=await Promise.all([check(api+"/api/v1/health"),check(api+"/api/v1/global-orders/health")]);
+    var health=results[0],orders=results[1];
+    show("hormoz-status-api",health.ok&&health.data.status==="ok"?"متصل و پاسخ‌گو":"پاسخ‌گو نیست",health.ok&&health.data.status==="ok");
+    if(orders.ok&&orders.data.ok&&orders.data.storage==="persistent"){
+      show("hormoz-status-orders","پایگاه داده متصل است",true);
+    }else if(orders.status===503){
+      show("hormoz-status-orders","ذخیره‌سازی در دسترس نیست",false);
+    }else{
+      show("hormoz-status-orders","وضعیت تأیید نشد",false);
+    }
+    var note=document.getElementById("hormoz-status-note");
+    if(note){note.textContent=(health.ok&&health.data.status==="ok"?"اتصال بک‌اند تأیید شد. ":"اتصال بک‌اند تأیید نشد. ")+(orders.ok&&orders.data.ok?"ذخیره‌سازی سفارش‌ها نیز پاسخ‌گوست.":"ذخیره‌سازی سفارش‌ها هنوز تأیید نشده است.")+" این بررسی به‌تنهایی کامل‌بودن همه خدمات را ثابت نمی‌کند.";}
+    if(button){button.disabled=false;button.textContent="بررسی دوباره";}
+  }
+  var button=document.getElementById("hormoz-check-now");if(button)button.addEventListener("click",run);run();
 })();
 </script>
 
