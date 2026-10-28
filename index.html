@@ -215,7 +215,7 @@ header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blu
         endpoint=api+"/api/v1/global-orders";
         payload={serviceType:serviceType.value,language:"fa",customerLabel:document.getElementById("unifiedName").value.trim(),contact:document.getElementById("unifiedContact").value.trim(),details:{subject:document.getElementById("unifiedSubject").value.trim(),request:message.value.trim()},consent:document.getElementById("unifiedConsent").checked};
       }else{
-        endpoint=api+"/api/v1/feedback";
+        endpoint=api+"/api/v1/unified-feedback";
         payload={category:category.value,subject:document.getElementById("unifiedSubject").value.trim(),message:message.value.trim(),customerLabel:document.getElementById("unifiedName").value.trim(),contact:document.getElementById("unifiedContact").value.trim(),consent:document.getElementById("unifiedConsent").checked};
       }
       const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
@@ -236,7 +236,7 @@ header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blu
   });
   trackForm.addEventListener("submit",async function(event){
     event.preventDefault();const code=document.getElementById("unifiedTrackCode").value.trim(),out=document.getElementById("unifiedTrackResult");out.classList.remove("hidden");out.textContent="در حال بررسی…";
-    try{const response=await fetch(api+"/api/v1/feedback/track/"+encodeURIComponent(code),{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.message||"پیامی پیدا نشد.");out.textContent="وضعیت: "+data.statusLabel+(data.staffNote?" — پاسخ: "+data.staffNote:"")+(data.subject?" — موضوع: "+data.subject:"");}
+    try{const response=await fetch(api+"/api/v1/unified-feedback/track/"+encodeURIComponent(code),{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.message||"پیامی پیدا نشد.");out.textContent="وضعیت: "+data.statusLabel+(data.staffNote?" — پاسخ: "+data.staffNote:"")+(data.subject?" — موضوع: "+data.subject:"");}
     catch(error){out.textContent=(error&&error.message)||"پیگیری انجام نشد.";}
   });
 })();
