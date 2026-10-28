@@ -160,7 +160,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     catch { return reply.code(503).send({ ok: false, storage: "unavailable" }); }
   });
 
-  app.post("/api/v1/feedback", async (request, reply) => {
+  app.post("/api/v1/unified-feedback", async (request, reply) => {
     const ipKey = "feedback:" + String(request.ip ?? "unknown");
     if (isOrderCreationLimited(ipKey)) return reply.code(429).send({ ok: false, message: "ثبت پیام‌های زیاد انجام شده؛ کمی بعد دوباره تلاش کنید." });
     noteOrderCreationAttempt(ipKey);
@@ -187,7 +187,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.get("/api/v1/feedback/track/:token", async (request, reply) => {
+  app.get("/api/v1/unified-feedback/track/:token", async (request, reply) => {
     reply.header("Cache-Control", "no-store");
     if (!db) return reply.code(503).send({ ok: false, message: "پیگیری پیام فعلاً در دسترس نیست." });
     const token = String((request.params as { token?: string }).token ?? "");
