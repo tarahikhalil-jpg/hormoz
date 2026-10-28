@@ -90,7 +90,7 @@ jobs:
             }
             return "AI returned a non-empty answer";
           });
-          await check("Persian female online TTS", async () => {
+          await check("Persian online TTS (female preferred, male fallback accepted)", async () => {
             const r = await fetch(base + "/api/v1/tts", {
               method: "POST",
               headers: { "Content-Type": "application/json", "Accept": "audio/*" },
