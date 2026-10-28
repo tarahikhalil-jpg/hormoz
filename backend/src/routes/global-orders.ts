@@ -121,6 +121,8 @@ async function ensureTable() {
   await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS collaboration_skills TEXT NOT NULL DEFAULT ''");
   await db.query("ALTER TABLE hormoz_global_members ADD COLUMN IF NOT EXISTS collaboration_availability TEXT NOT NULL DEFAULT ''");
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_global_members_status_idx ON hormoz_global_members (status, created_at DESC)");
+  await db.query("CREATE TABLE IF NOT EXISTS hormoz_feedback (id TEXT PRIMARY KEY, tracking_token TEXT NOT NULL UNIQUE, category TEXT NOT NULL, subject TEXT NOT NULL DEFAULT '', message TEXT NOT NULL, customer_label TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'received', staff_note TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+  await db.query("CREATE INDEX IF NOT EXISTS hormoz_feedback_created_idx ON hormoz_feedback (created_at DESC)");
   tableReady = true;
 }
 
@@ -156,6 +158,51 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     if (!db) return reply.code(503).send({ ok: false, storage: "unavailable" });
     try { await ensureTable(); await db.query("SELECT 1"); return { ok: true, storage: "persistent" }; }
     catch { return reply.code(503).send({ ok: false, storage: "unavailable" }); }
+  });
+
+  app.post("/api/v1/feedback", async (request, reply) => {
+    const ipKey = "feedback:" + String(request.ip ?? "unknown");
+    if (isOrderCreationLimited(ipKey)) return reply.code(429).send({ ok: false, message: "ثبت پیام‌های زیاد انجام شده؛ کمی بعد دوباره تلاش کنید." });
+    noteOrderCreationAttempt(ipKey);
+    if (!db) return reply.code(503).send({ ok: false, message: "ذخیره‌سازی دائمی پیام‌ها روی سرور آماده نیست؛ پیام شما ثبت نشده است." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const allowed = new Set(["suggestion", "complaint", "criticism", "question", "technical_issue", "other"]);
+    const category = String(body.category ?? "").trim();
+    const subject = String(body.subject ?? "").trim().slice(0, 160);
+    const message = String(body.message ?? "").trim().slice(0, 4000);
+    const customerLabel = String(body.customerLabel ?? "").trim().slice(0, 100);
+    const contact = String(body.contact ?? "").trim().slice(0, 160);
+    if (!allowed.has(category) || message.length < 3 || body.consent !== true) {
+      return reply.code(400).send({ ok: false, message: "نوع پیام، متن پیام و تأیید رضایت لازم است." });
+    }
+    const id = crypto.randomBytes(12).toString("hex").toUpperCase();
+    const trackingToken = crypto.randomBytes(24).toString("base64url");
+    try {
+      await ensureTable();
+      await db.query("INSERT INTO hormoz_feedback (id, tracking_token, category, subject, message, customer_label, contact) VALUES ($1,$2,$3,$4,$5,$6,$7)", [id, trackingToken, category, subject, message, customerLabel, contact]);
+      return reply.code(201).send({ ok: true, referenceNumber: "HZ-MSG-" + id.slice(0, 10), trackingCode: trackingToken, status: "received", message: "پیام شما ثبت شد. با کد رهگیری می‌توانید وضعیت بررسی را ببینید." });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ ok: false, message: "ثبت پیام ناموفق بود؛ لطفاً بعداً دوباره تلاش کنید." });
+    }
+  });
+
+  app.get("/api/v1/feedback/track/:token", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    if (!db) return reply.code(503).send({ ok: false, message: "پیگیری پیام فعلاً در دسترس نیست." });
+    const token = String((request.params as { token?: string }).token ?? "");
+    if (!/^[A-Za-z0-9_-]{25,40}$/.test(token)) return reply.code(404).send({ ok: false, message: "کد رهگیری معتبر نیست." });
+    try {
+      await ensureTable();
+      const result = await db.query("SELECT category, subject, status, staff_note, created_at, updated_at FROM hormoz_feedback WHERE tracking_token=$1 LIMIT 1", [token]);
+      if (!result.rows.length) return reply.code(404).send({ ok: false, message: "پیامی با این کد پیدا نشد." });
+      const row = result.rows[0];
+      const statuses: Record<string,string> = { received: "دریافت شد", reviewing: "در حال بررسی", answered: "پاسخ ثبت شده", resolved: "رسیدگی تکمیل شد" };
+      return { ok: true, category: String(row.category), subject: String(row.subject ?? ""), status: String(row.status), statusLabel: statuses[String(row.status)] ?? "در حال پیگیری", staffNote: String(row.staff_note ?? ""), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ ok: false, message: "پیگیری پیام ناموفق بود." });
+    }
   });
 
   app.post("/api/v1/global-orders", async (request, reply) => {
@@ -428,6 +475,41 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       return { ok: true, member: result.rows[0] };
     } catch (error) { request.log.error(error); return reply.code(503).send({ message: "تغییر دسترسی ناموفق بود." }); }
   });
+  app.get("/api/v1/global-admin/feedback", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود لازم است." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTable();
+      const result = await db.query("SELECT id, tracking_token, category, subject, message, customer_label, contact, status, staff_note, created_at, updated_at FROM hormoz_feedback ORDER BY created_at DESC LIMIT 300");
+      return { feedback: result.rows.map(row => ({ id: String(row.id), referenceNumber: "HZ-MSG-" + String(row.id).slice(0,10), trackingCode: String(row.tracking_token), category: String(row.category), subject: String(row.subject ?? ""), message: String(row.message), customerLabel: session.role === "viewer" ? "مخفی برای نقش مشاهده‌گر" : String(row.customer_label ?? ""), contact: session.role === "viewer" ? "" : String(row.contact ?? ""), status: String(row.status), staffNote: String(row.staff_note ?? ""), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() })) };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "دریافت پیام‌ها ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/global-admin/feedback/:id/status", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود لازم است." });
+    if (!["owner", "invoice_approver"].includes(session.role)) return reply.code(403).send({ message: "مجوز تغییر وضعیت ندارید." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const id = String((request.params as { id?: string }).id ?? "");
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const status = String(body.status ?? "");
+    const staffNote = String(body.staffNote ?? "").trim().slice(0, 1500);
+    if (!["received", "reviewing", "answered", "resolved"].includes(status)) return reply.code(400).send({ message: "وضعیت انتخاب‌شده معتبر نیست." });
+    try {
+      await ensureTable();
+      const result = await db.query("UPDATE hormoz_feedback SET status=$2, staff_note=$3, updated_at=NOW() WHERE id=$1 RETURNING id, status, staff_note, updated_at", [id, status, staffNote]);
+      if (!result.rows.length) return reply.code(404).send({ message: "پیام پیدا نشد." });
+      return { ok: true, message: "وضعیت پیام به‌روزرسانی شد.", feedback: result.rows[0] };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "به‌روزرسانی وضعیت ناموفق بود." });
+    }
+  });
+
   app.get("/api/v1/global-admin/orders", async (request, reply) => {
     const session = adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
