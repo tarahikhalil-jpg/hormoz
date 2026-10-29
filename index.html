@@ -179,6 +179,83 @@ header{padding:9px 0}
 @media(prefers-reduced-motion:reduce){.lamp{animation:none}}
 </style>
 
+
+<style id="hormoz-coastal-redesign">
+/* بازطراحی یکپارچه: ساحل هرمز، روشن، آرام و خوانا */
+:root{color-scheme:light;--bg:#f4f7f3;--panel:#ffffff;--panel2:#fffefa;--line:#d9e7e2;--text:#173b43;--muted:#607b7c;--aqua:#087f80;--gold:#e6a94c;--green:#247c62;--surface-glass:#ffffff;--soft-border:#d9e7e2}
+html{background:#f4f7f3;scroll-padding-top:88px}
+body{color:#173b43;background:radial-gradient(ellipse at 8% 4%,#d9f0e9 0,transparent 32%),radial-gradient(ellipse at 92% 18%,#f8e8cf 0,transparent 27%),linear-gradient(180deg,#f7faf7 0%,#f0f6f2 55%,#fbf8f1 100%);background-attachment:fixed}
+body:before{opacity:.16;background-image:radial-gradient(#168c86 1px,transparent 1px)}
+.wrap{width:min(1160px,93%)}
+header{background:rgba(255,255,255,.9);border-bottom:1px solid #dce9e3;box-shadow:0 5px 24px #174a3b0b}
+.brand{color:#14545a}
+.brand:before{color:#fff;background:linear-gradient(135deg,#087f80,#15515b);box-shadow:0 5px 14px #087f8030}
+.nav a{color:#526e70}
+.nav a:hover{background:#e4f2ed;color:#075f61}
+.hero{border:1px solid #d4e7df;background:linear-gradient(135deg,rgba(255,255,255,.97),rgba(237,248,242,.96) 58%,rgba(255,246,229,.95));box-shadow:0 22px 60px #214b3c12}
+.hero:before{background:#79cbb52b}.hero:after{background:#edbd7130}
+.hero h1{color:#164b52;text-shadow:none}
+.hero .lead{color:#087f80}
+.hero .quote{color:#587577;background:linear-gradient(90deg,transparent,#f4e7ce88);border-right-color:#d99c42}
+.lamp{filter:drop-shadow(0 5px 10px #087f8020)}
+.music{background:#fff;border-color:#d7e8e1;box-shadow:0 8px 22px #1a51400a}
+.music p{color:#607b7c}
+.section-head h2{color:#174d53}
+.hint{color:#688080}
+#hormoz-live-status{background:rgba(255,255,255,.94)!important;border-color:#d8e8e1!important;box-shadow:0 8px 24px #214b3c0b}
+#hormoz-live-status strong{color:#087f80!important}
+#hormoz-live-status>div>div{background:#f0f7f3!important;border:1px solid #e1ece6}
+#hormoz-live-status>div>div div{color:#688080!important}
+#hormoz-live-status button{background:#e5f3ed!important;color:#15545a!important;border-color:#c8e1d7!important}
+#hormoz-status-note{color:#688080!important}
+.btn{background:linear-gradient(135deg,#087f80,#126b70);color:white;box-shadow:0 6px 16px #087f8022}
+.btn.alt{background:#fff;border-color:#c8ddd5;color:#235c60;box-shadow:none}
+.btn:hover{filter:brightness(1.04);box-shadow:0 10px 22px #087f8025}
+.hero .row .btn:first-child{background:linear-gradient(135deg,#e8b65e,#f3d28d)!important;color:#3d351f!important;border-color:#f8e5b9!important}
+.easy-toggle{border-color:#e3b65e!important;color:#23545a!important}
+.card{background:linear-gradient(160deg,#fff,#f7fbf8);border-color:#dce9e3;box-shadow:0 9px 25px #1c4c3c0b}
+.card h3{color:#1c5559}
+.card p{color:#668080}
+.card .icon{color:#087f80}
+.card button{background:#eaf5ef;border-color:#d2e6dc;color:#176469}
+.card button:hover{background:#dff0e8;border-color:#8fc8b5}
+#easy-access .card{background:linear-gradient(155deg,#fff,#f0f8f3);border-color:#d6e8df;box-shadow:0 10px 26px #1b51400d}
+#easy-access .card:hover,.grid .card:hover,.feature .card:hover{border-color:#83c6b0;box-shadow:0 15px 32px #1b514018}
+#easy-access .icon{background:linear-gradient(135deg,#e2f4ec,#fff2dc);border-color:#d8e9df}
+.chat{background:linear-gradient(150deg,#ffffff,#f0f8f4);border:1px solid #cfe3d9;box-shadow:0 18px 46px #174c3c13}
+#nava .statusline{border-color:#dcebe4}
+#nava .statusline strong{color:#16565a}
+.pill{background:#e2f3e9;color:#22684e}
+.pill.neutral{background:#edf2ef;color:#647a78}
+.conversation-history{background:#f7faf8;border-color:#dce9e3}
+.chat-user{background:#e1f0f7;border-color:#c6dfe9;color:#214e60}
+.chat-nava{background:#e5f4eb;border-color:#c7e4d3;color:#205847}
+.chat-composer{background:rgba(255,255,255,.97);border:1px solid #d8e8e0;box-shadow:0 -6px 20px #174c3c09}
+input,textarea,#unifiedRequestForm select{background:#fff;color:#173b43;border-color:#cfdfd8}
+input::placeholder,textarea::placeholder{color:#91a5a0}
+input:focus,textarea:focus,#unifiedRequestForm select:focus{border-color:#168b83;box-shadow:0 0 0 3px #168b8318}
+#portal{background:linear-gradient(145deg,#ffffffed,#eff7f2ed);border-color:#d6e7df;box-shadow:0 18px 48px #174c3c10}
+#portal .card{background:linear-gradient(150deg,#fff,#f4f9f5)}
+.notice{background:#fff7e7;border-color:#ecd6a8;color:#735523}
+.poster{border-color:#b6d8cc;box-shadow:0 12px 34px #174c3c18}
+.footer{border-color:#dce9e3;color:#718684}
+.footer strong{color:#24575a}
+.easy-banner{background:#fff7e7;border-color:#e6c47f;color:#725523}
+.easy-mode .easy-banner{background:#fff7e7;color:#725523}
+#hormoz-module-shell{background:rgba(20,49,48,.55)}
+#hormoz-module-card{background:#fff;border-color:#d6e7df;box-shadow:0 22px 80px #173b4340}
+#hormoz-module-toolbar{background:#f0f7f3;color:#174d53;border-bottom:1px solid #d9e7e2}
+#hormoz-module-close{background:#087f80;color:white}
+::selection{background:#bfe8d7;color:#164b52}
+@media(max-width:700px){
+ .hero{border-radius:22px}
+ .nav a{background:#f2f7f4}
+ .chat{border-radius:19px}
+ #nava .chat-composer{background:rgba(255,255,255,.98)}
+}
+@media(prefers-reduced-motion:reduce){.lamp{animation:none}}
+</style>
+
 </head>
 <body>
 <header><div class="wrap head">
