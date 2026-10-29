@@ -2047,6 +2047,48 @@ return reply.type("application/xml; charset=utf-8").send(content);
         ? browserAppKey
         : "";
       const pollinationsKeys = [...new Set([process.env.POLLINATIONS_API_KEY || "", browserKey].filter(Boolean))];
+      // Free Microsoft Edge Read Aloud TTS using the dedicated msedge-tts client.
+      // The previous wrapper repeatedly timed out at 7 seconds on Render. This client
+      // handles the current Edge user-agent/authentication handshake and has explicit
+      // connection and synthesis deadlines. Only the verified Persian female voice is used.
+      try {
+        const edgeFemale = new MsEdgeTTS({
+          connectionTimeoutMs: 10_000,
+          synthesisTimeoutMs: 12_000
+        });
+        try {
+          await edgeFemale.setMetadata(
+            "fa-IR-DilaraNeural",
+            OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3
+          );
+          const { audioStream } = edgeFemale.toStream(text, {
+            rate: "-8%",
+            pitch: "+0Hz",
+            volume: "+0%"
+          });
+          const audioChunks: Buffer[] = [];
+          const edgeAudio = await Promise.race<Buffer>([
+            new Promise<Buffer>((resolve, reject) => {
+              audioStream.on("data", (chunk: Buffer | Uint8Array) => {
+                audioChunks.push(Buffer.from(chunk));
+              });
+              audioStream.once("end", () => resolve(Buffer.concat(audioChunks)));
+              audioStream.once("error", reject);
+            }),
+            new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error("Persian female voice stream timed out")), 8_000))
+          ]);
+          if (edgeAudio.length > 1000) {
+            request.log.info({ voice: "fa-IR-DilaraNeural", bytes: edgeAudio.length }, "Nava female Persian TTS succeeded via msedge-tts");
+            return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(edgeAudio);
+          }
+          request.log.warn({ bytes: edgeAudio.length }, "msedge-tts returned empty audio; trying other free providers");
+        } finally {
+          edgeFemale.close();
+        }
+      } catch (error) {
+        request.log.warn({ err: error }, "msedge-tts female Persian voice unavailable; trying other free providers");
+      }
+
       for (const pollinationsKey of pollinationsKeys) {
         try {
           const pollinations = await fetch("https://gen.pollinations.ai/v1/audio/speech", {
@@ -2137,47 +2179,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
           request.log.warn({ err: error }, "Pollinations Nava TTS request failed; trying next configured key");
           if (controller.signal.aborted) break;
         }
-      // Free Microsoft Edge Read Aloud TTS using the dedicated msedge-tts client.
-      // The previous wrapper repeatedly timed out at 7 seconds on Render. This client
-      // handles the current Edge user-agent/authentication handshake and has explicit
-      // connection and synthesis deadlines. Only the verified Persian female voice is used.
-      try {
-        const edgeFemale = new MsEdgeTTS({
-          connectionTimeoutMs: 10_000,
-          synthesisTimeoutMs: 12_000
-        });
-        try {
-          await edgeFemale.setMetadata(
-            "fa-IR-DilaraNeural",
-            OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3
-          );
-          const { audioStream } = edgeFemale.toStream(text, {
-            rate: "-8%",
-            pitch: "+0Hz",
-            volume: "+0%"
-          });
-          const audioChunks: Buffer[] = [];
-          const edgeAudio = await Promise.race<Buffer>([
-            new Promise<Buffer>((resolve, reject) => {
-              audioStream.on("data", (chunk: Buffer | Uint8Array) => {
-                audioChunks.push(Buffer.from(chunk));
-              });
-              audioStream.once("end", () => resolve(Buffer.concat(audioChunks)));
-              audioStream.once("error", reject);
-            }),
-            new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error("Persian female voice stream timed out")), 8_000))
-          ]);
-          if (edgeAudio.length > 1000) {
-            request.log.info({ voice: "fa-IR-DilaraNeural", bytes: edgeAudio.length }, "Nava female Persian TTS succeeded via msedge-tts");
-            return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(edgeAudio);
-          }
-          request.log.warn({ bytes: edgeAudio.length }, "msedge-tts returned empty audio; trying other free providers");
-        } finally {
-          edgeFemale.close();
-        }
-      } catch (error) {
-        request.log.warn({ err: error }, "msedge-tts female Persian voice unavailable; trying other free providers");
-      }
+
 
       }
 
