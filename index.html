@@ -57,6 +57,61 @@ header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blu
 body.hormoz-module-open{overflow:hidden}
 @media(max-width:600px){#hormoz-module-shell{padding:0}#hormoz-module-card{width:100%;height:100dvh;border-radius:0;border:0}#hormoz-module-toolbar{padding:10px}#hormoz-module-toolbar strong{font-size:13px}}
 </style>
+
+<style id="hormoz-premium-visual-refresh">
+:root{--bg:#06131f;--panel:#0d2637;--panel2:#12384b;--line:#2d6072;--text:#f7fbff;--muted:#b7cdd8;--aqua:#77f0dc;--gold:#ffd98e;--green:#9cf0bd}
+html{scroll-padding-top:90px}
+body{background:radial-gradient(ellipse at 50% -12%,rgba(27,112,129,.52),transparent 46%),radial-gradient(ellipse at 100% 35%,rgba(13,68,92,.22),transparent 35%),linear-gradient(180deg,#06131f 0%,#081d2b 48%,#06131f 100%);background-attachment:fixed}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.2;background-image:radial-gradient(#7cf1dc 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(to bottom,black,transparent 65%)}
+header{background:rgba(4,18,29,.86);border-bottom:1px solid rgba(119,240,220,.2);box-shadow:0 8px 28px #0002}
+.brand{display:inline-flex;align-items:center;gap:9px;color:#eafffb;letter-spacing:.1px}
+.brand:before{content:"777";font:800 11px Tahoma,Arial,sans-serif;letter-spacing:1px;color:#062a32;background:linear-gradient(135deg,#9bffe8,#ffd98e);border-radius:10px;padding:5px 7px;box-shadow:0 0 20px #77f0dc30}
+.nav a{padding:6px 8px;border-radius:8px;transition:background .2s,color .2s}
+.nav a:hover{background:#143a4a}
+.hero{position:relative;isolation:isolate;overflow:hidden;margin-top:18px;padding:clamp(24px,5vw,54px) clamp(12px,3vw,28px) 28px;border:1px solid rgba(119,240,220,.25);border-radius:30px;background:linear-gradient(140deg,rgba(15,54,72,.92),rgba(6,25,39,.93) 58%,rgba(25,49,57,.86));box-shadow:0 24px 80px #0003,inset 0 1px #ffffff0c}
+.hero:before{content:"";position:absolute;width:310px;height:310px;top:-175px;right:-95px;border-radius:50%;background:#77f0dc25;filter:blur(3px);z-index:-1}
+.hero:after{content:"";position:absolute;width:260px;height:260px;bottom:-180px;left:-60px;border-radius:50%;background:#ffd98e18;filter:blur(8px);z-index:-1}
+.lamp{font-size:58px;filter:drop-shadow(0 0 18px #77f0dc35);animation:hormozLamp 4s ease-in-out infinite}
+@keyframes hormozLamp{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.hero h1{font-weight:900;letter-spacing:-.7px;text-shadow:0 5px 24px #0003}
+.hero .lead{font-weight:800;color:#a6ffeb}
+.hero .quote{max-width:620px;padding:9px 15px;border-right:3px solid var(--gold);background:linear-gradient(90deg,transparent,rgba(255,217,142,.07));border-radius:8px}
+.poster{width:min(100%,360px);max-height:290px;margin:0 auto 20px;object-fit:cover;aspect-ratio:1/1;border-radius:25px;border:1px solid #77f0dc60;box-shadow:0 0 0 7px #77f0dc08,0 22px 52px #0005}
+.hero .music{border-color:#315d6d;background:rgba(4,23,36,.72)}
+.btn{transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;box-shadow:0 5px 14px #0002}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 9px 24px #0003}
+.btn.alt{border-color:#4a7a8c;background:#0b2535a8}
+#home>.section{position:relative}
+.section{padding-top:clamp(22px,4vw,38px);padding-bottom:clamp(22px,4vw,38px)}
+.section-head{margin-bottom:20px}
+.section-head h2{font-weight:850;letter-spacing:-.3px}
+.section-head .hint{max-width:720px;margin:4px auto 0}
+#easy-access .card{background:linear-gradient(155deg,rgba(20,63,79,.96),rgba(9,33,49,.97));border-color:#326174;box-shadow:0 12px 28px #0002;transition:transform .2s,border-color .2s,box-shadow .2s}
+#easy-access .card:hover{transform:translateY(-4px);border-color:#77f0dc;box-shadow:0 16px 34px #0003}
+#easy-access .icon{display:grid;place-items:center;width:58px;height:58px;margin-bottom:7px;border:1px solid #77f0dc30;border-radius:18px;background:linear-gradient(135deg,#77f0dc1c,#ffd98e12);font-size:30px}
+.chat{border-radius:24px;border-color:#3c7889;background:linear-gradient(145deg,rgba(16,54,74,.98),rgba(6,27,42,.98));box-shadow:0 22px 55px #0003}
+.conversation-history{border-color:#2d5c70;background:rgba(3,20,32,.82)}
+.chat-user{background:#173f57;border-color:#34748d}
+.chat-nava{background:#123d38;border-color:#347b6c}
+.chat-composer{background:linear-gradient(180deg,rgba(12,41,61,.88),#0c293d 22%);backdrop-filter:blur(10px)}
+input,textarea,#unifiedRequestForm select{border-color:#365f73;background:#061a28}
+input:focus,textarea:focus,#unifiedRequestForm select:focus{box-shadow:0 0 0 3px #77f0dc1b}
+.grid .card,.feature .card{border-radius:20px;box-shadow:0 10px 26px #0002;transition:transform .2s,border-color .2s}
+.grid .card:hover,.feature .card:hover{transform:translateY(-3px);border-color:#77f0dc77}
+.card button{transition:background .18s,border-color .18s}
+.card button:hover{background:#123e50;border-color:#77f0dc}
+#hormoz-live-status{background:linear-gradient(115deg,rgba(12,42,61,.95),rgba(9,30,45,.95))!important;border-color:#2b6678!important;box-shadow:0 12px 28px #0002}
+#hormoz-live-status>div:first-child strong{letter-spacing:.1px}
+#portal{border:1px solid #2b5d70;border-radius:26px;padding:clamp(16px,3vw,26px);background:linear-gradient(145deg,rgba(13,42,60,.78),rgba(6,25,39,.68));box-shadow:0 20px 55px #0002}
+#portal .card{background:linear-gradient(145deg,#12384b,#0a2435)}
+.notice{border-radius:15px}
+.footer{border-top:1px solid #28536a;margin-top:16px}
+::selection{background:#77f0dc;color:#062532}
+@media(min-width:800px){.hero .row{max-width:900px;margin:0 auto}.hero .row .btn:first-child{flex-basis:100%;max-width:470px}.hero .row .btn{min-height:47px}}
+@media(max-width:600px){.hero{border-radius:22px;margin-top:12px;padding:24px 13px}.poster{width:min(100%,300px);max-height:260px}.lamp{font-size:48px}.hero .row{gap:8px}.hero .row .btn{flex:1 1 42%;min-height:46px}.hero .row .btn:first-child{flex-basis:100%;font-size:17px!important}.section-head h2{font-size:24px}.grid .card{padding:15px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+</style>
+
 </head>
 <body>
 <header><div class="wrap head">
