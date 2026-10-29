@@ -2075,7 +2075,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
               audioStream.once("end", () => resolve(Buffer.concat(audioChunks)));
               audioStream.once("error", reject);
             }),
-            new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error("Persian female voice stream timed out")), 8_000))
+            new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error("Persian female voice stream timed out")), 11_000))
           ]);
           if (edgeAudio.length > 1000) {
             request.log.info({ voice: "fa-IR-DilaraNeural", bytes: edgeAudio.length }, "Nava female Persian TTS succeeded via msedge-tts");
