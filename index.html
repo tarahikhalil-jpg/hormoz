@@ -112,6 +112,73 @@ input:focus,textarea:focus,#unifiedRequestForm select:focus{box-shadow:0 0 0 3px
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
 </style>
 
+
+<style id="hormoz-layout-polish-2026">
+/* نظم بصری نهایی: خوانایی، فاصله‌گذاری و تجربه یکسان در موبایل و دسکتاپ */
+:root{--surface-glass:rgba(11,35,51,.88);--soft-border:rgba(119,240,220,.22)}
+body{font-size:15px;line-height:1.9;letter-spacing:0}
+.wrap{width:min(1120px,94%);margin-inline:auto}
+header{padding:9px 0}
+.head{min-height:48px}
+.nav{gap:5px;scrollbar-width:thin}
+.nav a{padding:7px 10px;border:1px solid transparent}
+.nav a:focus-visible,.btn:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.hero{margin-top:18px;padding:clamp(26px,5vw,58px) clamp(14px,4vw,34px) 30px}
+.hero .quote{font-size:16px}
+.section{scroll-margin-top:88px;padding-block:clamp(24px,4vw,42px)}
+.section-head{max-width:780px;margin-bottom:22px}
+.section-head h2{line-height:1.55}
+.section-head .hint{line-height:1.9}
+.grid,.feature{gap:15px}
+.grid .card,.feature .card{min-height:100%;padding:19px}
+.card h3{line-height:1.6}
+.card p{line-height:1.85}
+#nava .chat{max-width:880px;padding:clamp(14px,2.8vw,24px);gap:13px}
+#nava .statusline{padding:2px 2px 10px;border-bottom:1px solid var(--soft-border)}
+#nava .statusline strong{font-size:17px}
+#nava .conversation-history{height:clamp(260px,48vh,520px);max-height:520px;min-height:220px;padding:clamp(12px,2.5vw,20px);gap:14px;border-radius:17px}
+#nava .chat-turn{max-width:min(88%,680px);padding:12px 16px;font-size:15px;line-height:2}
+#nava .chat-composer{border:1px solid var(--soft-border);border-radius:17px;padding:13px;margin-top:2px;background:rgba(5,24,38,.96);box-shadow:0 -8px 25px #0002}
+#nava #message{min-height:94px;max-height:190px;line-height:1.9}
+#nava .chat-actions{gap:9px}
+#nava .chat-actions .btn{min-height:46px}
+#nava .small{line-height:1.8}
+#unified-center .chat{padding:clamp(15px,3vw,25px);gap:15px}
+#portal{scroll-margin-top:88px}
+#portal .grid{align-items:stretch}
+#hormoz-live-status{box-shadow:0 10px 28px #0002}
+.poster{object-position:center}
+.footer{line-height:2}
+@media(min-width:900px){
+ .nav{justify-content:flex-end}
+ #nava .chat{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+ #nava .conversation-history{height:430px}
+ .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #easy-access .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:700px){
+ .wrap{width:min(100% - 24px,620px)}
+ header{padding:7px 0}
+ .head{gap:6px}
+ .brand{font-size:17px}
+ .nav{width:100%;padding:2px 0 5px;gap:4px}
+ .nav a{font-size:12px;padding:5px 8px}
+ .hero{margin-top:10px}
+ .section{padding-block:22px}
+ .section-head{margin-bottom:15px}
+ .grid,.feature{gap:11px}
+ .grid .card,.feature .card{padding:15px}
+ #nava .chat{padding:12px;border-radius:19px}
+ #nava .conversation-history{height:42vh;min-height:210px;max-height:390px;padding:11px}
+ #nava .chat-turn{max-width:94%;font-size:14px;padding:10px 12px}
+ #nava .chat-composer{position:sticky;bottom:0;z-index:4;padding:10px 9px max(9px,env(safe-area-inset-bottom))}
+ #nava #message{min-height:78px;font-size:16px}
+ #nava .chat-actions .btn{flex:1 1 42%;min-height:48px}
+ #portal{padding:13px;border-radius:20px}
+}
+@media(prefers-reduced-motion:reduce){.lamp{animation:none}}
+</style>
+
 </head>
 <body>
 <header><div class="wrap head">
