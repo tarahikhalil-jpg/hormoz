@@ -2301,43 +2301,8 @@ return reply.type("application/xml; charset=utf-8").send(content);
         }
       }
 
-      // Final reliability fallback: if a verified female voice is unavailable, use Persian male Farid.
-      // The user explicitly prefers usable speech over blocking the service for voice gender.
-      try {
-        const edgeMale = new MsEdgeTTS({
-          connectionTimeoutMs: 10_000,
-          synthesisTimeoutMs: 12_000
-        });
-        try {
-          await edgeMale.setMetadata(
-            "fa-IR-FaridNeural",
-            OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3
-          );
-          const { audioStream } = edgeMale.toStream(text, {
-            rate: "-5%",
-            pitch: "+0Hz",
-            volume: "+0%"
-          });
-          const chunks: Buffer[] = [];
-          const maleAudio = await Promise.race<Buffer>([
-            new Promise<Buffer>((resolve, reject) => {
-              audioStream.on("data", (chunk: Buffer | Uint8Array) => chunks.push(Buffer.from(chunk)));
-              audioStream.once("end", () => resolve(Buffer.concat(chunks)));
-              audioStream.once("error", reject);
-            }),
-            new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error("Persian male voice stream timed out")), 8_000))
-          ]);
-          if (maleAudio.length > 1000) {
-            request.log.info({ voice: "fa-IR-FaridNeural", bytes: maleAudio.length }, "Nava Persian male voice fallback succeeded");
-            return reply.header("Cache-Control", "no-store").type("audio/mpeg").send(maleAudio);
-          }
-        } finally {
-          edgeMale.close();
-        }
-      } catch (error) {
-        request.log.warn({ err: error }, "Nava Persian male voice fallback unavailable");
-      }
-
+      // Nava must never silently switch to a male voice.
+      // If no verified female Persian provider is available, return a clear error instead.
       request.log.error("No Persian TTS provider succeeded");
       return reply.code(503).send({ error: "صدای فارسی نوا فعلاً در دسترس نیست؛ پاسخ متنی آماده است." });
     } catch (error) {
