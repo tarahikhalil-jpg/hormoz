@@ -2491,26 +2491,13 @@ return reply.type("application/xml; charset=utf-8").send(content);
   );
 
 
-  /* ===== HOME ===== */
+  /* ===== SINGLE PUBLIC HOME ===== */
 
   app.get(
     "/",
     async (_request, reply) => {
-
-      // Serve the maintained public homepage first; keep the older graphic page only as fallback.
-      const homePath = path.join(__dirname, "../public/index.html");
-      const fallbackPath = path.join(__dirname, "../public/hormoz-graphic.html");
-      let homeHtml: string;
-      try {
-        homeHtml = await fs.readFile(homePath, "utf8");
-      } catch {
-        homeHtml = await fs.readFile(fallbackPath, "utf8");
-      }
-
-      return reply
-        .type("text/html; charset=utf-8")
-        .send(homeHtml);
-
+      // Keep one canonical public entry page. API routes and service pages remain on this backend.
+      return reply.redirect("https://hormoz-portal-public-777.onrender.com/");
     }
   );
 
