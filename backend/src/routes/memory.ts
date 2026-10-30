@@ -28,11 +28,13 @@ export const memoryRoutes: FastifyPluginAsync<MemoryRoutesOptions> = async (
       return reply.code(400).send({ success: false, error: "INVALID_MEMORY" });
     }
 
+    const key = body.key;
+    const value = body.value;
     return handleMemoryError(reply, () => memoryService.createMemory({
       // The owner always comes from the authenticated session, never the request body.
       userId: identity.user.userId,
-      key: body.key,
-      value: body.value,
+      key,
+      value,
       source: body.source === "conversation" ? "conversation" : "user",
       expiresAt: body.expiresAt,
     }));
