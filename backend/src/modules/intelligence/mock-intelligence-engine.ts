@@ -68,18 +68,22 @@ export class MockIntelligenceEngine implements IntelligenceEngine {
 
       return { content, correlationId: request.correlationId, status: "completed" };
     } catch (error) {
+      const providerError = error instanceof Error ? error.message : String(error);
+      const rateLimited = /\\b429\\b|rate.?limit|free-models-per-day|quota exceeded/i.test(providerError);
       console.error(
         "Primary intelligence provider failed; refusing to present a mock answer as AI:",
-        error instanceof Error ? error.message : error,
+        providerError,
       );
       return {
         correlationId: request.correlationId,
         status: "failed",
         error: {
-          code: "AI_PROVIDER_UNAVAILABLE",
-          category: "unavailable",
+          code: rateLimited ? "AI_PROVIDER_RATE_LIMITED" : "AI_PROVIDER_UNAVAILABLE",
+          category: rateLimited ? "rate-limit" : "unavailable",
           retryable: true,
-          message: "موتور هوش مصنوعی نوا فعلاً پاسخ نداد. لطفاً کمی بعد دوباره تلاش کنید.",
+          message: rateLimited
+            ? "سهمیه رایگان سرویس هوش مصنوعی نوا فعلاً به پایان رسیده است؛ پس از بازنشانی سهمیه دوباره تلاش کن."
+            : "موتور هوش مصنوعی نوا فعلاً پاسخ نداد. لطفاً کمی بعد دوباره تلاش کنید.",
           correlationId: request.correlationId,
         },
       };
