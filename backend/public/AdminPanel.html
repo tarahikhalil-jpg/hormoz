@@ -279,6 +279,21 @@ footer{padding:32px 10px;font-size:14px}
 
 <body>
 
+<nav class="hormoz-page-nav" aria-label="ناوبری بین بخش‌های هوش هرمز">
+  <button type="button" id="hormozBack" aria-label="بازگشت به صفحه قبلی">→ قبلی</button>
+  <button type="button" id="hormozForward" aria-label="رفتن به صفحه بعدی">بعدی ←</button>
+  <a href="https://hormoz-portal-public-777.onrender.com/" aria-label="بازگشت به صفحه اصلی هوش هرمز">⌂ صفحه اصلی</a>
+</nav>
+<style>
+.hormoz-page-nav{position:sticky;top:0;z-index:9999;display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 12px;background:rgba(3,20,31,.97);border-bottom:1px solid #397184;box-shadow:0 5px 18px #0004;direction:rtl}
+.hormoz-page-nav button,.hormoz-page-nav a{min-height:43px;padding:8px 17px;border:1px solid #5d9aaa;border-radius:11px;background:#12394b;color:#fff!important;font:700 14px Tahoma,Arial,sans-serif;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.hormoz-page-nav a{background:#70ead7;color:#062b35!important;border-color:#a8fff1}
+.hormoz-page-nav button:active,.hormoz-page-nav a:active{transform:scale(.97)}
+@media(max-width:480px){.hormoz-page-nav{gap:6px;padding:8px 5px}.hormoz-page-nav button,.hormoz-page-nav a{flex:1 1 28%;padding:8px 5px;font-size:13px}}
+</style>
+<script id="hormoz-page-navigation">
+(()=>{const back=document.getElementById('hormozBack'),forward=document.getElementById('hormozForward');if(back)back.addEventListener('click',()=>{if(history.length>1)history.back();else location.href='https://hormoz-portal-public-777.onrender.com/'});if(forward)forward.addEventListener('click',()=>history.forward());})();
+</script>
 <div class="container">
 
   <header>
