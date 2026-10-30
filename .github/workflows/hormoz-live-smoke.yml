@@ -75,22 +75,28 @@ jobs:
               return "HTTP " + r.status + ", " + text.length + " characters";
             });
           }
-          await check("Nava AI response", async () => {
-            const r = await fetch(base + "/api/v1/chat", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ message: "فقط با یک کلمه فارسی پاسخ بده: سلام" }),
-              signal: AbortSignal.timeout(60000)
-            });
-            const text = await r.text();
-            let data;
-            try { data = JSON.parse(text); } catch { throw new Error("non-JSON response: " + text.slice(0,180)); }
-            if (!r.ok || data.success !== true || typeof data.response !== "string" || !data.response.trim()) {
-              throw new Error("HTTP " + r.status + ": " + (data.error || text).toString().slice(0,220));
+          await check("Nava AI response (transient provider retry)", async () => {
+            let lastFailure = "no response";
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              const r = await fetch(base + "/api/v1/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: "فقط با یک کلمه فارسی پاسخ بده: سلام" }),
+                signal: AbortSignal.timeout(60000)
+              });
+              const text = await r.text();
+              let data;
+              try { data = JSON.parse(text); } catch { throw new Error("non-JSON response: " + text.slice(0,180)); }
+              if (r.ok && data.success === true && typeof data.response === "string" && data.response.trim()) {
+                return "AI returned a non-empty answer on attempt " + attempt;
+              }
+              lastFailure = "HTTP " + r.status + ": " + (data.error || text).toString().slice(0,220);
+              if (![502, 503, 504].includes(r.status) || attempt === 3) break;
+              await new Promise(resolve => setTimeout(resolve, attempt * 1500));
             }
-            return "AI returned a non-empty answer";
+            throw new Error(lastFailure);
           });
-          await check("Persian online TTS (female preferred, male fallback accepted)", async () => {
+          await check("Persian online TTS endpoint availability (audio bytes do not verify voice gender)", async () => {
             const r = await fetch(base + "/api/v1/tts", {
               method: "POST",
               headers: { "Content-Type": "application/json", "Accept": "audio/*" },
