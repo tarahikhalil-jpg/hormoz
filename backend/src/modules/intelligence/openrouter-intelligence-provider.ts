@@ -15,7 +15,8 @@ export class OpenRouterIntelligenceProvider
       throw new Error("OpenRouter configuration is incomplete");
     }
 
-    // Keep normal replies quick while allowing one retry for temporary provider/network failures.
+    // Never burn a second free-tier request after quota exhaustion or a slow timeout.
+    // One retry remains available only for transient network/5xx failures.
     const maxAttempts = 2;
     let lastError: Error | undefined;
 
@@ -24,7 +25,7 @@ export class OpenRouterIntelligenceProvider
       const controller = new AbortController();
       const timeout = setTimeout(
         () => controller.abort(),
-        15_000,
+        12_000,
       );
 
       try {
@@ -55,7 +56,9 @@ export class OpenRouterIntelligenceProvider
         );
 
         if (!response.ok) {
-          retryableError = response.status === 429 || response.status >= 500;
+          // A 429 commonly means the free quota/rate limit is exhausted; retrying
+          // immediately wastes time and may consume another request without helping.
+          retryableError = response.status >= 500;
           throw new Error(
             `OpenRouter request failed: ${response.status} ${rawText}`,
           );
@@ -136,6 +139,10 @@ export class OpenRouterIntelligenceProvider
           error instanceof Error
             ? error
             : new Error(String(error));
+
+        // A timed-out request is not retried: the user gets a fast, honest failure
+        // instead of waiting through two full timeout windows.
+        if (lastError.name === "AbortError") retryableError = false;
 
         console.error(
           `OpenRouter attempt ${attempt} failed:`,
