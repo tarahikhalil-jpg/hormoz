@@ -753,5 +753,46 @@ body{font-size:17px!important;line-height:2!important}
 :where(body *):not(#nava):not(#nava *):is(.card button){background:#173e52!important;color:#ffffff!important;border:2px solid #8ab9c9!important}
 :where(body *):not(#nava):not(#nava *){--muted:#d2e2ea}
 </style>
+<style id="hormoz-topbar-readable-2026">
+/* نوار بالای درگاه: زمینه یکدست، نوشته درشت و دکمه‌های واضح */
+body>header{
+  background:#031725!important;
+  border-bottom:2px solid #4b9aaa!important;
+  box-shadow:0 6px 22px rgba(0,0,0,.42)!important;
+  padding:10px 0!important;
+}
+body>header .head{gap:14px!important;align-items:center!important}
+body>header .brand{
+  color:#ffffff!important;font-size:20px!important;font-weight:900!important;
+  text-shadow:none!important;flex-shrink:0;padding:4px 0;
+}
+body>header .nav{
+  display:flex!important;align-items:center!important;gap:7px!important;
+  overflow-x:auto!important;overflow-y:hidden!important;
+  scrollbar-width:thin;scrollbar-color:#69cbbb #123448;
+  padding:5px 2px 8px!important;
+}
+body>header .nav a{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  flex:0 0 auto!important;min-height:42px!important;padding:7px 13px!important;
+  border:1px solid #56899a!important;border-radius:11px!important;
+  background:#12384b!important;color:#ffffff!important;
+  font-size:15px!important;font-weight:800!important;line-height:1.5!important;
+  text-decoration:none!important;white-space:nowrap!important;
+}
+body>header .nav a:hover,
+body>header .nav a:focus-visible,
+body>header .nav a.active{
+  background:#a8fff0!important;color:#062b35!important;
+  border-color:#d1fff7!important;outline-offset:2px;
+}
+@media(max-width:700px){
+  body>header{padding:8px 0!important}
+  body>header .head{align-items:stretch!important;gap:5px!important}
+  body>header .brand{font-size:19px!important}
+  body>header .nav{width:100%!important;justify-content:flex-start!important}
+  body>header .nav a{font-size:14px!important;min-height:42px!important;padding:7px 12px!important}
+}
+</style>
 </body>
 </html>
