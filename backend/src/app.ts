@@ -19,6 +19,7 @@ import { InMemoryUserRepository } from "./modules/identity/repositories/user.rep
 import { InMemoryConversationRepository } from "./modules/conversation/repository.js";
 import { ConversationService } from "./modules/conversation/service.js";
 import { InMemoryMemoryRepository } from "./modules/memory/repository.js";
+import { PostgresRepositories } from "./persistence/postgres-repositories.js";
 import { MemoryService } from "./modules/memory/service.js";
 import { MockIntelligenceEngine } from "./modules/intelligence/mock-intelligence-engine.js";
 import { OpenRouterIntelligenceProvider } from "./modules/intelligence/openrouter-intelligence-provider.js";
@@ -2339,17 +2340,25 @@ return reply.type("application/xml; charset=utf-8").send(content);
   );
 
 
+  /* ===== DURABLE PERSISTENCE ===== */
+
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  if (process.env.NODE_ENV === "production" && !databaseUrl) {
+    throw new Error("DATABASE_URL is required in production; refusing volatile identity and user-data storage.");
+  }
+
+  const postgres = databaseUrl ? new PostgresRepositories(databaseUrl) : undefined;
+  if (postgres) {
+    app.addHook("onReady", async () => postgres.ensureSchema());
+    app.addHook("onClose", async () => postgres.pool.end());
+  }
+
   /* ===== IDENTITY ===== */
 
   const identityService =
     new IdentityService({
-
-      userRepository:
-        new InMemoryUserRepository(),
-
-      sessionRepository:
-        new InMemorySessionRepository()
-
+      userRepository: postgres?.userRepository ?? new InMemoryUserRepository(),
+      sessionRepository: postgres?.sessionRepository ?? new InMemorySessionRepository()
     });
 
 
@@ -2357,27 +2366,18 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
   const conversationService =
     new ConversationService({
-
-      conversationRepository:
-        new InMemoryConversationRepository(),
-
+      conversationRepository: postgres?.conversationRepository ?? new InMemoryConversationRepository(),
       identityService
-
     });
 
 
   /* ===== MEMORY ===== */
 
   const memoryRepository =
-    new InMemoryMemoryRepository();
-
+    postgres?.memoryRepository ?? new InMemoryMemoryRepository();
 
   const memoryService =
-    new MemoryService({
-
-      memoryRepository
-
-    });
+    new MemoryService({ memoryRepository });
 
 
   /* ===== DEVICE ===== */
