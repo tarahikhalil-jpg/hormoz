@@ -6,6 +6,7 @@ import type {
 import { MockIntelligenceEngine } from "../modules/intelligence/mock-intelligence-engine.js";
 import type { ConversationService } from "../modules/conversation/service.js";
 import type { IdentityService } from "../modules/identity/identity.service.js";
+import { IdentityError } from "../modules/identity/repositories/errors.js";
 import type { MemoryService } from "../modules/memory/service.js";
 import { ActionDispatcher } from "../modules/action/dispatcher.js";
 import { interpretCommand } from "../modules/action/command-interpreter.js";
@@ -126,24 +127,43 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
       }
     }
 
-    const userIdHeader = request.headers["x-user-id"];
+    // Public/guest chat remains available, but client-supplied x-user-id is never
+    // trusted for private memory. Personal memory is loaded only from a valid session.
+    const sessionHeader = request.headers["x-session-id"];
+    const sessionId = typeof sessionHeader === "string" ? sessionHeader.trim() : "";
+    let userId = "anonymous";
+    let memories: Awaited<ReturnType<MemoryService["listMemories"]>> = [];
 
-    const userId =
-      typeof userIdHeader === "string" && userIdHeader.trim()
-        ? userIdHeader.trim()
-        : "chat-fallback-user";
-
-    let memories: Awaited<
-      ReturnType<MemoryService["listMemories"]>
-    > = [];
-
-    try {
-      memories = await memoryService.listMemories(userId);
-    } catch (error) {
-      console.error(
-        "Memory service failed:",
-        error instanceof Error ? error.message : error,
-      );
+    if (sessionId) {
+      if (!identityService) {
+        return reply.code(503).send({
+          success: false,
+          error: "identity service unavailable",
+          version: "0.1",
+        });
+      }
+      try {
+        const identity = await identityService.authenticate(sessionId);
+        userId = identity.user.userId;
+        memories = await memoryService.listMemories(userId);
+      } catch (error) {
+        if (error instanceof IdentityError) {
+          return reply.code(401).send({
+            success: false,
+            error: error.code,
+            version: "0.1",
+          });
+        }
+        console.error(
+          "Authenticated chat context failed:",
+          error instanceof Error ? error.message : error,
+        );
+        return reply.code(500).send({
+          success: false,
+          error: "chat context unavailable",
+          version: "0.1",
+        });
+      }
     }
 
     const context = Object.fromEntries(
