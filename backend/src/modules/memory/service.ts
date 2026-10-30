@@ -51,7 +51,7 @@ export class MemoryService {
     const existing = await this.memoryRepository.get(id);
     if (!existing) throw new MemoryError("MEMORY_NOT_FOUND");
     if (existing.userId !== userId) throw new MemoryError("MEMORY_FORBIDDEN");
-    return this.memoryRepository.delete(id);
+    return this.memoryRepository.delete(id, userId);
   }
 
   public async createSessionMemory(input: SessionMemory): Promise<SessionMemory> {
@@ -82,7 +82,7 @@ export class MemoryService {
     if (!existing) throw new MemoryError("SESSION_MEMORY_NOT_FOUND");
     if (existing.userId !== userId) throw new MemoryError("SESSION_MEMORY_FORBIDDEN");
     if (this.isSessionExpired(existing)) throw new MemoryError("SESSION_MEMORY_EXPIRED");
-    const updated = await this.memoryRepository.updateSessionMemory(sessionId, input);
+    const updated = await this.memoryRepository.updateSessionMemory(sessionId, { ...input, userId });
     if (!updated) throw new MemoryError("SESSION_MEMORY_NOT_FOUND");
     return updated;
   }
@@ -91,7 +91,7 @@ export class MemoryService {
     const existing = await this.memoryRepository.getSessionMemory(sessionId);
     if (!existing) throw new MemoryError("SESSION_MEMORY_NOT_FOUND");
     if (existing.userId !== userId) throw new MemoryError("SESSION_MEMORY_FORBIDDEN");
-    return this.memoryRepository.deleteSessionMemory(sessionId);
+    return this.memoryRepository.deleteSessionMemory(sessionId, userId);
   }
 
   private isExpired(memory: PersistentMemory): boolean {
