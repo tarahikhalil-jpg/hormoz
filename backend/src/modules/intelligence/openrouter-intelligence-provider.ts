@@ -36,7 +36,8 @@ export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 12_000);
         try {
-          const response = await fetch(`${provider.baseUrl.replace(/\\/+$/, "")}/chat/completions`, {
+          const baseUrl = provider.baseUrl.endsWith("/") ? provider.baseUrl.slice(0, -1) : provider.baseUrl;
+          const response = await fetch(`${baseUrl}/chat/completions`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
