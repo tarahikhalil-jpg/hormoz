@@ -2379,15 +2379,6 @@ return reply.type("application/xml; charset=utf-8").send(content);
     new MemoryService({ memoryRepository });
 
 
-  /* ===== DEVICE ===== */
-
-  const light =
-    options.light ??
-    new MockLight(
-      "light-777"
-    );
-
-
   /* ===== INTELLIGENCE ===== */
 
   const intelligenceEngine =
