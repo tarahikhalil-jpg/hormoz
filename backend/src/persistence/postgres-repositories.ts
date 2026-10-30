@@ -42,9 +42,9 @@ export class PostgresRepositories {
     this.memoryRepository = {
       create: (input) => this.createMemory(input), get: (id) => this.getMemory(id),
       listByUser: (id) => this.listMemoriesByUser(id), update: (id, input) => this.updateMemory(id, input),
-      delete: (id) => this.deleteMemory(id), createSessionMemory: (item) => this.createSessionMemory(item),
+      delete: (id, userId) => this.deleteMemory(id, userId), createSessionMemory: (item) => this.createSessionMemory(item),
       getSessionMemory: (id) => this.getSessionMemory(id), listSessionMemoriesByUser: (id) => this.listSessionMemoriesByUser(id),
-      updateSessionMemory: (id, input) => this.updateSessionMemory(id, input), deleteSessionMemory: (id) => this.deleteSessionMemory(id),
+      updateSessionMemory: (id, input) => this.updateSessionMemory(id, input), deleteSessionMemory: (id, userId) => this.deleteSessionMemory(id, userId),
     };
     this.conversationRepository = {
       create: (input) => this.createConversation(input), findById: (id) => this.findConversationById(id),
@@ -197,10 +197,10 @@ export class PostgresRepositories {
     return r.rowCount ? this.mapMemory(r.rows[0]) : null;
   }
 
-  public async deleteMemory(id: MemoryId): Promise<boolean> {
+  public async deleteMemory(id: MemoryId, userId: UserId): Promise<boolean> {
     await this.ensureSchema();
     // Owner is enforced by MemoryService before this call; route never accepts arbitrary repository IDs.
-    const r = await this.pool.query("DELETE FROM hormoz_user_memories WHERE id=$1", [id]);
+    const r = await this.pool.query("DELETE FROM hormoz_user_memories WHERE id=$1 AND user_id=$2", [id,userId]);
     return (r.rowCount ?? 0) > 0;
   }
 
@@ -243,9 +243,9 @@ export class PostgresRepositories {
     return r.rowCount ? this.mapSessionMemory(r.rows[0]) : null;
   }
 
-  public async deleteSessionMemory(sessionId: SessionId): Promise<boolean> {
+  public async deleteSessionMemory(sessionId: SessionId, userId: UserId): Promise<boolean> {
     await this.ensureSchema();
-    const r = await this.pool.query("DELETE FROM hormoz_session_memories WHERE session_id=$1", [sessionId]);
+    const r = await this.pool.query("DELETE FROM hormoz_session_memories WHERE session_id=$1 AND user_id=$2", [sessionId,userId]);
     return (r.rowCount ?? 0) > 0;
   }
 
