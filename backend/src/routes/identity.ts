@@ -9,7 +9,7 @@ export interface IdentityRoutesOptions {
 const attempts = new Map<string, { count: number; resetAt: number }>();
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 20;
-const SESSION_TTL_SECONDS = 24 * 60 * 60;
+const SESSION_TTL_SECONDS = 24 * 60 * 60; // Must match IdentityService default session TTL.
 
 export const identityRoutes: FastifyPluginAsync<IdentityRoutesOptions> = async (app, { identityService }) => {
   app.post("/api/v1/identity/guest", async (request, reply) => {
