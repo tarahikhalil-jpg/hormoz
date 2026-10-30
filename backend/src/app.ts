@@ -9,7 +9,6 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 import { chatRoutes } from "./routes/chat.js";
 import { ActionDispatcher } from "./modules/action/dispatcher.js";
 import type { LightDevice } from "./modules/device/light.js";
-import { MockLight } from "./modules/device/mock-light.js";
 import { conversationRoutes } from "./routes/conversation.js";
 import { healthRoutes } from "./routes/health.js";
 import { memoryRoutes } from "./routes/memory.js";
@@ -2411,10 +2410,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
       intelligenceEngine,
 
-      actionDispatcher:
-        new ActionDispatcher({
-          light
-        })
+      actionDispatcher: options.light ? new ActionDispatcher({ light: options.light }) : undefined
 
     }
   );
