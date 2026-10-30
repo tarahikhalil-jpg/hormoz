@@ -73,9 +73,12 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
       current.count++;
 
       if (current.count > RATE_LIMIT_MAX_REQUESTS) {
+        const retryAfterSeconds = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
+        reply.header("Retry-After", String(retryAfterSeconds));
         return reply.code(429).send({
           success: false,
           error: "too many requests",
+          retryAfterSeconds,
           version: "0.1",
         });
       }
