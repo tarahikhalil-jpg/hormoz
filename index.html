@@ -722,5 +722,18 @@ if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serv
 })();
 </script>
 
+<style id="hormoz-readable-portal-2026">
+/* Portal-wide contrast correction. Nava chat is intentionally excluded. */
+body{color:#173b43!important}
+body :is(h1,h2,h3,h4,h5,h6,p,li,label,small,strong,span,a,button){text-shadow:none}
+body :is(.hint,.small,.card p,.section-head .hint,.footer,.muted){color:#405e61!important}
+body :is(.section-head h2,.card h3,.hero h1,.brand){color:#123f45!important}
+body :is(.nav a,.btn,.card button,button){font-weight:700}
+body :is(.nav a,.btn,.card button,button){color:#124e52!important}
+body :is(input,textarea,select){color:#173b43!important;font-weight:600}
+body :is(input,textarea)::placeholder{color:#526d70!important;opacity:1!important}
+body :not(#nava):not(#nava *){--muted:#405e61}
+#nava .chat,#nava .chat *{ }
+</style>
 </body>
 </html>
