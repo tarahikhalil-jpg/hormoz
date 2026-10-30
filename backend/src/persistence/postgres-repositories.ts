@@ -12,7 +12,11 @@ const iso = (v: Date | string): string => new Date(v).toISOString();
 const json = <T>(v: unknown, fallback: T): T => typeof v === "string" ? JSON.parse(v) as T : (v as T) ?? fallback;
 
 /** Durable PostgreSQL adapters shared by identity, memory and conversation services. */
-export class PostgresRepositories implements UserRepository, SessionRepository, MemoryRepository, ConversationRepository {
+export class PostgresRepositories {
+  public readonly userRepository: UserRepository;
+  public readonly sessionRepository: SessionRepository;
+  public readonly memoryRepository: MemoryRepository;
+  public readonly conversationRepository: ConversationRepository;
   public readonly pool: Pool;
   private schemaPromise?: Promise<void>;
 
@@ -25,6 +29,28 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
       connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 30000,
     });
+    this.userRepository = {
+      create: (input) => this.createUser(input),
+      findById: (id) => this.findUserById(id),
+      save: (user) => this.saveUser(user),
+    };
+    this.sessionRepository = {
+      create: (session) => this.createSession(session),
+      findById: (id) => this.findSessionById(id),
+      invalidate: (id, at) => this.invalidateSession(id, at),
+    };
+    this.memoryRepository = {
+      create: (input) => this.createMemory(input), get: (id) => this.getMemory(id),
+      listByUser: (id) => this.listMemoriesByUser(id), update: (id, input) => this.updateMemory(id, input),
+      delete: (id) => this.deleteMemory(id), createSessionMemory: (item) => this.createSessionMemory(item),
+      getSessionMemory: (id) => this.getSessionMemory(id), listSessionMemoriesByUser: (id) => this.listSessionMemoriesByUser(id),
+      updateSessionMemory: (id, input) => this.updateSessionMemory(id, input), deleteSessionMemory: (id) => this.deleteSessionMemory(id),
+    };
+    this.conversationRepository = {
+      create: (input) => this.createConversation(input), findById: (id) => this.findConversationById(id),
+      listByUser: (id) => this.listConversationsByUser(id), update: (id, input) => this.updateConversation(id, input),
+      appendMessage: (id, message, at) => this.appendMessage(id, message, at),
+    };
   }
 
   public async ensureSchema(): Promise<void> {
@@ -74,7 +100,7 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
     `);
   }
 
-  public async create(input: CreateUserInput): Promise<IdentityUser> {
+  public async createUser(input: CreateUserInput): Promise<IdentityUser> {
     await this.ensureSchema();
     const userId = input.userId;
     if (!userId) throw new Error("userId is required");
@@ -88,13 +114,13 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
     return this.mapUser(result.rows[0]);
   }
 
-  public async findById(userId: UserId): Promise<IdentityUser | null> {
+  public async findUserById(userId: UserId): Promise<IdentityUser | null> {
     await this.ensureSchema();
     const r = await this.pool.query("SELECT * FROM hormoz_identity_users WHERE user_id=$1", [userId]);
     return r.rowCount ? this.mapUser(r.rows[0]) : null;
   }
 
-  public async save(user: IdentityUser): Promise<IdentityUser> {
+  public async saveUser(user: IdentityUser): Promise<IdentityUser> {
     await this.ensureSchema();
     const r = await this.pool.query(
       `INSERT INTO hormoz_identity_users(user_id,status,role,permissions,metadata,created_at)
@@ -111,7 +137,7 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
       permissions:json(r.permissions,[]), metadata:json(r.metadata,{}), createdAt:iso(r.created_at) };
   }
 
-  public async create(session: IdentitySession): Promise<IdentitySession> {
+  public async createSession(session: IdentitySession): Promise<IdentitySession> {
     await this.ensureSchema();
     const r = await this.pool.query(
       "INSERT INTO hormoz_identity_sessions(session_id,user_id,created_at,expires_at,invalidated_at) VALUES($1,$2,$3,$4,$5) RETURNING *",
@@ -120,13 +146,13 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
     return this.mapSession(r.rows[0]);
   }
 
-  public async findById(sessionId: SessionId): Promise<IdentitySession | null> {
+  public async findSessionById(sessionId: SessionId): Promise<IdentitySession | null> {
     await this.ensureSchema();
     const r = await this.pool.query("SELECT * FROM hormoz_identity_sessions WHERE session_id=$1", [sessionId]);
     return r.rowCount ? this.mapSession(r.rows[0]) : null;
   }
 
-  public async invalidate(sessionId: SessionId, invalidatedAt: Timestamp): Promise<IdentitySession | null> {
+  public async invalidateSession(sessionId: SessionId, invalidatedAt: Timestamp): Promise<IdentitySession | null> {
     await this.ensureSchema();
     const r = await this.pool.query("UPDATE hormoz_identity_sessions SET invalidated_at=$2 WHERE session_id=$1 RETURNING *", [sessionId,invalidatedAt]);
     return r.rowCount ? this.mapSession(r.rows[0]) : null;
@@ -137,7 +163,7 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
       ...(r.invalidated_at ? { invalidatedAt:iso(r.invalidated_at) } : {}) };
   }
 
-  public async create(input: CreateMemoryInput): Promise<PersistentMemory> {
+  public async createMemory(input: CreateMemoryInput): Promise<PersistentMemory> {
     await this.ensureSchema();
     const now = new Date().toISOString();
     const id = `mem-${randomUUID()}`;
@@ -148,19 +174,19 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
     return this.mapMemory(r.rows[0]);
   }
 
-  public async get(id: MemoryId): Promise<PersistentMemory | null> {
+  public async getMemory(id: MemoryId): Promise<PersistentMemory | null> {
     await this.ensureSchema();
     const r = await this.pool.query("SELECT * FROM hormoz_user_memories WHERE id=$1", [id]);
     return r.rowCount ? this.mapMemory(r.rows[0]) : null;
   }
 
-  public async listByUser(userId: UserId): Promise<PersistentMemory[]> {
+  public async listMemoriesByUser(userId: UserId): Promise<PersistentMemory[]> {
     await this.ensureSchema();
     const r = await this.pool.query("SELECT * FROM hormoz_user_memories WHERE user_id=$1 ORDER BY created_at DESC", [userId]);
     return r.rows.map((row) => this.mapMemory(row));
   }
 
-  public async update(id: MemoryId, input: UpdateMemoryInput): Promise<PersistentMemory | null> {
+  public async updateMemory(id: MemoryId, input: UpdateMemoryInput): Promise<PersistentMemory | null> {
     await this.ensureSchema();
     const r = await this.pool.query(
       `UPDATE hormoz_user_memories SET key=COALESCE($3,key), value=COALESCE($4,value),
@@ -171,7 +197,7 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
     return r.rowCount ? this.mapMemory(r.rows[0]) : null;
   }
 
-  public async delete(id: MemoryId): Promise<boolean> {
+  public async deleteMemory(id: MemoryId): Promise<boolean> {
     await this.ensureSchema();
     // Owner is enforced by MemoryService before this call; route never accepts arbitrary repository IDs.
     const r = await this.pool.query("DELETE FROM hormoz_user_memories WHERE id=$1", [id]);
@@ -228,7 +254,7 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
       entries:json(r.entries,[]), expiresAt:iso(r.expires_at) };
   }
 
-  public async create(input: CreateConversationInput): Promise<Conversation> {
+  public async createConversation(input: CreateConversationInput): Promise<Conversation> {
     await this.ensureSchema();
     const id = `conversation-${randomUUID()}`;
     const r = await this.pool.query(
@@ -238,20 +264,20 @@ export class PostgresRepositories implements UserRepository, SessionRepository, 
     return this.mapConversation(r.rows[0], []);
   }
 
-  public async findById(id: ConversationId): Promise<Conversation | null> {
+  public async findConversationById(id: ConversationId): Promise<Conversation | null> {
     await this.ensureSchema();
     const r = await this.pool.query("SELECT * FROM hormoz_conversations WHERE id=$1", [id]);
     if (!r.rowCount) return null;
     return this.mapConversation(r.rows[0], await this.messages(id));
   }
 
-  public async listByUser(userId: UserId): Promise<Conversation[]> {
+  public async listConversationsByUser(userId: UserId): Promise<Conversation[]> {
     await this.ensureSchema();
     const r = await this.pool.query("SELECT * FROM hormoz_conversations WHERE user_id=$1 ORDER BY updated_at DESC", [userId]);
     return Promise.all(r.rows.map(async (row) => this.mapConversation(row, await this.messages(row.id))));
   }
 
-  public async update(id: ConversationId, input: UpdateConversationInput): Promise<Conversation | null> {
+  public async updateConversation(id: ConversationId, input: UpdateConversationInput): Promise<Conversation | null> {
     await this.ensureSchema();
     const r = await this.pool.query(
       `UPDATE hormoz_conversations SET title=COALESCE($2,title), status=COALESCE($3,status),
