@@ -26,7 +26,7 @@ assert.equal(body.expiresInSeconds, 86400);
 
 const identity = await identityService.authenticate(body.sessionId);
 assert.equal(identity.user.role, "user");
-assert.deepEqual(identity.user.permissions, []);
+assert.deepEqual(identity.user.permissions, ["use-core"]);
 assert.match(identity.user.userId, /^guest-/);
 
 await app.close();
