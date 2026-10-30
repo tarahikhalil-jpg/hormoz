@@ -209,6 +209,19 @@
       }
     }
   
+
+/* Login-first layout: keep manager sign-in visible immediately on phones */
+#loginBox.login{width:min(100%,560px);max-width:560px;margin:10px auto 18px;padding:20px 22px;scroll-margin-top:10px}
+#loginBox h2{margin:0 0 10px;padding:0;border:0;font-size:22px}
+#loginBox input[type="password"]{min-height:54px;font-size:18px;margin:8px 0 12px}
+#loginBox button{min-height:52px;width:100%;font-size:17px;margin:6px 0}
+@media(max-width:600px){
+  #loginBox.login{width:100%;margin:6px auto 12px;padding:18px 16px}
+  header{margin:8px 0 12px;padding:18px 10px 14px}
+  header img{width:62px;height:62px}
+  header h1{margin:8px 0 3px;font-size:21px}
+}
+
 /* Hormoz Admin — complete responsive dashboard skin */
 :root{color-scheme:dark;--bg:#071521;--panel:#102536;--panel2:#0b1d2b;--line:#29475a;--ink:#f3f8fc;--muted:#bfd0dc;--gold:#f3c96b;--mint:#75ead8;--red:#ff8585}
 html{scroll-behavior:smooth;scroll-padding-top:92px}
@@ -276,8 +289,7 @@ footer{padding:32px 10px;font-size:14px}
     </div>
   </header>
 
-
-  <!-- LOGIN -->
+<!-- LOGIN -->
 
   <section id="loginBox" class="card login">
 
@@ -297,6 +309,7 @@ footer{padding:32px 10px;font-size:14px}
     <div id="loginMessage" class="result"></div>
 
   </section>
+
 
 
   <!-- PANEL -->
