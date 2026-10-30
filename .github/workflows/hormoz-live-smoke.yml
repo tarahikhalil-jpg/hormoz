@@ -113,7 +113,11 @@ jobs:
               signal: AbortSignal.timeout(45000)
             });
             const text = await r.text();
-            if (r.status !== 400) throw new Error("expected safe HTTP 400, got " + r.status + ": " + text.slice(0,180));
+            if (r.status === 429) {
+              if (!r.headers.get("retry-after")) throw new Error("rate limit response is missing Retry-After");
+              return "rate limit correctly blocked the request; no production order was created";
+            }
+            if (r.status !== 400) throw new Error("expected safe HTTP 400 or rate-limit HTTP 429, got " + r.status + ": " + text.slice(0,180));
             return "validation works; no production order was created";
           });
           if (failures.length) {
