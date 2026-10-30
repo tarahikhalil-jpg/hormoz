@@ -112,9 +112,21 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
           version: "0.1",
         });
       }
+      const actionSessionHeader = request.headers["x-session-id"];
+      const actionSessionId = typeof actionSessionHeader === "string" ? actionSessionHeader.trim() : "";
+      if (!identityService || !actionSessionId) {
+        return reply.code(401).send({ success: false, error: "برای اجرای فرمان باید وارد حساب شوید.", version: "0.1" });
+      }
       try {
+        const actionIdentity = await identityService.authenticate(actionSessionId);
+        if (!actionIdentity.user.permissions.includes("manage-system")) {
+          return reply.code(403).send({ success: false, error: "اجازه اجرای این فرمان را ندارید.", version: "0.1" });
+        }
         return await actionDispatcher.dispatch(action);
       } catch (error) {
+        if (error instanceof IdentityError) {
+          return reply.code(401).send({ success: false, error: "نشست کاربری معتبر نیست.", version: "0.1" });
+        }
         console.error(
           "Action dispatcher failed:",
           error instanceof Error ? error.message : error,
