@@ -1,31 +1,6 @@
 name: Hormoz live smoke tests
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/hormoz-live-smoke.yml"
-      - "backend/src/**"
-      - "backend/public/**"
-      - "backend/package.json"
-      - "index.html"
-      - "orders.html"
-      - "track-order.html"
-      - "invoice.html"
-      - "manifest.json"
-      - "sw.js"
-  pull_request:
-    branches: [main]
-    paths:
-      - "backend/src/**"
-      - "backend/public/**"
-      - "backend/package.json"
-      - "index.html"
-      - "orders.html"
-      - "track-order.html"
-      - "invoice.html"
-      - "manifest.json"
-      - "sw.js"
   workflow_dispatch:
 
 permissions:
@@ -91,6 +66,12 @@ jobs:
                 return "AI returned a non-empty answer on attempt " + attempt;
               }
               lastFailure = "HTTP " + r.status + ": " + (data.error || text).toString().slice(0,220);
+              if (r.status === 429) {
+                const retryAfter = Number(r.headers.get("retry-after"));
+                if (!Number.isFinite(retryAfter) || retryAfter < 1 || attempt === 3) break;
+                await new Promise(resolve => setTimeout(resolve, Math.min(65000, retryAfter * 1000 + 250)));
+                continue;
+              }
               if (![502, 503, 504].includes(r.status) || attempt === 3) break;
               await new Promise(resolve => setTimeout(resolve, attempt * 1500));
             }
