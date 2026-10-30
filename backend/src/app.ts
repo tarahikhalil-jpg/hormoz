@@ -2453,7 +2453,8 @@ return reply.type("application/xml; charset=utf-8").send(content);
   app.register(
     memoryRoutes,
     {
-      memoryService
+      memoryService,
+      identityService
     }
   );
 
