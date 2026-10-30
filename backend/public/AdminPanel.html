@@ -208,6 +208,59 @@
         font-size: 21px;
       }
     }
+  
+/* Hormoz Admin — complete responsive dashboard skin */
+:root{color-scheme:dark;--bg:#071521;--panel:#102536;--panel2:#0b1d2b;--line:#29475a;--ink:#f3f8fc;--muted:#bfd0dc;--gold:#f3c96b;--mint:#75ead8;--red:#ff8585}
+html{scroll-behavior:smooth;scroll-padding-top:92px}
+body{min-height:100vh;background:radial-gradient(ellipse at 12% 0%,#17445a 0,transparent 34%),radial-gradient(ellipse at 95% 12%,#243b52 0,transparent 30%),var(--bg);color:var(--ink);font-size:16px;line-height:1.9}
+.container{width:min(100% - 28px,1440px);margin:auto}
+header{position:relative;padding:34px 16px 26px;margin:14px 0 18px;border:1px solid #42647a;border-radius:26px;background:linear-gradient(125deg,rgba(22,66,85,.96),rgba(13,31,48,.96));box-shadow:0 18px 50px #0005;overflow:hidden}
+header:after{content:"";position:absolute;width:260px;height:260px;border:1px solid #ffffff18;border-radius:50%;left:-80px;top:-130px;box-shadow:0 0 0 28px #ffffff08,0 0 0 58px #ffffff05;pointer-events:none}
+header img{width:82px;height:82px;border:3px solid #f3c96b;border-radius:24px;box-shadow:0 8px 28px #0006}
+h1{font-size:clamp(25px,4vw,36px);color:#fff;letter-spacing:-.4px}
+.subtitle{color:var(--muted);font-size:14px;line-height:1.9}
+#panel{width:100%}
+.admin-nav{position:sticky;top:8px;z-index:20;display:flex;gap:8px;overflow-x:auto;padding:10px;margin:0 0 18px;border:1px solid #36566a;border-radius:17px;background:#091b29ed;backdrop-filter:blur(14px);box-shadow:0 8px 26px #0005;scrollbar-width:thin}
+.admin-nav a{flex:0 0 auto;padding:8px 13px;border:1px solid #416278;border-radius:12px;background:#153247;color:#f5fbff;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+.admin-nav a:hover,.admin-nav a:focus{background:var(--mint);border-color:var(--mint);color:#062630;outline:none}
+.card{position:relative;background:linear-gradient(145deg,rgba(18,43,60,.98),rgba(11,29,43,.98));border:1px solid var(--line);border-radius:21px;padding:clamp(16px,2.2vw,26px);margin:18px 0;box-shadow:0 12px 34px #0003;scroll-margin-top:92px}
+.card h2{font-size:clamp(19px,2.3vw,24px);line-height:1.6;color:#fff;margin:0 0 12px;padding-bottom:11px;border-bottom:1px solid #34566b}
+.card h3{font-size:18px;color:#f7d88f}
+.card p{line-height:2}
+.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.stat{background:linear-gradient(145deg,#15384d,#0b2233);border:1px solid #3b6075;border-radius:17px;padding:18px 12px;min-width:0}
+.stat .number{font-size:clamp(23px,3vw,34px);color:#fff;overflow-wrap:anywhere}
+.stat .label{font-size:14px;color:#c7d8e3}
+.status{padding:13px 4px;border-bottom:1px solid #29475a;font-size:15px}
+.status strong{color:#b7f4d1}
+button,.card a[style*="background"]{min-height:44px;border-radius:12px;padding:11px 17px;background:var(--gold);color:#17212a;border:1px solid #ffe2a0;font-size:14px;font-weight:800;box-shadow:0 4px 12px #0002;transition:transform .15s,filter .15s}
+button:hover,.card a[style*="background"]:hover{filter:brightness(1.08);transform:translateY(-1px)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--mint);outline-offset:2px}
+button.danger{background:#9d3d4c;color:#fff;border-color:#e77c8b}
+input,textarea,select,.finance-row input,.finance-input{width:100%;min-height:44px;padding:11px 13px;border:1px solid #49677a;border-radius:11px;background:#071a28;color:#f6fbff;font:inherit;font-size:15px}
+input::placeholder,textarea::placeholder{color:#a9bfcd;opacity:1}
+label{display:block;color:#e3edf3;font-size:14px;font-weight:700;margin:9px 0 5px}
+.feedback,.stat,.finance-row,.finance-summary div{box-shadow:inset 0 1px #ffffff08}
+.feedback{background:#0a2030;border:1px solid #315166;border-radius:15px}
+.feedback small,.empty,footer{color:#b7c9d5}
+.result{font-size:14px;line-height:2;overflow-wrap:anywhere}
+.success{color:#8ef0b2}.warning{color:#ffdc83}.error{color:#ff9999}
+.finance-note{border-radius:14px;border-color:#a9833c;background:#8c68251f;color:#ffe6ad;font-size:14px}
+.finance-row{grid-template-columns:1.2fr 1.2fr .8fr .65fr;background:#0a2030;border-color:#315166}
+.finance-summary div{background:#0a2030;border-color:#315166;border-radius:14px}
+.finance-summary small{color:#c2d3de}
+.finance-summary strong{color:#fff;font-size:18px}
+.finance-table{font-size:14px}
+.finance-table th{color:#ffdc91}
+.finance-table td{color:#e5eef4}
+.login{max-width:520px;padding:26px;margin:28px auto}
+.login h2{border:0}
+footer{padding:32px 10px;font-size:14px}
+.hidden{display:none!important}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.container{width:min(100% - 20px,1440px)}}
+@media(max-width:600px){body{font-size:15px}.container{width:calc(100% - 16px)}header{padding:25px 12px 20px;border-radius:20px}.card{padding:15px;margin:12px 0;border-radius:17px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat{padding:13px 8px}.stat .label{font-size:12px}.stat .number{font-size:23px}.admin-nav{top:4px;margin-bottom:12px;padding:8px}.admin-nav a{font-size:12px;padding:7px 10px}.finance-row{grid-template-columns:1fr 1fr}.finance-summary{grid-template-columns:1fr}.status{gap:12px}.status span,.status strong{overflow-wrap:anywhere}button{width:auto;max-width:100%}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}button{transition:none}}
+
   </style>
 </head>
 
@@ -249,6 +302,8 @@
   <!-- PANEL -->
 
   <main id="panel" class="hidden">
+    <nav class="admin-nav" id="adminNav" aria-label="بخش‌های پنل مدیریت"></nav>
+
     <section class="card">
       <h2>👥 مدیریت اعضای هرمز</h2>
       <p class="subtitle">ساخت حساب بازاریاب‌ها و هماهنگ‌کنندگان خدمات، تعیین دسترسی و پیگیری کار اعضا در پنل جداگانه.</p>
@@ -621,8 +676,27 @@ async function login() {
 }
 
 
+
+function buildAdminNavigation(){
+  const nav=document.getElementById("adminNav");
+  const panel=document.getElementById("panel");
+  if(!nav||!panel)return;
+  const sections=[...panel.querySelectorAll(":scope > section.card")];
+  nav.innerHTML="";
+  sections.forEach((section,index)=>{
+    const heading=section.querySelector("h2");
+    if(!heading)return;
+    if(!section.id)section.id="admin-section-"+(index+1);
+    const link=document.createElement("a");
+    link.href="#"+section.id;
+    link.textContent=heading.textContent.replace(/^[^\p{L}\p{N}]+/u,"").trim();
+    nav.appendChild(link);
+  });
+}
+
 function showPanel() {
 
+  buildAdminNavigation();
   document
     .getElementById("loginBox")
     .classList.add("hidden");
