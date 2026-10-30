@@ -10,7 +10,6 @@ import { IdentityError } from "../modules/identity/repositories/errors.js";
 import type { MemoryService } from "../modules/memory/service.js";
 import { ActionDispatcher } from "../modules/action/dispatcher.js";
 import { interpretCommand } from "../modules/action/command-interpreter.js";
-import { MockLight } from "../modules/device/mock-light.js";
 
 export interface ChatRoutesOptions {
   memoryService: MemoryService;
@@ -33,9 +32,7 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
     conversationService,
     identityService,
     intelligenceEngine = new MockIntelligenceEngine(),
-    actionDispatcher = new ActionDispatcher({
-      light: new MockLight("light-777"),
-    }),
+    actionDispatcher,
   },
 ) => {
   app.post("/api/v1/chat", async (request, reply) => {
@@ -108,6 +105,13 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
     const action = interpretCommand(message);
 
     if (action) {
+      if (!actionDispatcher) {
+        return reply.code(503).send({
+          success: false,
+          error: "این فرمان تا زمان اتصال سخت‌افزار واقعی فعال نیست.",
+          version: "0.1",
+        });
+      }
       try {
         return await actionDispatcher.dispatch(action);
       } catch (error) {
