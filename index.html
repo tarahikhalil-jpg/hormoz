@@ -523,8 +523,9 @@ header{border-bottom:2px solid transparent!important;border-image:linear-gradien
       <div id="unifiedResult" class="notice hidden" role="status" aria-live="polite" style="margin-top:14px;overflow-wrap:anywhere"></div>
     </form>
     <form id="unifiedTrackForm" class="hidden" style="margin-top:12px">
-      <label for="unifiedTrackCode">کد پیگیری پیام</label><input id="unifiedTrackCode" required minlength="25" maxlength="40" dir="ltr" placeholder="کد رهگیری را وارد کن">
-      <button class="btn alt" type="submit" style="margin-top:10px">بررسی وضعیت پیام</button><div id="unifiedTrackResult" class="notice hidden" role="status" style="margin-top:10px"></div>
+      <label for="unifiedTrackType">نوع کد رهگیری</label><select id="unifiedTrackType"><option value="order">سفارش خدمت</option><option value="feedback">پیام، پیشنهاد یا انتقاد</option></select>
+      <label for="unifiedTrackCode">کد رهگیری</label><input id="unifiedTrackCode" required minlength="25" maxlength="40" dir="ltr" placeholder="کد رهگیری را وارد کن">
+      <button class="btn alt" type="submit" style="margin-top:10px">بررسی وضعیت</button><div id="unifiedTrackResult" class="notice hidden" role="status" style="margin-top:10px"></div>
     </form>
   </div>
 </section>
@@ -601,15 +602,15 @@ header{border-bottom:2px solid transparent!important;border-image:linear-gradien
         const code=document.createElement("p");code.style.direction="ltr";code.style.overflowWrap="anywhere";code.textContent="کد رهگیری: "+data.trackingCode;result.append(code);
         const copy=document.createElement("button");copy.type="button";copy.className="btn alt";copy.textContent="کپی کد رهگیری";copy.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(data.trackingCode);copy.textContent="کپی شد";}catch{code.textContent+=" — کد را انتخاب و کپی کن";}});result.append(copy);
         if(category.value!=="service_order"){const trackLink=document.createElement("a");trackLink.className="btn alt";trackLink.style.marginInlineStart="8px";trackLink.href="#unifiedTrackForm";trackLink.textContent="پیگیری این پیام";trackLink.addEventListener("click",()=>{trackForm.classList.remove("hidden");document.getElementById("unifiedTrackCode").value=data.trackingCode;trackForm.requestSubmit();});result.append(trackLink);}
-        else{const trackLink=document.createElement("a");trackLink.className="btn alt";trackLink.style.marginInlineStart="8px";trackLink.href=api+"/track-order.html?code="+encodeURIComponent(data.trackingCode);trackLink.target="_blank";trackLink.rel="noopener";trackLink.textContent="پیگیری سفارش";result.append(trackLink);}
+        else{const trackLink=document.createElement("button");trackLink.type="button";trackLink.className="btn alt";trackLink.style.marginInlineStart="8px";trackLink.textContent="پیگیری سفارش همین‌جا";trackLink.addEventListener("click",()=>{trackForm.classList.remove("hidden");document.getElementById("unifiedTrackType").value="order";document.getElementById("unifiedTrackCode").value=data.trackingCode;trackForm.requestSubmit();});result.append(trackLink);}
       }
       form.reset();serviceWrap.classList.add("hidden");serviceType.required=false;submit.textContent="ثبت و دریافت کد پیگیری";
     }catch(error){result.textContent=(error&&error.message)||"ارتباط با سامانه برقرار نشد؛ درخواست ثبت نشده است.";}
     finally{submit.disabled=false;category.dispatchEvent(new Event("change"));}
   });
   trackForm.addEventListener("submit",async function(event){
-    event.preventDefault();const code=document.getElementById("unifiedTrackCode").value.trim(),out=document.getElementById("unifiedTrackResult");out.classList.remove("hidden");out.textContent="در حال بررسی…";
-    try{const response=await fetch(api+"/api/v1/unified-feedback/track/"+encodeURIComponent(code),{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.message||"پیامی پیدا نشد.");out.textContent="وضعیت: "+data.statusLabel+(data.staffNote?" — پاسخ: "+data.staffNote:"")+(data.subject?" — موضوع: "+data.subject:"");}
+    event.preventDefault();const code=document.getElementById("unifiedTrackCode").value.trim(),kind=document.getElementById("unifiedTrackType").value,out=document.getElementById("unifiedTrackResult");out.classList.remove("hidden");out.textContent="در حال بررسی…";
+    try{const path=kind==="order"?"/api/v1/global-orders/track/":"/api/v1/unified-feedback/track/";const response=await fetch(api+path+encodeURIComponent(code),{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.message||"موردی با این کد پیدا نشد.");if(kind==="order"){const invoice=data.invoice||{};out.textContent="شماره سفارش: "+(data.orderNumber||"—")+" | وضعیت: "+(data.status||"—")+" | وضعیت فاکتور: "+(invoice.status||"در انتظار بررسی")+" | مبلغ: "+(invoice.amount==null?"هنوز تعیین نشده":invoice.amount+" "+(invoice.currency||"IRR"))+" | آخرین به‌روزرسانی: "+(data.updatedAt||"—");}else{out.textContent="وضعیت: "+data.statusLabel+(data.staffNote?" — پاسخ: "+data.staffNote:"")+(data.subject?" — موضوع: "+data.subject:"");}}
     catch(error){out.textContent=(error&&error.message)||"پیگیری انجام نشد.";}
   });
 })();
@@ -655,8 +656,9 @@ function addServiceRoute(message){
  const wrap=document.createElement("div");wrap.className="chat-turn chat-nava";wrap.style.maxWidth="100%";
  const title=document.createElement("strong");title.textContent="برای تکمیل این درخواست، وارد بخش «"+route.label+"» شو.";
  const note=document.createElement("p");note.textContent="در فرم بعدی، جزئیات لازم را وارد و در صورت تمایل درخواست را ثبت کن. هیچ رزرو یا سفارشی تا زمان تأیید نهایی قطعی نیست.";note.style.margin="6px 0 10px";
- const link=document.createElement("a");link.className="btn";link.href=API+"/orders.html?serviceType="+encodeURIComponent(route.type)+"&request="+encodeURIComponent(message);link.textContent=route.type==="stay"?"ثبت درخواست سوئیت یا اقامتگاه ↗":"ادامه به بخش "+route.label+" ↗";link.style.textDecoration="none";
- if(route.type==="stay"){title.textContent="درخواست سوئیت تشخیص داده شد؛ از اینجا سفارش را ثبت کن.";note.textContent="فرم سفارش سوئیت باز می‌شود و درخواست اولیه‌ات داخل فرم قرار می‌گیرد. ثبت فرم، رزرو قطعی نیست؛ بعد از بررسی باید ظرفیت و قیمت تأیید شود.";}
+ const link=document.createElement("a");link.className="btn";link.href="#unified-center";link.textContent=route.type==="stay"?"ثبت درخواست سوئیت یا اقامتگاه":"ادامه به ثبت درخواست "+route.label;link.style.textDecoration="none";
+ link.addEventListener("click",()=>{const category=document.getElementById("unifiedCategory"),service=document.getElementById("unifiedServiceType"),details=document.getElementById("unifiedMessage");category.value="service_order";category.dispatchEvent(new Event("change"));const typeMap={stay:"stay",flight:"transport",train:"transport",bus:"transport",boat:"transport",driver:"transport",food:"food",electrician:"repair",repair:"repair",tourism:"tourism",skill:"skill",letter:"letter",invoice:"other",other:"other"};service.value=typeMap[route.type]||"other";details.value=message;document.getElementById("unifiedSubject").value=route.label;document.getElementById("unified-center").scrollIntoView({behavior:"smooth"});});
+ if(route.type==="stay"){title.textContent="درخواست اقامت تشخیص داده شد؛ ثبت سفارش در همین درگاه انجام می‌شود.";note.textContent="جزئیات درخواست به فرم یکپارچه منتقل می‌شود. پس از ثبت، کد رهگیری می‌گیری؛ ثبت درخواست به معنی رزرو قطعی نیست و ظرفیت و قیمت باید تأیید شوند.";}
  wrap.append(title,note,link);historyBox.appendChild(wrap);scrollConversationToBottom();
 }
 document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>askWith(b.dataset.prompt)));
