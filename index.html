@@ -46,17 +46,7 @@ header{position:sticky;top:0;z-index:10;background:#061725ed;backdrop-filter:blu
 
 </style>
 
-<style id="hormoz-module-shell-style">
-#hormoz-module-shell{position:fixed;inset:0;z-index:99999;background:rgba(2,12,22,.78);display:none;align-items:center;justify-content:center;padding:12px}
-#hormoz-module-shell.open{display:flex}
-#hormoz-module-card{width:min(1100px,100%);height:min(92dvh,900px);background:#071b2b;border:1px solid #3b6478;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 80px #0009}
-#hormoz-module-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:#0c2a3e;color:#f3f8fc;font-family:Tahoma,Arial,sans-serif}
-#hormoz-module-toolbar strong{font-size:15px}
-#hormoz-module-close{border:0;border-radius:10px;padding:8px 14px;background:#63e6d1;color:#062532;font:inherit;font-weight:bold;cursor:pointer}
-#hormoz-module-frame{width:100%;height:100%;flex:1;border:0;background:#fff}
-body.hormoz-module-open{overflow:hidden}
-@media(max-width:600px){#hormoz-module-shell{padding:0}#hormoz-module-card{width:100%;height:100dvh;border-radius:0;border:0}#hormoz-module-toolbar{padding:10px}#hormoz-module-toolbar strong{font-size:13px}}
-</style>
+
 
 <style id="hormoz-premium-visual-refresh">
 :root{--bg:#06131f;--panel:#0d2637;--panel2:#12384b;--line:#2d6072;--text:#f7fbff;--muted:#b7cdd8;--aqua:#77f0dc;--gold:#ffd98e;--green:#9cf0bd}
@@ -689,11 +679,6 @@ $("easyModeBtn").addEventListener("click",()=>{easyMode=!easyMode;document.body.
 $("voiceInputBtn").addEventListener("click",()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$("voiceInputStatus").textContent="تشخیص گفتار در این مرورگر پشتیبانی نمی‌شود؛ درخواستت را تایپ کن.";return}if(recognition){recognition.stop();recognition=null;return}recognition=new SR();recognition.lang="fa-IR";recognition.interimResults=false;recognition.maxAlternatives=1;$("voiceInputStatus").textContent="گوش می‌دهم؛ صحبت کن…";recognition.onresult=e=>{input.value=e.results[0][0].transcript;if(easyMode){$("voiceInputStatus").textContent="گفتارت دریافت شد؛ نوا در حال پاسخ‌گویی است…";setTimeout(()=>sendMessage(),250)}else $("voiceInputStatus").textContent="گفتارت به متن تبدیل شد؛ برای ارسال، دکمه ارسال به نوا را بزن."};recognition.onerror=()=>{$("voiceInputStatus").textContent="دسترسی میکروفون یا تشخیص گفتار در دسترس نیست؛ می‌توانی درخواستت را تایپ کنی."};recognition.onend=()=>{recognition=null};try{recognition.start()}catch{$("voiceInputStatus").textContent="شروع میکروفون ممکن نشد؛ درخواستت را تایپ کن."}});
 fetch(API+"/api/v1/visits",{cache:"no-store"}).then(r=>r.json()).then(d=>{$("visitCount").textContent=d&&d.ok&&Number.isFinite(Number(d.visits))?Number(d.visits).toLocaleString("fa-IR"):"فعلاً در دسترس نیست"}).catch(()=>$("visitCount").textContent="فعلاً در دسترس نیست");
 if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
-</script>
-
-<div id="hormoz-module-shell" aria-hidden="true" role="dialog" aria-modal="true" aria-label="بخش یکپارچه هوش هرمز"><div id="hormoz-module-card"><div id="hormoz-module-toolbar"><strong id="hormoz-module-title">بخش‌های هوش هرمز</strong><button id="hormoz-module-close" type="button">بازگشت به صفحه اصلی ✕</button></div><iframe id="hormoz-module-frame" title="بخش یکپارچه هوش هرمز" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>
-<script id="hormoz-module-shell-script">
-(()=>{const shell=document.getElementById('hormoz-module-shell');const frame=document.getElementById('hormoz-module-frame');const title=document.getElementById('hormoz-module-title');const close=document.getElementById('hormoz-module-close');if(!shell||!frame||!close)return;const backend='https://hormoz-ai-backend-777.onrender.com/';function closeModule(){shell.classList.remove('open');shell.setAttribute('aria-hidden','true');document.body.classList.remove('hormoz-module-open');frame.src='about:blank'}function openModule(url,label){frame.src=url;title.textContent=label||'بخش‌های هوش هرمز';shell.classList.add('open');shell.setAttribute('aria-hidden','false');document.body.classList.add('hormoz-module-open');close.focus()}document.addEventListener('click',event=>{const a=event.target.closest('a[href]');if(!a)return;let url;try{url=new URL(a.href,location.href)}catch{return}if(url.origin!==new URL(backend).origin||!url.pathname.toLowerCase().endsWith('.html'))return;event.preventDefault();const label=(a.innerText||a.getAttribute('aria-label')||'بخش‌های هوش هرمز').trim().replace(/\s+/g,' ').slice(0,80);openModule(url.href,label)});close.addEventListener('click',closeModule);shell.addEventListener('click',event=>{if(event.target===shell)closeModule()});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&shell.classList.contains('open'))closeModule()});})();
 </script>
 
 <script id="hormoz-interface-polish">
