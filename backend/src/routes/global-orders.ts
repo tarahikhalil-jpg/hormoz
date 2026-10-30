@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { Pool } from "pg";
 
 type GlobalSession = { expiresAt: number; role: "owner" | "invoice_approver" | "viewer"; username: string };
-const sessions = new Map<string, GlobalSession>();
+
 function normalizeDatabaseUrl(value: string | undefined): string {
   if (!value) return "";
   let normalized = value.trim();
@@ -123,18 +123,56 @@ async function ensureTable() {
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_global_members_status_idx ON hormoz_global_members (status, created_at DESC)");
   await db.query("CREATE TABLE IF NOT EXISTS hormoz_feedback (id TEXT PRIMARY KEY, tracking_token TEXT NOT NULL UNIQUE, category TEXT NOT NULL, subject TEXT NOT NULL DEFAULT '', message TEXT NOT NULL, customer_label TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'received', staff_note TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_feedback_created_idx ON hormoz_feedback (created_at DESC)");
+  await db.query("CREATE TABLE IF NOT EXISTS hormoz_global_admin_sessions (token_hash TEXT PRIMARY KEY, username TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('owner','invoice_approver','viewer')), expires_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), revoked_at TIMESTAMPTZ)");
+  await db.query("CREATE INDEX IF NOT EXISTS hormoz_global_admin_sessions_username_idx ON hormoz_global_admin_sessions (username, expires_at DESC)");
   tableReady = true;
 }
 
-function adminSession(request: any) {
+function hashSessionToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+async function persistGlobalSession(token: string, role: GlobalSession["role"], username: string) {
+  if (!db) throw new Error("Persistent database is required for administrative sessions.");
+  await ensureTable();
+  await db.query(
+    "INSERT INTO hormoz_global_admin_sessions (token_hash, username, role, expires_at) VALUES ($1,$2,$3,$4)",
+    [hashSessionToken(token), username, role, new Date(Date.now() + SESSION_TTL).toISOString()]
+  );
+}
+
+async function adminSession(request: any): Promise<GlobalSession | false> {
   const header = String(request.headers.authorization ?? "");
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
-  const session = sessions.get(token);
-  if (!session || session.expiresAt <= Date.now()) {
-    if (token) sessions.delete(token);
+  if (!token || !db) return false;
+  try {
+    await ensureTable();
+    const result = await db.query(
+      "SELECT username, role, expires_at FROM hormoz_global_admin_sessions WHERE token_hash=$1 AND revoked_at IS NULL AND expires_at>NOW() LIMIT 1",
+      [hashSessionToken(token)]
+    );
+    if (!result.rows.length) return false;
+    const row = result.rows[0];
+    const session: GlobalSession = {
+      username: String(row.username),
+      role: row.role as GlobalSession["role"],
+      expiresAt: new Date(row.expires_at).getTime()
+    };
+    if (session.role !== "owner") {
+      const member = await db.query(
+        "SELECT 1 FROM hormoz_global_members WHERE username=$1 AND active=TRUE AND status='approved' AND role=$2 LIMIT 1",
+        [session.username, session.role]
+      );
+      if (!member.rows.length) {
+        await db.query("UPDATE hormoz_global_admin_sessions SET revoked_at=NOW() WHERE token_hash=$1 AND revoked_at IS NULL", [hashSessionToken(token)]);
+        return false;
+      }
+    }
+    return session;
+  } catch (error) {
+    request.log.error(error, "Administrative session lookup failed");
     return false;
   }
-  return session;
 }
 
 function invoiceFromRow(row: any) {
@@ -297,8 +335,10 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(401).send({ message: "رمز مدیریت نادرست است." });
     }
     loginFailures.delete(ipKey);
+    if (!db) return reply.code(503).send({ message: "پایگاه داده برای نشست امن مدیر آماده نیست." });
     const token = crypto.randomBytes(32).toString("hex");
-    sessions.set(token, { expiresAt: Date.now() + SESSION_TTL, role: "owner", username: "owner" });
+    try { await persistGlobalSession(token, "owner", "owner"); }
+    catch (error) { request.log.error(error); return reply.code(503).send({ message: "ایجاد نشست امن مدیر انجام نشد." }); }
     return { ok: true, token, expiresInSeconds: SESSION_TTL / 1000 };
   });
 
@@ -351,12 +391,12 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       if (member && member.active === true && member.status === "approved") { const parts = String(member.password_hash).split("$"); if (parts.length === 2) { const actual = crypto.scryptSync(password, parts[0], 64); const expectedHash = Buffer.from(parts[1], "hex"); valid = actual.length === expectedHash.length && crypto.timingSafeEqual(actual, expectedHash); } }
       if (!valid) { noteLoginFailure(ipKey); return reply.code(401).send({ message: "نام کاربری یا گذرواژه نادرست است." }); }
       loginFailures.delete(ipKey); const token = crypto.randomBytes(32).toString("hex");
-      sessions.set(token, { expiresAt: Date.now() + SESSION_TTL, role: member.role, username: String(member.username) });
+      await persistGlobalSession(token, member.role, String(member.username));
       return { ok: true, token, role: member.role, username: String(member.username), expiresInSeconds: SESSION_TTL / 1000 };
     } catch (error) { request.log.error(error); return reply.code(503).send({ message: "ورود عضو انجام نشد." }); }
   });
   app.post("/api/v1/global-admin/members", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
     if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند اعضا را مدیریت کند." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
@@ -387,7 +427,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       await ensureTable();
       const result = await db.query("DELETE FROM hormoz_global_members WHERE username=$1 RETURNING username", ["hormoztest777"]);
       if (!result.rows.length) return reply.code(404).send({ message: "حساب آزمایشی hormoztest777 پیدا نشد؛ حسابی حذف نشد." });
-      for (const [token, value] of sessions) if (value.username === "hormoztest777") sessions.delete(token);
+      await db.query("UPDATE hormoz_global_admin_sessions SET revoked_at=NOW() WHERE username=$1 AND revoked_at IS NULL", ["hormoztest777"]);
       return { ok: true, message: "حساب آزمایشی hormoztest777 حذف شد و نشست‌های آن باطل شدند." };
     } catch (error) {
       request.log.error(error);
@@ -415,7 +455,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       );
       if (!result.rows.length) return reply.code(404).send({ message: "حساب عضو پیدا نشد." });
       const username = String(result.rows[0].username);
-      for (const [token, value] of sessions) if (value.username === username) sessions.delete(token);
+      await db.query("UPDATE hormoz_global_admin_sessions SET revoked_at=NOW() WHERE username=$1 AND revoked_at IS NULL", [username]);
       return { ok: true, message: "گذرواژه بازنشانی شد. عضو باید با گذرواژه جدید وارد شود." };
     } catch (error) {
       request.log.error(error);
@@ -442,7 +482,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
         [id, status, role]
       );
       if (!result.rows.length) return reply.code(404).send({ message: "درخواست در انتظار بررسی پیدا نشد." });
-      for (const [token, value] of sessions) if (value.username === String(result.rows[0].username)) sessions.delete(token);
+      await db.query("UPDATE hormoz_global_admin_sessions SET revoked_at=NOW() WHERE username=$1 AND revoked_at IS NULL", [String(result.rows[0].username)]);
       return { ok: true, member: result.rows[0], message: status === "approved" ? "عضو تأیید شد و دسترسی تعیین‌شده فعال است." : "درخواست عضویت رد شد." };
     } catch (error) {
       request.log.error(error);
@@ -471,7 +511,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       await ensureTable();
       const result = await db.query("UPDATE hormoz_global_members SET active=$2,updated_at=NOW() WHERE id=$1 RETURNING id,username,role,active", [id,active]);
       if (!result.rows.length) return reply.code(404).send({ message: "عضو پیدا نشد." });
-      for (const [token,value] of sessions) if (value.username === String(result.rows[0].username)) sessions.delete(token);
+      await db.query("UPDATE hormoz_global_admin_sessions SET revoked_at=NOW() WHERE username=$1 AND revoked_at IS NULL", [String(result.rows[0].username)]);
       return { ok: true, member: result.rows[0] };
     } catch (error) { request.log.error(error); return reply.code(503).send({ message: "تغییر دسترسی ناموفق بود." }); }
   });
