@@ -306,6 +306,34 @@ body.hormoz-module-open{overflow:hidden}
         return "guest-session-" + Math.random().toString(36).slice(2);
       }
     }
+    let hormozGuestSessionCache = null;
+    async function getHormozGuestSession() {
+      const key = "hormoz_guest_session_v1";
+      try {
+        const saved = JSON.parse(localStorage.getItem(key) || "null");
+        if (saved && typeof saved.sessionId === "string" && saved.expiresAt > Date.now() + 60000) {
+          hormozGuestSessionCache = saved.sessionId;
+          return saved.sessionId;
+        }
+      } catch {}
+      if (hormozGuestSessionCache) return hormozGuestSessionCache;
+      const response = await fetch("/api/v1/identity/guest", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: "{}",
+        cache: "no-store"
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.sessionId) throw new Error(data.error || "نشست امن مهمان ایجاد نشد؛ دوباره تلاش کن.");
+      hormozGuestSessionCache = data.sessionId;
+      try {
+        localStorage.setItem(key, JSON.stringify({
+          sessionId: data.sessionId,
+          expiresAt: Date.now() + (Number(data.expiresInSeconds) || 86400) * 1000
+        }));
+      } catch {}
+      return hormozGuestSessionCache;
+    }
 
     let navaAnswerAudio = null;
     let navaAnswerAudioUrl = null;
@@ -633,7 +661,7 @@ body.hormoz-module-open{overflow:hidden}
       try {
         const response = await fetch("/api/v1/chat", {
           method: "POST",
-          headers: {"Content-Type": "application/json", "x-user-id": getHormozGuestId()},
+          headers: {"Content-Type": "application/json", "x-session-id": await getHormozGuestSession()},
           body: JSON.stringify({message, history: navaConversationHistory.slice(-10)}),
           cache: "no-store"
         });

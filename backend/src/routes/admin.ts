@@ -190,6 +190,9 @@ async function ensureOpportunitiesTable() {
 
 
 const orderTrackingRateLimiter = new InMemoryRateLimiter({ windowMs: 60_000, maxRequests: 30, maxKeys: 10_000 });
+// Public intake endpoints accept personal contact details, so limit abuse before database work.
+const serviceOrderCreationRateLimiter = new InMemoryRateLimiter({ windowMs: 10 * 60_000, maxRequests: 8, maxKeys: 10_000 });
+const providerIntakeRateLimiter = new InMemoryRateLimiter({ windowMs: 10 * 60_000, maxRequests: 5, maxKeys: 10_000 });
 
 let serviceOrdersTableReady = false;
 
@@ -1205,6 +1208,11 @@ export async function adminRoutes(app: FastifyInstance) {
   ]);
 
   app.post("/api/v1/orders", async (request, reply) => {
+    const limit = serviceOrderCreationRateLimiter.check(String(request.ip ?? "unknown"));
+    if (!limit.allowed) {
+      reply.header("Retry-After", String(Math.max(1, Math.ceil(limit.retryAfterMs / 1000))));
+      return reply.code(429).send({ ok: false, message: "ثبت سفارش‌های زیاد از این اتصال انجام شده است؛ کمی بعد دوباره تلاش کنید." });
+    }
     if (!db) return reply.code(503).send({ ok: false, message: "ثبت دائمی سفارش هنوز آماده نیست؛ لطفاً بعداً دوباره تلاش کنید." });
     const body = (request.body ?? {}) as Record<string, unknown>;
     const serviceType = String(body.serviceType ?? "").trim().slice(0, 60);
@@ -1415,6 +1423,11 @@ export async function adminRoutes(app: FastifyInstance) {
    */
   const providerStatuses = new Set(["pending_review", "approved", "needs_changes", "suspended"]);
   app.post("/api/v1/providers", async (request, reply) => {
+    const limit = providerIntakeRateLimiter.check(String(request.ip ?? "unknown"));
+    if (!limit.allowed) {
+      reply.header("Retry-After", String(Math.max(1, Math.ceil(limit.retryAfterMs / 1000))));
+      return reply.code(429).send({ ok: false, message: "درخواست‌های ثبت ارائه‌دهنده از این اتصال زیاد است؛ کمی بعد دوباره تلاش کنید." });
+    }
     if (!db) return reply.code(503).send({ ok: false, message: "ثبت دائمی ارائه‌دهندگان هنوز آماده نیست." });
     const body = (request.body ?? {}) as Record<string, unknown>;
     const providerName = String(body.providerName ?? "").trim().slice(0, 120);

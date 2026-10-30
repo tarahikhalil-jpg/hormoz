@@ -630,6 +630,21 @@ function scrollConversationToBottom(){requestAnimationFrame(()=>{historyBox.scro
 function addChatBubble(role,text,pending=false){const bubble=document.createElement("div");bubble.className="chat-turn "+(role==="user"?"chat-user":"chat-nava")+(pending?" chat-pending":"");bubble.textContent=text;historyBox.appendChild(bubble);scrollConversationToBottom();return bubble}
 function saveConversation(){try{localStorage.setItem("hormoz_nava_chat_history",JSON.stringify(conversationHistory.slice(-40)))}catch{}}
 function guestId(){try{let id=localStorage.getItem("hormoz_guest_id");if(!id){id="guest-"+(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36));localStorage.setItem("hormoz_guest_id",id)}return id}catch{return "guest-"+Math.random().toString(36).slice(2)}}
+let guestSessionCache=null;
+async function getGuestSession(){
+  const key="hormoz_guest_session_v1";
+  try{
+    const saved=JSON.parse(localStorage.getItem(key)||"null");
+    if(saved&&typeof saved.sessionId==="string"&&saved.expiresAt>Date.now()+60000){guestSessionCache=saved.sessionId;return saved.sessionId}
+  }catch{}
+  if(guestSessionCache)return guestSessionCache;
+  const response=await fetch(API+"/api/v1/identity/guest",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.sessionId)throw Error(data.error||"نشست امن مهمان ایجاد نشد؛ دوباره تلاش کن.");
+  guestSessionCache=data.sessionId;
+  try{localStorage.setItem(key,JSON.stringify({sessionId:data.sessionId,expiresAt:Date.now()+(Number(data.expiresInSeconds)||86400)*1000}))}catch{}
+  return guestSessionCache;
+}
 function askWith(prompt){input.value=prompt; $("nava").scrollIntoView({behavior:"smooth"});if(easyMode){setTimeout(()=>sendMessage(),250)}else input.focus()}
 // مسیر خدمت را از متن فارسی کاربر تشخیص می‌دهیم و بعد از پاسخ نوا، دکمه ادامه همان خدمت را نشان می‌دهیم.
 function detectServiceRoute(text){
@@ -665,7 +680,7 @@ function addServiceRoute(message){
 }
 document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>askWith(b.dataset.prompt)));
 $("clearBtn").addEventListener("click",()=>{input.value="";input.focus()});
-async function sendMessage(){const message=input.value.trim();if(!message){input.focus();return}stopAudio();audioActions.classList.add("hidden");$("audioStatus").textContent="";sendBtn.disabled=true;$("connectionStatus").textContent="نوا در حال پاسخ‌گویی است…";$("connectionStatus").className="pill neutral";addChatBubble("user",message);input.value="";const pending=addChatBubble("assistant","نوا در حال آماده شدن است؛ بار اول ممکن است کمی زمان ببرد.",true);try{const res=await fetch(API+"/api/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-user-id":guestId()},body:JSON.stringify({message,history:conversationHistory.slice(-10)})});let data;try{data=await res.json()}catch{throw Error("پاسخ قابل خواندن از سرور دریافت نشد.")}if(!res.ok)throw Error(data.error||"ارتباط با نوا ناموفق بود.");const reply=data.response||data.message||"";if(!reply)throw Error("نوا این بار پاسخ متنی دریافت نکرد.");pending.classList.remove("chat-pending");pending.textContent=reply;addServiceRoute(message);answer.textContent=reply;conversationHistory.push({role:"user",content:message},{role:"assistant",content:reply});conversationHistory=conversationHistory.slice(-10);saveConversation();audioActions.classList.remove("hidden");$("connectionStatus").textContent="پاسخ دریافت شد";$("connectionStatus").className="pill";input.focus();scrollConversationToBottom();speakAnswer()}catch(e){pending.classList.remove("chat-pending");pending.textContent="ارتباط با نوا برقرار نشد. می‌توانی همین‌جا دوباره تلاش کنی. ("+(e.message||"خطای ارتباط")+")";addServiceRoute(message);$("connectionStatus").textContent="ارتباط برقرار نشد";$("connectionStatus").className="pill neutral";input.focus()}finally{sendBtn.disabled=false}}
+async function sendMessage(){const message=input.value.trim();if(!message){input.focus();return}stopAudio();audioActions.classList.add("hidden");$("audioStatus").textContent="";sendBtn.disabled=true;$("connectionStatus").textContent="نوا در حال پاسخ‌گویی است…";$("connectionStatus").className="pill neutral";addChatBubble("user",message);input.value="";const pending=addChatBubble("assistant","نوا در حال آماده شدن است؛ بار اول ممکن است کمی زمان ببرد.",true);try{const res=await fetch(API+"/api/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-session-id":await getGuestSession()},body:JSON.stringify({message,history:conversationHistory.slice(-10)})});let data;try{data=await res.json()}catch{throw Error("پاسخ قابل خواندن از سرور دریافت نشد.")}if(!res.ok)throw Error(data.error||"ارتباط با نوا ناموفق بود.");const reply=data.response||data.message||"";if(!reply)throw Error("نوا این بار پاسخ متنی دریافت نکرد.");pending.classList.remove("chat-pending");pending.textContent=reply;addServiceRoute(message);answer.textContent=reply;conversationHistory.push({role:"user",content:message},{role:"assistant",content:reply});conversationHistory=conversationHistory.slice(-10);saveConversation();audioActions.classList.remove("hidden");$("connectionStatus").textContent="پاسخ دریافت شد";$("connectionStatus").className="pill";input.focus();scrollConversationToBottom();speakAnswer()}catch(e){pending.classList.remove("chat-pending");pending.textContent="ارتباط با نوا برقرار نشد. می‌توانی همین‌جا دوباره تلاش کنی. ("+(e.message||"خطای ارتباط")+")";addServiceRoute(message);$("connectionStatus").textContent="ارتباط برقرار نشد";$("connectionStatus").className="pill neutral";input.focus()}finally{sendBtn.disabled=false}}
 sendBtn.addEventListener("click",sendMessage);
 input.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();sendMessage()}});
 function stopAudio(){requestId++;if(audio){audio.pause();audio.removeAttribute("src");audio=null}if(audioUrl){URL.revokeObjectURL(audioUrl);audioUrl=null}if("speechSynthesis"in window)window.speechSynthesis.cancel();$("speakBtn").disabled=false}

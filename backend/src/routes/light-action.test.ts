@@ -11,6 +11,9 @@ import { MockLight } from "../modules/device/mock-light.js";
 import { InMemoryMemoryRepository } from "../modules/memory/repository.js";
 import { MemoryService } from "../modules/memory/service.js";
 import { chatRoutes } from "./chat.js";
+import { IdentityService } from "../modules/identity/identity.service.js";
+import { InMemoryUserRepository } from "../modules/identity/repositories/user.repository.js";
+import { InMemorySessionRepository } from "../modules/identity/repositories/session.repository.js";
 
 class SpyEngine implements IntelligenceEngine {
   public requests: IntelligenceRequest[] = [];
@@ -25,9 +28,13 @@ const light = new MockLight("light-777");
 const dispatcher = new ActionDispatcher({ light });
 const engine = new SpyEngine();
 const app = Fastify();
+const identityService = new IdentityService({ userRepository: new InMemoryUserRepository(), sessionRepository: new InMemorySessionRepository() });
+await identityService.createUser({ userId: "device-admin", role: "admin" });
+const adminSession = await identityService.createSession("device-admin");
 app.register(chatRoutes, {
   memoryService: new MemoryService({ memoryRepository: new InMemoryMemoryRepository() }),
   intelligenceEngine: engine,
+  identityService,
   actionDispatcher: dispatcher,
 });
 
@@ -40,6 +47,7 @@ assert.equal(light.getState(), "off");
 const actionResponse = await app.inject({
   method: "POST",
   url: "/api/v1/chat",
+  headers: { "x-session-id": adminSession },
   payload: { message: "چراغ را روشن کن" },
 });
 assert.equal(actionResponse.statusCode, 200);

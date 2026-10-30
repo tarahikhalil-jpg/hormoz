@@ -1,167 +1,101 @@
 import type { IntelligenceRequest } from "./contracts/intelligence-engine.js";
 import type { IntelligenceProvider } from "./contracts/intelligence-provider.js";
 
-export class OpenRouterIntelligenceProvider
-  implements IntelligenceProvider
-{
-  public async generate(
-    request: IntelligenceRequest,
-  ): Promise<string> {
-    const apiKey = process.env.HORMOZ_AI_API_KEY;
-    const baseUrl = process.env.HORMOZ_AI_BASE_URL;
-    const model = process.env.HORMOZ_AI_MODEL;
+type ProviderConfig = {
+  name: string;
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+};
 
-    if (!apiKey || !baseUrl || !model) {
-      throw new Error("OpenRouter configuration is incomplete");
-    }
+export class OpenRouterIntelligenceProvider implements IntelligenceProvider {
+  public async generate(request: IntelligenceRequest): Promise<string> {
+    const providers: ProviderConfig[] = [];
+    const primary = {
+      name: "primary",
+      apiKey: process.env.HORMOZ_AI_API_KEY?.trim() ?? "",
+      baseUrl: process.env.HORMOZ_AI_BASE_URL?.trim() ?? "",
+      model: process.env.HORMOZ_AI_MODEL?.trim() ?? "",
+    };
+    const fallback = {
+      name: "fallback",
+      apiKey: process.env.HORMOZ_AI_FALLBACK_API_KEY?.trim() ?? "",
+      baseUrl: process.env.HORMOZ_AI_FALLBACK_BASE_URL?.trim() ?? "",
+      model: process.env.HORMOZ_AI_FALLBACK_MODEL?.trim() ?? "",
+    };
 
-    // Never burn a second free-tier request after quota exhaustion or a slow timeout.
-    // One retry remains available only for transient network/5xx failures.
-    const maxAttempts = 2;
+    if (primary.apiKey && primary.baseUrl && primary.model) providers.push(primary);
+    if (fallback.apiKey && fallback.baseUrl && fallback.model) providers.push(fallback);
+    if (!providers.length) throw new Error("AI provider configuration is incomplete");
+
     let lastError: Error | undefined;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      let retryableError = true;
-      const controller = new AbortController();
-      const timeout = setTimeout(
-        () => controller.abort(),
-        12_000,
-      );
-
-      try {
-        const response = await fetch(
-          `${baseUrl}/chat/completions`,
-          {
+    for (const provider of providers) {
+      const maxAttempts = 2;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        let retryableError = false;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12_000);
+        try {
+          const baseUrl = provider.baseUrl.endsWith("/") ? provider.baseUrl.slice(0, -1) : provider.baseUrl;
+          const response = await fetch(`${baseUrl}/chat/completions`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
+              Authorization: `Bearer ${provider.apiKey}`,
             },
             signal: controller.signal,
             body: JSON.stringify({
-              model,
+              model: provider.model,
               messages: request.messages,
-              // Some OpenRouter models spend part of the completion budget on internal reasoning.
-              // Give the first response enough room, with one larger retry if no final answer is returned.
               max_tokens: attempt === 1 ? 800 : 1200,
             }),
-          },
-        );
-
-        const rawText = await response.text();
-
-        console.log(
-          `OpenRouter attempt ${attempt} status:`,
-          response.status,
-        );
-
-        if (!response.ok) {
-          // A 429 commonly means the free quota/rate limit is exhausted; retrying
-          // immediately wastes time and may consume another request without helping.
-          retryableError = response.status >= 500;
-          throw new Error(
-            `OpenRouter request failed: ${response.status} ${rawText}`,
-          );
-        }
-
-        let data: {
-          choices?: Array<{
-            finish_reason?: string;
-            native_finish_reason?: string;
-            message?: {
-              content?:
-                | string
-                | Array<{
-                    type?: string;
-                    text?: string;
-                  }>;
-            };
-          }>;
-          error?: {
-            message?: string;
-            code?: string;
-          };
-        };
-
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          throw new Error(
-            "OpenRouter returned invalid JSON",
-          );
-        }
-
-        if (data.error?.message) {
-          throw new Error(
-            `OpenRouter error: ${
-              data.error.code ?? "unknown"
-            } ${data.error.message}`,
-          );
-        }
-
-        const choice = data.choices?.[0];
-        const content = choice?.message?.content;
-        const finishReason =
-          choice?.native_finish_reason ??
-          choice?.finish_reason ??
-          "unknown";
-
-        // Do not spend another full provider round-trip just because the first answer
-        // reached its token budget. Return the available answer promptly; reserve retries
-        // for transient network/provider failures.
-        if (finishReason === "length") {
-          console.warn("OpenRouter answer reached its token budget; returning the available answer to avoid a slow second call.");
-        }
-
-        if (
-          typeof content === "string" &&
-          content.trim()
-        ) {
-          return content.trim();
-        }
-
-        if (Array.isArray(content)) {
-          const text = content
-            .map((part) => part.text ?? "")
-            .join("")
-            .trim();
-
-          if (text) {
-            return text;
+          });
+          const rawText = await response.text();
+          if (!response.ok) {
+            retryableError = response.status >= 500;
+            throw new Error(`${provider.name} provider request failed: ${response.status} ${rawText}`);
           }
-        }
 
-        throw new Error(
-          `OpenRouter returned no final answer (finish_reason: ${finishReason})`,
-        );
-      } catch (error) {
-        lastError =
-          error instanceof Error
-            ? error
-            : new Error(String(error));
+          const data = JSON.parse(rawText) as {
+            choices?: Array<{
+              finish_reason?: string;
+              native_finish_reason?: string;
+              message?: { content?: string | Array<{ type?: string; text?: string }> };
+            }>;
+            error?: { message?: string; code?: string };
+          };
+          if (data.error?.message) {
+            throw new Error(`${provider.name} provider error: ${data.error.code ?? "unknown"} ${data.error.message}`);
+          }
 
-        // A timed-out request is not retried: the user gets a fast, honest failure
-        // instead of waiting through two full timeout windows.
-        if (lastError.name === "AbortError") retryableError = false;
-
-        console.error(
-          `OpenRouter attempt ${attempt} failed:`,
-          lastError.message,
-        );
-
-        if (attempt < maxAttempts && retryableError) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        } else {
+          const choice = data.choices?.[0];
+          const content = choice?.message?.content;
+          const finishReason = choice?.native_finish_reason ?? choice?.finish_reason ?? "unknown";
+          if (finishReason === "length") {
+            console.warn(`${provider.name} AI answer reached its token budget; returning available answer.`);
+          }
+          if (typeof content === "string" && content.trim()) return content.trim();
+          if (Array.isArray(content)) {
+            const text = content.map((part) => part.text ?? "").join("").trim();
+            if (text) return text;
+          }
+          throw new Error(`${provider.name} provider returned no final answer (finish_reason: ${finishReason})`);
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          if (lastError.name === "AbortError") retryableError = false;
+          console.error(`AI ${provider.name} provider attempt ${attempt} failed:`, lastError.message);
+          if (retryableError && attempt < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            continue;
+          }
           break;
+        } finally {
+          clearTimeout(timeout);
         }
-      } finally {
-        clearTimeout(timeout);
       }
+      // A quota/rate-limit or upstream failure on the primary provider may be
+      // recovered by a separately configured provider. Never invent an answer.
     }
-
-    throw (
-      lastError ??
-      new Error("OpenRouter request failed")
-    );
+    throw lastError ?? new Error("AI provider request failed");
   }
 }

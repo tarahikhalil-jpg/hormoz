@@ -24,12 +24,12 @@ export interface MemoryRepository {
   get(id: MemoryId): Promise<PersistentMemory | null>;
   listByUser(userId: UserId): Promise<PersistentMemory[]>;
   update(id: MemoryId, input: UpdateMemoryInput): Promise<PersistentMemory | null>;
-  delete(id: MemoryId): Promise<boolean>;
+  delete(id: MemoryId, userId: UserId): Promise<boolean>;
   createSessionMemory(session: SessionMemory): Promise<SessionMemory>;
   getSessionMemory(sessionId: SessionId): Promise<SessionMemory | null>;
   listSessionMemoriesByUser(userId: UserId): Promise<SessionMemory[]>;
   updateSessionMemory(sessionId: SessionId, input: Partial<SessionMemory>): Promise<SessionMemory | null>;
-  deleteSessionMemory(sessionId: SessionId): Promise<boolean>;
+  deleteSessionMemory(sessionId: SessionId, userId: UserId): Promise<boolean>;
 }
 
 export class InMemoryMemoryRepository implements MemoryRepository {
@@ -79,7 +79,9 @@ export class InMemoryMemoryRepository implements MemoryRepository {
     return { ...updated };
   }
 
-  public async delete(id: MemoryId): Promise<boolean> {
+  public async delete(id: MemoryId, userId: UserId): Promise<boolean> {
+    const current = this.memories.get(id);
+    if (!current || current.userId !== userId) return false;
     return this.memories.delete(id);
   }
 
@@ -111,7 +113,9 @@ export class InMemoryMemoryRepository implements MemoryRepository {
     return { ...updated, entries: [...updated.entries] };
   }
 
-  public async deleteSessionMemory(sessionId: SessionId): Promise<boolean> {
+  public async deleteSessionMemory(sessionId: SessionId, userId: UserId): Promise<boolean> {
+    const current = this.sessionMemories.get(sessionId);
+    if (!current || current.userId !== userId) return false;
     return this.sessionMemories.delete(sessionId);
   }
 }

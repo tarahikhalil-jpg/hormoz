@@ -9,9 +9,9 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 import { chatRoutes } from "./routes/chat.js";
 import { ActionDispatcher } from "./modules/action/dispatcher.js";
 import type { LightDevice } from "./modules/device/light.js";
-import { MockLight } from "./modules/device/mock-light.js";
 import { conversationRoutes } from "./routes/conversation.js";
 import { healthRoutes } from "./routes/health.js";
+import { identityRoutes } from "./routes/identity.js";
 import { memoryRoutes } from "./routes/memory.js";
 import { IdentityService } from "./modules/identity/identity.service.js";
 import { InMemorySessionRepository } from "./modules/identity/repositories/session.repository.js";
@@ -19,6 +19,7 @@ import { InMemoryUserRepository } from "./modules/identity/repositories/user.rep
 import { InMemoryConversationRepository } from "./modules/conversation/repository.js";
 import { ConversationService } from "./modules/conversation/service.js";
 import { InMemoryMemoryRepository } from "./modules/memory/repository.js";
+import { PostgresRepositories } from "./persistence/postgres-repositories.js";
 import { MemoryService } from "./modules/memory/service.js";
 import { MockIntelligenceEngine } from "./modules/intelligence/mock-intelligence-engine.js";
 import { OpenRouterIntelligenceProvider } from "./modules/intelligence/openrouter-intelligence-provider.js";
@@ -2339,17 +2340,25 @@ return reply.type("application/xml; charset=utf-8").send(content);
   );
 
 
+  /* ===== DURABLE PERSISTENCE ===== */
+
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  if (process.env.NODE_ENV === "production" && !databaseUrl) {
+    throw new Error("DATABASE_URL is required in production; refusing volatile identity and user-data storage.");
+  }
+
+  const postgres = databaseUrl ? new PostgresRepositories(databaseUrl) : undefined;
+  if (postgres) {
+    app.addHook("onReady", async () => postgres.ensureSchema());
+    app.addHook("onClose", async () => postgres.pool.end());
+  }
+
   /* ===== IDENTITY ===== */
 
   const identityService =
     new IdentityService({
-
-      userRepository:
-        new InMemoryUserRepository(),
-
-      sessionRepository:
-        new InMemorySessionRepository()
-
+      userRepository: postgres?.userRepository ?? new InMemoryUserRepository(),
+      sessionRepository: postgres?.sessionRepository ?? new InMemorySessionRepository()
     });
 
 
@@ -2357,36 +2366,18 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
   const conversationService =
     new ConversationService({
-
-      conversationRepository:
-        new InMemoryConversationRepository(),
-
+      conversationRepository: postgres?.conversationRepository ?? new InMemoryConversationRepository(),
       identityService
-
     });
 
 
   /* ===== MEMORY ===== */
 
   const memoryRepository =
-    new InMemoryMemoryRepository();
-
+    postgres?.memoryRepository ?? new InMemoryMemoryRepository();
 
   const memoryService =
-    new MemoryService({
-
-      memoryRepository
-
-    });
-
-
-  /* ===== DEVICE ===== */
-
-  const light =
-    options.light ??
-    new MockLight(
-      "light-777"
-    );
+    new MemoryService({ memoryRepository });
 
 
   /* ===== INTELLIGENCE ===== */
@@ -2411,10 +2402,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
       intelligenceEngine,
 
-      actionDispatcher:
-        new ActionDispatcher({
-          light
-        })
+      actionDispatcher: options.light ? new ActionDispatcher({ light: options.light }) : undefined
 
     }
   );
@@ -2434,9 +2422,8 @@ return reply.type("application/xml; charset=utf-8").send(content);
   );
 
 
-  app.register(
-    healthRoutes
-  );
+  app.register(healthRoutes);
+  app.register(identityRoutes, { identityService });
 
   app.register(imageGenerationRoutes);
 
@@ -2453,7 +2440,8 @@ return reply.type("application/xml; charset=utf-8").send(content);
   app.register(
     memoryRoutes,
     {
-      memoryService
+      memoryService,
+      identityService
     }
   );
 

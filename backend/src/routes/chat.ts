@@ -6,10 +6,10 @@ import type {
 import { MockIntelligenceEngine } from "../modules/intelligence/mock-intelligence-engine.js";
 import type { ConversationService } from "../modules/conversation/service.js";
 import type { IdentityService } from "../modules/identity/identity.service.js";
+import { IdentityError } from "../modules/identity/repositories/errors.js";
 import type { MemoryService } from "../modules/memory/service.js";
 import { ActionDispatcher } from "../modules/action/dispatcher.js";
 import { interpretCommand } from "../modules/action/command-interpreter.js";
-import { MockLight } from "../modules/device/mock-light.js";
 
 export interface ChatRoutesOptions {
   memoryService: MemoryService;
@@ -32,9 +32,7 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
     conversationService,
     identityService,
     intelligenceEngine = new MockIntelligenceEngine(),
-    actionDispatcher = new ActionDispatcher({
-      light: new MockLight("light-777"),
-    }),
+    actionDispatcher,
   },
 ) => {
   app.post("/api/v1/chat", async (request, reply) => {
@@ -75,9 +73,12 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
       current.count++;
 
       if (current.count > RATE_LIMIT_MAX_REQUESTS) {
+        const retryAfterSeconds = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
+        reply.header("Retry-After", String(retryAfterSeconds));
         return reply.code(429).send({
           success: false,
           error: "too many requests",
+          retryAfterSeconds,
           version: "0.1",
         });
       }
@@ -107,9 +108,28 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
     const action = interpretCommand(message);
 
     if (action) {
+      if (!actionDispatcher) {
+        return reply.code(503).send({
+          success: false,
+          error: "این فرمان تا زمان اتصال سخت‌افزار واقعی فعال نیست.",
+          version: "0.1",
+        });
+      }
+      const actionSessionHeader = request.headers["x-session-id"];
+      const actionSessionId = typeof actionSessionHeader === "string" ? actionSessionHeader.trim() : "";
+      if (!identityService || !actionSessionId) {
+        return reply.code(401).send({ success: false, error: "برای اجرای فرمان باید وارد حساب شوید.", version: "0.1" });
+      }
       try {
+        const actionIdentity = await identityService.authenticate(actionSessionId);
+        if (!actionIdentity.user.permissions.includes("manage-system")) {
+          return reply.code(403).send({ success: false, error: "اجازه اجرای این فرمان را ندارید.", version: "0.1" });
+        }
         return await actionDispatcher.dispatch(action);
       } catch (error) {
+        if (error instanceof IdentityError) {
+          return reply.code(401).send({ success: false, error: "نشست کاربری معتبر نیست.", version: "0.1" });
+        }
         console.error(
           "Action dispatcher failed:",
           error instanceof Error ? error.message : error,
@@ -126,24 +146,43 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
       }
     }
 
-    const userIdHeader = request.headers["x-user-id"];
+    // Public/guest chat remains available, but client-supplied x-user-id is never
+    // trusted for private memory. Personal memory is loaded only from a valid session.
+    const sessionHeader = request.headers["x-session-id"];
+    const sessionId = typeof sessionHeader === "string" ? sessionHeader.trim() : "";
+    let userId = "anonymous";
+    let memories: Awaited<ReturnType<MemoryService["listMemories"]>> = [];
 
-    const userId =
-      typeof userIdHeader === "string" && userIdHeader.trim()
-        ? userIdHeader.trim()
-        : "chat-fallback-user";
-
-    let memories: Awaited<
-      ReturnType<MemoryService["listMemories"]>
-    > = [];
-
-    try {
-      memories = await memoryService.listMemories(userId);
-    } catch (error) {
-      console.error(
-        "Memory service failed:",
-        error instanceof Error ? error.message : error,
-      );
+    if (sessionId) {
+      if (!identityService) {
+        return reply.code(503).send({
+          success: false,
+          error: "identity service unavailable",
+          version: "0.1",
+        });
+      }
+      try {
+        const identity = await identityService.authenticate(sessionId);
+        userId = identity.user.userId;
+        memories = await memoryService.listMemories(userId);
+      } catch (error) {
+        if (error instanceof IdentityError) {
+          return reply.code(401).send({
+            success: false,
+            error: error.code,
+            version: "0.1",
+          });
+        }
+        console.error(
+          "Authenticated chat context failed:",
+          error instanceof Error ? error.message : error,
+        );
+        return reply.code(500).send({
+          success: false,
+          error: "chat context unavailable",
+          version: "0.1",
+        });
+      }
     }
 
     const context = Object.fromEntries(
