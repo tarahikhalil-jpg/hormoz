@@ -397,6 +397,16 @@ header{border-bottom:2px solid transparent!important;border-image:linear-gradien
 #nava .section-head h2{color:#174b50!important}
 #nava .section-head .hint{color:#526f70!important}
 </style>
+<style id="hormoz-panel-entry-visibility">
+#portal{scroll-margin-top:24px}
+#portal .portal-card:has(a[href*="AdminPanel.html"]){order:-2;border:2px solid #f3c96b;background:linear-gradient(145deg,#173f52,#102b3c);box-shadow:0 12px 32px #0005}
+#portal .portal-card:has(a[href*="TeamPanel.html"]){order:-1;border:2px solid #75ead8;background:linear-gradient(145deg,#123b45,#102b3c)}
+#portal .portal-card:has(a[href*="AdminPanel.html"]) h3{color:#ffe09a;font-size:21px}
+#portal .portal-card:has(a[href*="AdminPanel.html"]) .btn,#portal .portal-card:has(a[href*="TeamPanel.html"]) .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;font-size:17px;font-weight:900;margin-top:14px}
+#portal .portal-card:has(a[href*="AdminPanel.html"]) .btn{background:#f3c96b;color:#17212a;border:2px solid #ffe6a8}
+#portal .portal-card:has(a[href*="TeamPanel.html"]) .btn{background:#75ead8;color:#062b35;border:2px solid #a8fff1}
+@media(max-width:700px){#portal .grid{grid-template-columns:1fr!important}#portal .portal-card:has(a[href*="AdminPanel.html"]),#portal .portal-card:has(a[href*="TeamPanel.html"]){padding:20px}#portal .portal-card:has(a[href*="AdminPanel.html"]) .btn,#portal .portal-card:has(a[href*="TeamPanel.html"]) .btn{min-height:54px}}
+</style>
 </head>
 <body>
 <header><div class="wrap head">
@@ -462,7 +472,7 @@ header{border-bottom:2px solid transparent!important;border-image:linear-gradien
 <section class="section" id="services">
 <div class="section-head"><h2>خدمات و نیازهای روزمره</h2><p class="hint">هر گزینه گفت‌وگوی نوا را با درخواست مرتبط آماده می‌کند؛ ارسال نهایی با انتخاب خودت است.</p></div>
 <div class="grid">
-<article class="card"><div class="icon">💧</div><h3>آب، برق و گاز</h3><p>راهنمایی برای مشکل خدمات شهری و یافتن مسیر رسمی پیگیری.</p><button data-prompt="برای مشکل آب، برق یا گاز راهنمایی می‌خواهم. از من بپرس در کدام شهر هستم و کمک کن مسیر رسمی پیگیری را پیدا کنم.">شروع با نوا</button></article>
+<article class="card portal-card"><div class="icon">🔐</div><h3>پنل مدیریت</h3><p>دسترسی مدیریتی برای افراد مجاز؛ اطلاعات محرمانه را عمومی نکنید.</p><a class="btn alt" target="_blank" rel="noopener" href="https://hormoz-ai-backend-777.onrender.com/AdminPanel.html">پنل مدیریت</a></article><article class="card portal-card"><div class="icon">👥</div><h3>پنل اعضا و همکاران</h3><p>ورود اعضای مجاز و پیگیری مسئولیت‌ها.</p><a class="btn alt" target="_blank" rel="noopener" href="https://hormoz-ai-backend-777.onrender.com/TeamPanel.html">پنل اعضا</a></article><article class="card"><div class="icon">💧</div><h3>آب، برق و گاز</h3><p>راهنمایی برای مشکل خدمات شهری و یافتن مسیر رسمی پیگیری.</p><button data-prompt="برای مشکل آب، برق یا گاز راهنمایی می‌خواهم. از من بپرس در کدام شهر هستم و کمک کن مسیر رسمی پیگیری را پیدا کنم.">شروع با نوا</button></article>
 <article class="card"><div class="icon">📶</div><h3>اینترنت و تلفن</h3><p>بررسی مشکل اتصال، تلفن همراه یا انتخاب سرویس مناسب.</p><button data-prompt="برای اینترنت یا تلفن مشکل دارم. با چند سؤال کمک کن علت احتمالی و راه پیگیری رسمی را پیدا کنم.">شروع با نوا</button></article>
 <article class="card"><div class="icon">🩺</div><h3>سلامت و بیمه</h3><p>اطلاعات عمومی و راهنمای پیدا کردن مرکز یا درگاه رسمی.</p><button data-prompt="برای پیدا کردن خدمت سلامت یا بیمه راهنمایی عمومی می‌خواهم. کمک کن مسیر معتبر و رسمی را پیدا کنم.">شروع با نوا</button></article>
 <article class="card"><div class="icon">🏛️</div><h3>کارهای اداری</h3><p>فهم مراحل، مدارک احتمالی و پیدا کردن درگاه رسمی مربوط.</p><button data-prompt="برای یک کار اداری راهنمایی می‌خواهم. اول بپرس چه خدمتی و مربوط به کدام شهر یا سازمان است؛ سپس مراحل و مسیر رسمی را توضیح بده.">شروع با نوا</button></article>
@@ -540,8 +550,8 @@ header{border-bottom:2px solid transparent!important;border-image:linear-gradien
 <article class="card portal-card"><div class="icon">🧑‍🔧</div><h3>معرفی ارائه‌دهندگان</h3><p>ثبت و مدیریت اطلاعات ارائه‌دهندگان خدمات.</p><a class="btn alt" href="https://hormoz-ai-backend-777.onrender.com/providers.html">ارائه‌دهندگان</a></article>
 <article class="card portal-card"><div class="icon">🌱</div><h3>فرصت‌ها و همکاری</h3><p>مسیر معرفی مهارت، فرصت شغلی و همکاری.</p><a class="btn alt" href="https://hormoz-ai-backend-777.onrender.com/opportunities.html">فرصت‌ها</a><a class="btn alt" href="https://hormoz-ai-backend-777.onrender.com/agency-connect.html">درخواست همکاری</a></article>
 <article class="card portal-card"><div class="icon">🎨</div><h3>کارگاه پوستر و کلیپ</h3><p>بخش خلاقیت و آماده‌سازی محتوای تبلیغاتی.</p><a class="btn alt" href="https://hormoz-ai-backend-777.onrender.com/creative-studio.html">ورود به کارگاه</a></article>
-<article class="card portal-card"><div class="icon">👥</div><h3>پنل اعضا و همکاران</h3><p>ورود اعضای مجاز و پیگیری مسئولیت‌ها.</p><a class="btn alt" href="https://hormoz-ai-backend-777.onrender.com/TeamPanel.html">پنل اعضا</a></article>
-<article class="card portal-card"><div class="icon">🔐</div><h3>پنل مدیریت</h3><p>دسترسی مدیریتی برای افراد مجاز؛ اطلاعات محرمانه را عمومی نکنید.</p><a class="btn alt" href="https://hormoz-ai-backend-777.onrender.com/AdminPanel.html">پنل مدیریت</a></article>
+
+
 <article class="card portal-card"><div class="icon">✉️</div><h3>ارتباط با مدیر</h3><p>ارسال پیام و درخواست پشتیبانی.</p><a class="btn alt" href="https://hormoz-ai-backend-777.onrender.com/contact-admin.html">ارتباط با مدیر</a></article>
 <article class="card portal-card"><div class="icon">🪪</div><h3>درگاه کاربران</h3><p>ورود به درگاه عمومی و مسیرهای مرتبط با حساب کاربری.</p><a class="btn alt" href="https://hormoz-ai-backend-777.onrender.com/portal.html">درگاه کاربران</a></article>
 </div>
