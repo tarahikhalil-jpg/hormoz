@@ -419,7 +419,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.delete("/api/v1/global-admin/members/test-account/hormoztest777", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
     if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند حساب آزمایشی را حذف کند." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
@@ -436,7 +436,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/api/v1/global-admin/members/:id/reset-password", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
     if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند گذرواژه عضو را بازنشانی کند." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
@@ -464,7 +464,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/api/v1/global-admin/members/:id/review", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
     if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند درخواست عضویت را بررسی کند." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
@@ -491,7 +491,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.get("/api/v1/global-admin/members", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
     if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند اعضا را مدیریت کند." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
@@ -500,7 +500,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/api/v1/global-admin/members/:id/active", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
     if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند دسترسی را تغییر دهد." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
@@ -516,7 +516,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     } catch (error) { request.log.error(error); return reply.code(503).send({ message: "تغییر دسترسی ناموفق بود." }); }
   });
   app.get("/api/v1/global-admin/feedback", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
     try {
@@ -530,7 +530,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/api/v1/global-admin/feedback/:id/status", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
     if (!["owner", "invoice_approver"].includes(session.role)) return reply.code(403).send({ message: "مجوز تغییر وضعیت ندارید." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
@@ -551,7 +551,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.get("/api/v1/global-admin/orders", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
     try {
@@ -565,7 +565,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/api/v1/global-admin/orders/:id/verify-invoice", async (request, reply) => {
-    const session = adminSession(request);
+    const session = await adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود لازم است." });
     if (!["owner", "invoice_approver"].includes(session.role)) return reply.code(403).send({ message: "سطح دسترسی شما اجازه تأیید فاکتور را نمی‌دهد." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
