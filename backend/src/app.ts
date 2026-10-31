@@ -2183,32 +2183,10 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
       }
 
-      // Google Translate may reject legacy clients on some hosts. Try the current gtx
-      // client as well as the legacy endpoint, with browser-like request headers.
-      for (const googleClient of ["gtx", "tw-ob"]) {
-        try {
-          const googleUrl = "https://translate.google.com/translate_tts?ie=UTF-8&client=" + googleClient + "&tl=fa&dt=t&q=" + encodeURIComponent(text);
-          const googleResponse = await fetch(googleUrl, {
-            headers: {
-              "Accept": "audio/mpeg, audio/*, */*",
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36",
-              "Referer": "https://translate.google.com/"
-            },
-            signal: controller.signal
-          });
-          const googleType = googleResponse.headers.get("content-type") || "";
-          if (googleResponse.ok && googleType.toLowerCase().includes("audio")) {
-            const googleAudio = Buffer.from(await googleResponse.arrayBuffer());
-            if (googleAudio.length > 1000) {
-              request.log.info({ bytes: googleAudio.length, client: googleClient }, "Nava Persian TTS succeeded via Google Translate fallback");
-              return reply.header("Cache-Control", "no-store").type(googleType.split(";")[0] || "audio/mpeg").send(googleAudio);
-            }
-          }
-          request.log.warn({ status: googleResponse.status, contentType: googleType, client: googleClient }, "Google Translate Persian TTS fallback unavailable");
-        } catch (error) {
-          request.log.warn({ err: error, client: googleClient }, "Google Translate Persian TTS fallback failed");
-        }
-      }
+      // Do not use Google Translate here: it does not provide a reliable gender
+      // guarantee for Persian. Nava must remain a female-voice assistant; if the
+      // verified female providers above and below fail, return the explicit 503
+      // response instead of silently playing an unknown or male voice.
 
       // Prefer a verified female Persian voice if the free provider currently offers one.
       // Voice availability can change, so discover it at runtime instead of guessing an ID.
