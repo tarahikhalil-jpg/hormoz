@@ -126,24 +126,25 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
       }
     }
 
-    const userIdHeader = request.headers["x-user-id"];
+    // Never trust a caller-supplied x-user-id for private memory access.
+    // Stateless public chat receives no private memory; memory is loaded only
+    // after validating a server-issued session.
+    let userId = "chat-fallback-user";
+    let memories: Awaited<ReturnType<MemoryService["listMemories"]>> = [];
+    const sessionHeader = request.headers["x-session-id"];
+    const sessionId = typeof sessionHeader === "string" ? sessionHeader.trim() : "";
 
-    const userId =
-      typeof userIdHeader === "string" && userIdHeader.trim()
-        ? userIdHeader.trim()
-        : "chat-fallback-user";
-
-    let memories: Awaited<
-      ReturnType<MemoryService["listMemories"]>
-    > = [];
-
-    try {
-      memories = await memoryService.listMemories(userId);
-    } catch (error) {
-      console.error(
-        "Memory service failed:",
-        error instanceof Error ? error.message : error,
-      );
+    if (sessionId && identityService) {
+      try {
+        const identity = await identityService.authenticate(sessionId);
+        userId = identity.user.userId;
+        memories = await memoryService.listMemories(userId);
+      } catch (error) {
+        console.warn(
+          "Private chat memory not loaded because session validation failed:",
+          error instanceof Error ? error.message : error,
+        );
+      }
     }
 
     const context = Object.fromEntries(
