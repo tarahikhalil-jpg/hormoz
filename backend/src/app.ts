@@ -2443,8 +2443,11 @@ return reply.type("application/xml; charset=utf-8").send(content);
   app.get(
     "/",
     async (_request, reply) => {
-      // Keep one canonical public entry page. API routes and service pages remain on this backend.
-      return reply.redirect("https://hormoz-portal-public-777.onrender.com/");
+      // Serve the integrated public page from the active backend instead of redirecting
+      // visitors to the legacy portal deployment.
+      return reply
+        .type("text/html; charset=utf-8")
+        .send(page);
     }
   );
 
