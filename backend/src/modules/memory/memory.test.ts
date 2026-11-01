@@ -30,14 +30,17 @@ const updated = await service.updateMemory(created.id, "user-1", { value: "en" }
 assert.equal(updated.value, "en");
 assert.equal(updated.conversationId, "conversation-777");
 
-const expired = await service.createMemory({
+await assert.rejects(() => service.createMemory({
   userId: "user-1",
   key: "temp",
   value: "soon",
   expiresAt: "2025-12-31T23:59:59.000Z",
-});
+}), (error: unknown) => error instanceof MemoryError && error.code === "INVALID_MEMORY");
 
-await assert.rejects(() => service.getMemory(expired.id, "user-1"), (error: unknown) => error instanceof MemoryError && error.code === "MEMORY_EXPIRED");
+await assert.rejects(() => service.updateMemory(created.id, "user-1", { key: "   " }),
+  (error: unknown) => error instanceof MemoryError && error.code === "INVALID_MEMORY");
+await assert.rejects(() => service.updateMemory(created.id, "user-1", { expiresAt: "invalid-date" as never }),
+  (error: unknown) => error instanceof MemoryError && error.code === "INVALID_MEMORY");
 
 await assert.rejects(() => service.getMemory(created.id, "user-2"), (error: unknown) => error instanceof MemoryError && error.code === "MEMORY_FORBIDDEN");
 
