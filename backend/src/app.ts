@@ -1903,8 +1903,10 @@ export function buildApp(
     if (origin && allowedFrontendOrigins.has(origin)) {
       reply.header("Access-Control-Allow-Origin", origin);
       reply.header("Vary", "Origin");
-      reply.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-      reply.header("Access-Control-Allow-Headers", "Content-Type, x-user-id, x-session-id, x-pollinations-app-key");
+      // The public portal is hosted on a separate Render origin. Allow the
+      // methods and credentials headers used by authenticated admin/member panels.
+      reply.header("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS");
+      reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-user-id, x-session-id, x-pollinations-app-key");
       reply.header("Access-Control-Max-Age", "86400");
     }
 
