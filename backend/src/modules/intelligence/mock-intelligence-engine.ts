@@ -8,10 +8,10 @@ import { MockIntelligenceProvider } from "./mock-intelligence-provider.js";
 import { NAVA_SYSTEM_PROMPT } from "./nava-persona.js";
 
 export function containsUnverifiedContactClaims(text: string): boolean {
-  const email = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/iu;
-  const phone = /(?:\\+?\\d[\\d\\s().-]{7,}\\d)/u;
-  const contactClaim = /(?:شماره\\s*(?:تماس|تلفن)|تلفن\\s*(?:پشتیبانی|تماس)?|ایمیل\\s*(?:پشتیبانی|تماس)?|نشانی\\s*(?:دفتر|پشتیبانی)|ساعات?\\s*(?:کاری|پاسخگویی)|تماس\\s*بگیرید|با\\s*ما\\s*تماس)/u;
-  const ticketClaim = /(?:شماره|کد)\\s*تیکت/u;
+  const email = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu;
+  const phone = /(?:\+?\d[\d\s().-]{7,}\d)/u;
+  const contactClaim = /(?:شماره\s*(?:تماس|تلفن)|تلفن\s*(?:پشتیبانی|تماس)?|ایمیل\s*(?:پشتیبانی|تماس)?|نشانی\s*(?:دفتر|پشتیبانی)|ساعات?\s*(?:کاری|پاسخگویی)|تماس\s*بگیرید|با\s*ما\s*تماس)/u;
+  const ticketClaim = /(?:شماره|کد)\s*تیکت/u;
   return email.test(text) || phone.test(text) || contactClaim.test(text) || ticketClaim.test(text);
 }
 
