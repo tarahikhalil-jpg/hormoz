@@ -8,11 +8,19 @@ import { MockIntelligenceProvider } from "./mock-intelligence-provider.js";
 import { NAVA_SYSTEM_PROMPT } from "./nava-persona.js";
 
 export function containsUnverifiedContactClaims(text: string): boolean {
+  // Normalize Persian and Arabic-Indic digits so localized phone numbers
+  // cannot bypass the same safety checks as Latin-digit numbers.
+  const normalized = text.replace(/[۰-۹٠-٩]/gu, (digit) => {
+    const code = digit.charCodeAt(0);
+    return String(code >= 0x06f0 && code <= 0x06f9
+      ? code - 0x06f0
+      : code - 0x0660);
+  });
   const email = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu;
   const phone = /(?:\+?\d[\d\s().-]{7,}\d)/u;
-  const contactClaim = /(?:شماره\s*(?:تماس|تلفن)|تلفن\s*(?:پشتیبانی|تماس)?|ایمیل\s*(?:پشتیبانی|تماس)?|نشانی\s*(?:دفتر|پشتیبانی)|ساعات?\s*(?:کاری|پاسخگویی)|تماس\s*بگیرید|با\s*ما\s*تماس)/u;
+  const contactClaim = /(?:شماره\s*(?:تماس|تلفن)|تلفن\s*(?:پشتیبانی|تماس)?|ایمیل\s*(?:پشتیبانی|تماس)?|نشانی\s*(?:دفتر|پشتیبانی)|ساعات?\s*(?:کاری|پاسخگویی)|تماس\s*بگیرید|با\s*ما\s*تماس|واتساپ|تلگرام\s*(?:آیدی|شناسه)?|پشتیبانی\s*(?:در|از\s*طریق))/u;
   const ticketClaim = /(?:شماره|کد)\s*تیکت/u;
-  return email.test(text) || phone.test(text) || contactClaim.test(text) || ticketClaim.test(text);
+  return email.test(normalized) || phone.test(normalized) || contactClaim.test(normalized) || ticketClaim.test(normalized);
 }
 
 function isLikelyCorruptedPersian(text: string, userMessage: string): boolean {
