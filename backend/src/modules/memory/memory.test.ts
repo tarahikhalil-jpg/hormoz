@@ -23,8 +23,12 @@ assert.equal(fetched.value, "fa");
 const listed = await service.listMemories("user-1");
 assert.equal(listed.length, 1);
 
+const linked = await service.updateMemory(created.id, "user-1", { conversationId: "conversation-777" });
+assert.equal(linked.conversationId, "conversation-777");
+
 const updated = await service.updateMemory(created.id, "user-1", { value: "en" });
 assert.equal(updated.value, "en");
+assert.equal(updated.conversationId, "conversation-777");
 
 const expired = await service.createMemory({
   userId: "user-1",
