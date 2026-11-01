@@ -25,7 +25,7 @@ export class OpenRouterIntelligenceProvider
       const controller = new AbortController();
       const timeout = setTimeout(
         () => controller.abort(),
-        12_000,
+        25_000,
       );
 
       try {
