@@ -9,9 +9,16 @@ test("blocks fabricated support email addresses", () => {
   );
 });
 
-test("blocks phone numbers", () => {
+test("blocks phone numbers written with Latin digits", () => {
   assert.equal(
     containsUnverifiedContactClaims("با شماره +98 21 41234567 تماس بگیرید."),
+    true,
+  );
+});
+
+test("blocks phone numbers written with Persian digits", () => {
+  assert.equal(
+    containsUnverifiedContactClaims("شماره پشتیبانی: ۰۹۱۲۳۴۵۶۷۸۹"),
     true,
   );
 });
