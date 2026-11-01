@@ -14,6 +14,7 @@ export interface PersistentMemory {
   key: string;
   value: string;
   source: "user" | "conversation" | "system";
+  conversationId?: ConversationId;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   expiresAt?: Timestamp;
