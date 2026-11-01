@@ -21,6 +21,7 @@ export class MemoryService {
     this.validateUserId(input.userId);
     this.validateKey(input.key);
     this.validateValue(input.value);
+    this.validateExpiry(input.expiresAt);
     return this.memoryRepository.create(input);
   }
 
@@ -42,6 +43,9 @@ export class MemoryService {
     if (!existing) throw new MemoryError("MEMORY_NOT_FOUND");
     if (existing.userId !== userId) throw new MemoryError("MEMORY_FORBIDDEN");
     if (this.isExpired(existing)) throw new MemoryError("MEMORY_EXPIRED");
+    if (input.key !== undefined) this.validateKey(input.key);
+    if (input.value !== undefined) this.validateValue(input.value);
+    this.validateExpiry(input.expiresAt);
     const updated = await this.memoryRepository.update(id, { userId, ...input });
     if (!updated) throw new MemoryError("MEMORY_NOT_FOUND");
     return updated;
@@ -57,11 +61,11 @@ export class MemoryService {
   public async createSessionMemory(input: SessionMemory): Promise<SessionMemory> {
     this.validateUserId(input.userId);
     this.validateSessionId(input.sessionId);
-    const sessionMemory = await this.memoryRepository.createSessionMemory(input);
-    if (this.isSessionExpired(sessionMemory)) {
-      throw new MemoryError("SESSION_MEMORY_EXPIRED");
+    this.validateExpiry(input.expiresAt);
+    if (!Array.isArray(input.entries) || input.entries.some((entry) => typeof entry !== "string" || entry.length > 5000)) {
+      throw new MemoryError("INVALID_MEMORY");
     }
-    return sessionMemory;
+    return this.memoryRepository.createSessionMemory(input);
   }
 
   public async getSessionMemory(sessionId: SessionId, userId: UserId): Promise<SessionMemory> {
@@ -113,6 +117,12 @@ export class MemoryService {
 
   private validateValue(value: string): void {
     if (value.length > 5000) throw new MemoryError("INVALID_MEMORY");
+  }
+
+  private validateExpiry(expiresAt: Timestamp | undefined): void {
+    if (expiresAt === undefined) return;
+    const expiry = Date.parse(expiresAt);
+    if (!Number.isFinite(expiry) || expiry <= this.now()) throw new MemoryError("INVALID_MEMORY");
   }
 
   private validateSessionId(sessionId: SessionId): void {
