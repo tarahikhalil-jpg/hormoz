@@ -7,6 +7,14 @@ import type { IntelligenceProvider } from "./contracts/intelligence-provider.js"
 import { MockIntelligenceProvider } from "./mock-intelligence-provider.js";
 import { NAVA_SYSTEM_PROMPT } from "./nava-persona.js";
 
+function containsUnverifiedContactClaims(text: string): boolean {
+  const email = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/iu;
+  const phone = /(?:\\+?\\d[\\d\\s().-]{7,}\\d)/u;
+  const contactClaim = /(?:شماره\\s*(?:تماس|تلفن)|تلفن\\s*(?:پشتیبانی|تماس)?|ایمیل\\s*(?:پشتیبانی|تماس)?|نشانی\\s*(?:دفتر|پشتیبانی)|ساعات?\\s*(?:کاری|پاسخگویی)|تماس\\s*بگیرید|با\\s*ما\\s*تماس)/u;
+  const ticketClaim = /(?:شماره|کد)\\s*تیکت/u;
+  return email.test(text) || phone.test(text) || contactClaim.test(text) || ticketClaim.test(text);
+}
+
 function isLikelyCorruptedPersian(text: string, userMessage: string): boolean {
   const arabicScript = (userMessage.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) ?? []).length;
   const latinScript = (userMessage.match(/[A-Za-z]/g) ?? []).length;
@@ -48,6 +56,23 @@ export class MockIntelligenceEngine implements IntelligenceEngine {
 
     try {
       let content = await this.provider.generate(requestWithSystemPrompt);
+
+      // Hard safety gate: no contact details or ticket claims unless backed by a verified registry.
+      // No such registry is currently wired into Nava, so reject these claims instead of showing fabricated data.
+      if (containsUnverifiedContactClaims(content)) {
+        console.warn("Nava response blocked: unverified contact or ticket information.");
+        return {
+          correlationId: request.correlationId,
+          status: "failed",
+          error: {
+            code: "UNVERIFIED_CONTACT_INFORMATION_BLOCKED",
+            category: "unknown",
+            retryable: false,
+            message: "اطلاعات تماس و کانال پشتیبانی انسانی هنوز به‌صورت رسمی تأیید و ثبت نشده است. نوا نباید شماره تلفن، ایمیل، نشانی یا شماره تیکت حدس بزند؛ لطفاً به اطلاعات تماس تولیدشده در گفتگو اعتماد نکنید.",
+            correlationId: request.correlationId,
+          },
+        };
+      }
 
       // Keep chat latency predictable: do not make a second, slow provider call.
       // If the response fails the Persian guard, report it honestly rather than returning poor or fabricated text.
