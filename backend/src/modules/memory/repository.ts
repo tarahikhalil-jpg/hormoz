@@ -72,6 +72,7 @@ export class InMemoryMemoryRepository implements MemoryRepository {
       key: input.key ?? current.key,
       value: input.value ?? current.value,
       source: input.source ?? current.source,
+      conversationId: input.conversationId ?? current.conversationId,
       updatedAt: new Date().toISOString(),
       expiresAt: input.expiresAt ?? current.expiresAt,
     };
