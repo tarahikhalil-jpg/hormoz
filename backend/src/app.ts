@@ -1,4 +1,6 @@
 import Fastify from "fastify";
+import { Pool } from "pg";
+import { initializeHormozPersistence, PostgresConversationRepository, PostgresMemoryRepository, PostgresSessionRepository, PostgresUserRepository } from "./infrastructure/postgres-repositories.js";
 import fastifyStatic from "@fastify/static";
 import multipart from "@fastify/multipart";
 import fs from "node:fs/promises";
@@ -1889,6 +1891,34 @@ export function buildApp(
       logger: true
     });
 
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  const persistencePool = databaseUrl
+    ? new Pool({
+        connectionString: databaseUrl,
+        ssl: (() => {
+          try {
+            const hostname = new URL(databaseUrl).hostname;
+            return hostname === "localhost" || hostname === "127.0.0.1" ? false : { rejectUnauthorized: false };
+          } catch {
+            throw new Error("DATABASE_URL is not a valid PostgreSQL URL");
+          }
+        })(),
+        max: 5,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000
+      })
+    : null;
+
+  if (persistencePool) {
+    app.addHook("onReady", async () => {
+      await initializeHormozPersistence(persistencePool);
+      app.log.info("Hormoz PostgreSQL repositories initialized");
+    });
+    app.addHook("onClose", async () => {
+      await persistencePool.end();
+    });
+  }
+
   /* ===== PUBLIC FRONTEND CORS ===== */
   const allowedFrontendOrigins = new Set([
     "https://tarahikhalil-jpg.github.io",
@@ -2323,13 +2353,8 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
   const identityService =
     new IdentityService({
-
-      userRepository:
-        new InMemoryUserRepository(),
-
-      sessionRepository:
-        new InMemorySessionRepository()
-
+      userRepository: persistencePool ? new PostgresUserRepository(persistencePool) : new InMemoryUserRepository(),
+      sessionRepository: persistencePool ? new PostgresSessionRepository(persistencePool) : new InMemorySessionRepository()
     });
 
 
@@ -2337,19 +2362,15 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
   const conversationService =
     new ConversationService({
-
-      conversationRepository:
-        new InMemoryConversationRepository(),
-
+      conversationRepository: persistencePool ? new PostgresConversationRepository(persistencePool) : new InMemoryConversationRepository(),
       identityService
-
     });
 
 
   /* ===== MEMORY ===== */
 
   const memoryRepository =
-    new InMemoryMemoryRepository();
+    persistencePool ? new PostgresMemoryRepository(persistencePool) : new InMemoryMemoryRepository();
 
 
   const memoryService =
