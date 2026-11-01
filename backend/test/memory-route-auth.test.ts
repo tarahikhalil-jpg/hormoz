@@ -5,6 +5,7 @@ import { memoryRoutes } from "../src/routes/memory.js";
 import { MemoryService } from "../src/modules/memory/service.js";
 import { InMemoryMemoryRepository } from "../src/modules/memory/repository.js";
 import type { IdentityService } from "../src/modules/identity/identity.service.js";
+import { IdentityError } from "../src/modules/identity/repositories/errors.js";
 
 function makeApp() {
   const memoryService = new MemoryService({
@@ -12,7 +13,7 @@ function makeApp() {
   });
   const identityService = {
     authenticate: async (sessionId: string) => {
-      if (sessionId !== "valid-session") throw new Error("invalid session");
+      if (sessionId !== "valid-session") throw new IdentityError("SESSION_INVALID");
       return {
         kind: "authenticated" as const,
         sessionId,
