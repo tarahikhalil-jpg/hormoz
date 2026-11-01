@@ -1891,7 +1891,14 @@ export function buildApp(
       logger: true
     });
 
-  const databaseUrl = process.env.DATABASE_URL?.trim();
+  const databaseUrl = (() => {
+    let value = process.env.DATABASE_URL?.trim() ?? "";
+    if (/^DATABASE_URL\\s*=/i.test(value)) value = value.replace(/^DATABASE_URL\\s*=\\s*/i, "");
+    if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith('"') && value.endsWith('"'))) {
+      value = value.slice(1, -1).trim();
+    }
+    return value;
+  })();
   const persistencePool = databaseUrl
     ? new Pool({
         connectionString: databaseUrl,
