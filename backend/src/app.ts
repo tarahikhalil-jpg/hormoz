@@ -2472,29 +2472,16 @@ return reply.type("application/xml; charset=utf-8").send(content);
   app.get(
     "/",
     async (_request, reply) => {
-      // Serve the integrated public page from the active backend instead of redirecting
-      // visitors to the legacy portal deployment.
-      return reply
-        .type("text/html; charset=utf-8")
-        .send(page);
+      // The repository-root index.html is the one canonical public product home.
+      // All feature pages are opened from this page in the in-page module frame.
+      const mainPagePath = path.join(__dirname, "../../index.html");
+      const mainPage = await fs.readFile(mainPagePath, "utf8");
+      return reply.type("text/html; charset=utf-8").send(mainPage);
     }
   );
 
-
-  /* ===== CHAT PAGE ===== */
-
-  app.get(
-    "/chat",
-    async (_request, reply) => {
-
-      return reply
-        .type(
-          "text/html; charset=utf-8"
-        )
-        .send(page);
-
-    }
-  );
+  /* Keep the legacy chat address as an alias to the single canonical home. */
+  app.get("/chat", async (_request, reply) => reply.redirect(302, "/"));
 
 
   /* ===== ADMIN PANEL ===== */
