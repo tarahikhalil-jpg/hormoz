@@ -1914,7 +1914,7 @@ export function buildApp(
           port: parsed.port ? Number(parsed.port) : 5432,
           user: decodeURIComponent(parsed.username),
           password: decodeURIComponent(parsed.password),
-          database: decodeURIComponent(parsed.pathname.replace(/^\\/+/, "")),
+          database: decodeURIComponent(parsed.pathname.replace(/^\/+/, "")),
           ssl: localHost ? false : { rejectUnauthorized: false },
           max: 5,
           idleTimeoutMillis: 30000,
