@@ -1,17 +1,18 @@
 {
+  "id": "https://hormoz-portal-public-777.onrender.com/",
   "name": "هوش هرمز",
   "short_name": "هرمز",
-  "description": "نوا، دستیار هوشمند هرمز",
-  "start_url": "./",
-  "scope": "./",
+  "description": "درگاه یکپارچه نوا برای راهنمایی، خدمات و پیگیری درخواست‌ها",
+  "start_url": "https://hormoz-portal-public-777.onrender.com/",
+  "scope": "https://hormoz-portal-public-777.onrender.com/",
   "display": "standalone",
-  "background_color": "#07141d",
-  "theme_color": "#111827",
+  "background_color": "#061725",
+  "theme_color": "#082f49",
   "lang": "fa",
   "dir": "rtl",
   "icons": [
     {
-      "src": "./hormoz-icon.svg",
+      "src": "https://hormoz-portal-public-777.onrender.com/hormoz-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
