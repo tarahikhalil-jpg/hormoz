@@ -2257,12 +2257,12 @@ return reply.type("application/xml; charset=utf-8").send(content);
           }
         }
       } catch (error) {
-        request.log.warn({ err: error }, "Could not discover a free female Persian TTS voice; preserving the working fallback");
+        request.log.warn({ err: error }, "Could not discover a free female Persian TTS voice; no unverified voice fallback will be used");
       }
 
-      // Free anonymous TTS.ai fallback; no API key required.
-      // Female Persian voices are tried first when the provider advertises one.
-      // Otherwise preserve the known-working male voice rather than risk breaking speech.
+      // Free TTS.ai fallback; no API key required.
+      // Only provider voices explicitly identified as female and Persian are eligible.
+      // If none are available, return 503 rather than silently using an unknown or male voice.
       const freeTtsVoices: Array<{ voice: string; model: string }> = [
         // Only use voices explicitly advertised as female; never silently switch Nava back to a male voice.
         ...discoveredFemaleVoices.map((item) => ({ voice: item.id!, model: item.model! }))
