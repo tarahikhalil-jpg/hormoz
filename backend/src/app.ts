@@ -1902,14 +1902,12 @@ export function buildApp(
   const persistencePool = databaseUrl
     ? new Pool({
         connectionString: databaseUrl,
-        ssl: (() => {
-          try {
-            const hostname = new URL(databaseUrl).hostname;
-            return hostname === "localhost" || hostname === "127.0.0.1" ? false : { rejectUnauthorized: false };
-          } catch {
-            throw new Error("DATABASE_URL is not a valid PostgreSQL URL");
-          }
-        })(),
+        // PostgreSQL connection strings can contain credentials that the WHATWG URL
+        // parser rejects even when node-postgres can parse them. Decide SSL only from
+        // the local-host prefix and let pg validate the actual connection string.
+        ssl: /^postgres(?:ql)?:\\/\\/(?:[^@/]+@)?(?:localhost|127\\.0\\.0\\.1)(?::|\\/|$)/i.test(databaseUrl)
+          ? false
+          : { rejectUnauthorized: false },
         max: 5,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000
