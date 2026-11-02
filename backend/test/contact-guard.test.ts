@@ -34,6 +34,17 @@ test("blocks contact and ticket claims even without a number", () => {
   );
 });
 
+test("blocks invented support-team availability and ticket workflows", () => {
+  assert.equal(
+    containsUnverifiedContactClaims("تیم پشتیبانی ما آماده پاسخگویی است."),
+    true,
+  );
+  assert.equal(
+    containsUnverifiedContactClaims("در سامانه تیکت درخواست شما ثبت شد."),
+    true,
+  );
+});
+
 test("allows ordinary answers that contain no contact claims", () => {
   assert.equal(
     containsUnverifiedContactClaims("من نوا هستم و می‌توانم درباره خدمات هرمز راهنمایی کنم."),
