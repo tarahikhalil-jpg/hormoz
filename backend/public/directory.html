@@ -170,25 +170,5 @@ document.getElementById("clearSearch").addEventListener("click",()=>{search.valu
 const directoryParams=new URLSearchParams(location.search);const initialQuery=directoryParams.get("q");if(initialQuery)search.value=initialQuery;const initialLocation=directoryParams.get("location");if(initialLocation)locationFilter.value=initialLocation;
 fetch("/api/v1/providers",{headers:{Accept:"application/json"}}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.message||"فهرست خدمات در دسترس نیست.");providers=Array.isArray(d.providers)?d.providers:[];render();}).catch(e=>{state.style.display="block";state.textContent="فهرست خدمات اکنون از سرور دریافت نشد. "+(e.message||"لطفاً بعداً دوباره تلاش کنید.");});
 </script>
-<script id="hormoz-embedded-home-navigation">
-(()=> {
-  const embedded=new URLSearchParams(location.search).get("embedded")==="1";
-  if(!embedded||window.top===window.self)return;
-  const backend="https://hormoz-ai-backend-777.onrender.com";
-  const publicHome="https://hormoz-portal-public-777.onrender.com/";
-  document.addEventListener("click",event=>{
-    const link=event.target.closest("a[href]");
-    if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||link.target==="_blank"||link.hasAttribute("download"))return;
-    let target;try{target=new URL(link.href,location.href)}catch{return}
-    const label=(link.textContent||link.getAttribute("aria-label")||"بخش داخلی").trim().replace(/\s+/g," ").slice(0,70);
-    if((target.origin===backend||target.origin==="https://hormoz-portal-public-777.onrender.com")&&(target.pathname==="/"||target.pathname==="/index.html")){
-      event.preventDefault();window.top.location.assign(publicHome);return;
-    }
-    if(target.origin===backend&&/\.html?$/i.test(target.pathname)){
-      event.preventDefault();
-      window.parent.postMessage({type:"hormoz:navigate",url:target.href,label},backend);
-    }
-  },true);
-})();
-</script>
+<script id="hormoz-embedded-home-navigation">(()=>{const embedded=new URLSearchParams(location.search).get("embedded")==="1";if(!embedded||window.top===window.self)return;const backend="https://hormoz-ai-backend-777.onrender.com";const publicHome="https://hormoz-portal-public-777.onrender.com/";document.addEventListener("click",event=>{const link=event.target.closest("a[href]");if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||link.target==="_blank"||link.hasAttribute("download"))return;let target;try{target=new URL(link.href,location.href)}catch{return}const label=(link.textContent||link.getAttribute("aria-label")||"بخش داخلی").trim().replace(/\s+/g," ").slice(0,70);if((target.origin===backend||target.origin==="https://hormoz-portal-public-777.onrender.com")&&(target.pathname==="/"||target.pathname==="/index.html")){event.preventDefault();window.top.location.assign(publicHome);return}if(target.origin===backend&&/\.html?$/i.test(target.pathname)){event.preventDefault();window.parent.postMessage({type:"hormoz:navigate",url:target.href,label},backend)}},true)})();</script>
 </body></html>
