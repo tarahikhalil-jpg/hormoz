@@ -1899,22 +1899,28 @@ export function buildApp(
     }
     return value;
   })();
+  // Parse the PostgreSQL URL ourselves and pass discrete connection fields to pg.
+  // This avoids pg-connection-string misreading Neon URLs with channel_binding/sslmode
+  // query parameters (seen in production as the invalid DNS host "base").
   const persistencePool = databaseUrl
-    ? new Pool({
-        connectionString: databaseUrl,
-        // PostgreSQL connection strings can contain credentials that the WHATWG URL
-        // parser rejects even when node-postgres can parse them. Decide SSL only from
-        // the local-host prefix and let pg validate the actual connection string.
-        ssl: databaseUrl.startsWith("postgres://localhost") ||
-          databaseUrl.startsWith("postgresql://localhost") ||
-          databaseUrl.startsWith("postgres://127.0.0.1") ||
-          databaseUrl.startsWith("postgresql://127.0.0.1")
-          ? false
-          : { rejectUnauthorized: false },
-        max: 5,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000
-      })
+    ? (() => {
+        const parsed = new URL(databaseUrl);
+        if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+          throw new Error("DATABASE_URL must use postgres:// or postgresql://");
+        }
+        const localHost = ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname);
+        return new Pool({
+          host: parsed.hostname,
+          port: parsed.port ? Number(parsed.port) : 5432,
+          user: decodeURIComponent(parsed.username),
+          password: decodeURIComponent(parsed.password),
+          database: decodeURIComponent(parsed.pathname.replace(/^\\/+/, "")),
+          ssl: localHost ? false : { rejectUnauthorized: false },
+          max: 5,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 10000
+        });
+      })()
     : null;
 
   if (persistencePool) {
