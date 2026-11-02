@@ -41,5 +41,7 @@ document.getElementById("copyEmail").addEventListener("click", async () => {
  }
 });
 </script>
+
+<script id="hormoz-embedded-home-navigation">(()=>{const embedded=new URLSearchParams(location.search).get("embedded")==="1";if(!embedded||window.top===window.self)return;const publicHome="https://hormoz-portal-public-777.onrender.com/";document.addEventListener("click",event=>{const link=event.target.closest("a[href]");if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||link.target==="_blank"||link.hasAttribute("download"))return;let target;try{target=new URL(link.href,location.href)}catch{return}const isBackendHome=target.origin==="https://hormoz-ai-backend-777.onrender.com"&&(target.pathname==="/"||target.pathname==="/index.html");const isPublicHome=target.origin==="https://hormoz-portal-public-777.onrender.com"&&(target.pathname==="/"||target.pathname==="/index.html");if(isBackendHome||isPublicHome){event.preventDefault();window.top.location.assign(publicHome)}},true)})();</script>
 </body>
 </html>
