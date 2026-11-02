@@ -2482,7 +2482,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
   );
 
   /* Keep the legacy chat address as an alias to the single canonical home. */
-  app.get("/chat", async (_request, reply) => reply.redirect(302, "/"));
+  app.get("/chat", async (_request, reply) => reply.redirect("/"));
 
 
   /* ===== ADMIN PANEL ===== */
