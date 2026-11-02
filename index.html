@@ -791,5 +791,63 @@ body>header .nav a.active{
   body>header .nav a{font-size:14px!important;min-height:42px!important;padding:7px 12px!important}
 }
 </style>
-\n<style id="hormoz-one-route-per-card">\n/* هر کارت فقط یک مسیر؛ دکمه در تمام عرض کارت */\n#portal .portal-card{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0}\n#portal .portal-card .icon{align-self:flex-start}\n#portal .portal-card p{flex:1;margin:0 0 8px}\n#portal .portal-card>a.btn{display:flex;width:100%;min-height:48px;align-items:center;justify-content:center;margin:0;text-align:center;white-space:normal}\n</style>\n</body>
+\n<style id="hormoz-one-route-per-card">\n/* هر کارت فقط یک مسیر؛ دکمه در تمام عرض کارت */\n#portal .portal-card{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0}\n#portal .portal-card .icon{align-self:flex-start}\n#portal .portal-card p{flex:1;margin:0 0 8px}\n#portal .portal-card>a.btn{display:flex;width:100%;min-height:48px;align-items:center;justify-content:center;margin:0;text-align:center;white-space:normal}\n</style>\n
+<div id="hormoz-module-shell" role="dialog" aria-modal="true" aria-label="بخش داخلی هوش هرمز">
+  <div id="hormoz-module-card">
+    <div id="hormoz-module-toolbar">
+      <strong id="hormoz-module-title">بخش هوش هرمز</strong>
+      <button id="hormoz-module-close" type="button" aria-label="بازگشت به صفحه اصلی">بازگشت به صفحه اصلی ✕</button>
+    </div>
+    <iframe id="hormoz-module-frame" title="بخش داخلی هوش هرمز" loading="eager" allow="microphone; autoplay; clipboard-read; clipboard-write"></iframe>
+  </div>
+</div>
+<script id="hormoz-single-page-router">
+(()=> {
+  const BACKEND_ORIGIN="https://hormoz-ai-backend-777.onrender.com";
+  const shell=document.getElementById("hormoz-module-shell");
+  const frame=document.getElementById("hormoz-module-frame");
+  const title=document.getElementById("hormoz-module-title");
+  const close=document.getElementById("hormoz-module-close");
+  if(!shell||!frame||!close)return;
+  let previousFocus=null;
+  const openModule=(url,label)=>{
+    previousFocus=document.activeElement;
+    const target=new URL(url,location.href);
+    target.searchParams.set("embedded","1");
+    title.textContent=label||"بخش داخلی هوش هرمز";
+    frame.src=target.href;
+    shell.classList.add("open");
+    document.body.classList.add("hormoz-module-open");
+    close.focus();
+    history.pushState({hormozModule:true},"","#بخش-"+encodeURIComponent(label||"داخلی"));
+  };
+  const closeModule=()=>{
+    shell.classList.remove("open");
+    document.body.classList.remove("hormoz-module-open");
+    frame.src="about:blank";
+    if(location.hash.startsWith("#بخش-"))history.replaceState(null,"",location.pathname+location.search);
+    if(previousFocus&&previousFocus.focus)previousFocus.focus();
+  };
+  document.addEventListener("click",event=>{
+    const link=event.target.closest("a[href]");
+    if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||link.target==="_blank"||link.hasAttribute("download"))return;
+    let target;
+    try{target=new URL(link.href,location.href)}catch{return}
+    const isBackend=target.origin===BACKEND_ORIGIN;
+    const isLocalModule=target.origin===location.origin&&target.pathname!=="/"&&/\.(html?)$/i.test(target.pathname);
+    if(!isBackend&&!isLocalModule)return;
+    if(target.pathname==="/"||target.pathname==="/index.html")return;
+    event.preventDefault();
+    const label=(link.textContent||link.getAttribute("aria-label")||"بخش داخلی").trim().replace(/\s+/g," ").slice(0,70);
+    openModule(target.href,label);
+  });
+  close.addEventListener("click",closeModule);
+  shell.addEventListener("click",event=>{if(event.target===shell)closeModule()});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&shell.classList.contains("open"))closeModule()});
+  addEventListener("popstate",()=>{if(shell.classList.contains("open"))closeModule()});
+  if(location.hash.startsWith("#بخش-"))history.replaceState(null,"",location.pathname+location.search);
+})();
+</script>
+
+</body>
 </html>
