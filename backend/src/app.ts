@@ -1905,7 +1905,10 @@ export function buildApp(
         // PostgreSQL connection strings can contain credentials that the WHATWG URL
         // parser rejects even when node-postgres can parse them. Decide SSL only from
         // the local-host prefix and let pg validate the actual connection string.
-        ssl: /^postgres(?:ql)?:\\/\\/(?:[^@/]+@)?(?:localhost|127\\.0\\.0\\.1)(?::|\\/|$)/i.test(databaseUrl)
+        ssl: databaseUrl.startsWith("postgres://localhost") ||
+          databaseUrl.startsWith("postgresql://localhost") ||
+          databaseUrl.startsWith("postgres://127.0.0.1") ||
+          databaseUrl.startsWith("postgresql://127.0.0.1")
           ? false
           : { rejectUnauthorized: false },
         max: 5,
