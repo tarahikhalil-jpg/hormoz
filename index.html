@@ -867,6 +867,14 @@ body>header .nav a.active{
     const label=(link.textContent||link.getAttribute("aria-label")||"بخش داخلی").trim().replace(/\s+/g," ").slice(0,70);
     openModule(target.href,label);
   });
+  window.addEventListener("message",event=>{
+    if(event.origin!==BACKEND_ORIGIN||event.source!==frame.contentWindow)return;
+    const data=event.data;
+    if(!data||data.type!=="hormoz:navigate"||typeof data.url!=="string")return;
+    let target;try{target=new URL(data.url)}catch{return}
+    if(target.origin!==BACKEND_ORIGIN||!/^\\/[^?#]*\\.html?$/i.test(target.pathname))return;
+    openModule(target.href,typeof data.label==="string"?data.label:"بخش داخلی هوش هرمز");
+  });
   close.addEventListener("click",closeModule);
   shell.addEventListener("click",event=>{if(event.target===shell)closeModule()});
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&shell.classList.contains("open"))closeModule()});
