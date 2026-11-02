@@ -43,6 +43,10 @@ test("blocks invented support-team availability and ticket workflows", () => {
     containsUnverifiedContactClaims("در سامانه تیکت درخواست شما ثبت شد."),
     true,
   );
+  assert.equal(
+    containsUnverifiedContactClaims("کارشناسان پشتیبانی ما در دسترس هستند."),
+    true,
+  );
 });
 
 test("allows ordinary answers that contain no contact claims", () => {
