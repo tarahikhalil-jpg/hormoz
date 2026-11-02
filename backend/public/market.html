@@ -48,4 +48,20 @@ async function imageAsDataUrl(file){if(!file)return "";if(file.type&&!file.type.
 $("adForm").onsubmit=async e=>{e.preventDefault();const b=$("publishBtn");b.disabled=true;b.textContent="در حال ثبت…";try{$("managerStatus").textContent="در حال آماده‌سازی عکس و ثبت آگهی…";const imageData=await imageAsDataUrl($("photo").files[0]);$("managerStatus").textContent="در حال ارسال اطلاعات به سرور…";const d=await api("/api/v1/admin/market/ads",{method:"POST",body:JSON.stringify({title:$("title").value,description:$("description").value,priceToman:Number($("price").value),priceUnit:$("unit").value,contact:$("contact").value,imageData})});$("managerStatus").textContent=d.message+" شناسه: "+d.id+"؛ آگهی ثبت شد.";$("photo").value="";loadAds()}catch(e){$("managerStatus").textContent=e.message}finally{b.disabled=false;b.textContent="ثبت و انتشار آگهی"}};
 window.removeAd=async id=>{if(!confirm("این آگهی از ویترین عمومی برداشته شود؟"))return;try{const d=await api("/api/v1/admin/market/ads/"+encodeURIComponent(id),{method:"DELETE"});$("managerStatus").textContent=d.message;loadAds()}catch(e){$("managerStatus").textContent=e.message}};
 if(token){$("adForm").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("loginBtn").classList.add("hidden")}loadAds();
-</script></body></html>
+</script>
+<script id="hormoz-embedded-home-navigation">
+(()=>{
+  const embedded=new URLSearchParams(location.search).get("embedded")==="1";
+  if(!embedded||window.top===window.self)return;
+  const publicHome="https://hormoz-portal-public-777.onrender.com/";
+  document.addEventListener("click",event=>{
+    const link=event.target.closest("a[href]");
+    if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||link.target==="_blank"||link.hasAttribute("download"))return;
+    let target;try{target=new URL(link.href,location.href)}catch{return}
+    const isBackendHome=target.origin==="https://hormoz-ai-backend-777.onrender.com"&&(target.pathname==="/"||target.pathname==="/index.html");
+    const isPublicHome=target.origin==="https://hormoz-portal-public-777.onrender.com"&&(target.pathname==="/"||target.pathname==="/index.html");
+    if(isBackendHome||isPublicHome){event.preventDefault();window.top.location.assign(publicHome)}
+  },true);
+})();
+</script>
+</body></html>
