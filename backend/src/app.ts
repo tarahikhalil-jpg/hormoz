@@ -1893,7 +1893,8 @@ export function buildApp(
 
   const databaseUrl = (() => {
     let value = process.env.DATABASE_URL?.trim() ?? "";
-    if (/^DATABASE_URL\\s*=/i.test(value)) value = value.replace(/^DATABASE_URL\\s*=\\s*/i, "");
+    // Render may store the variable as a dotenv assignment wrapped in quotes.
+    value = value.replace(/^DATABASE_URL\s*=\s*/i, "");
     if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith('"') && value.endsWith('"'))) {
       value = value.slice(1, -1).trim();
     }
