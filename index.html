@@ -835,14 +835,24 @@ body>header .nav a.active{
     shell.classList.add("open");
     document.body.classList.add("hormoz-module-open");
     close.focus();
-    history.pushState({hormozModule:true},"","#بخش-"+encodeURIComponent(label||"داخلی"));
+    history.pushState({hormozModule:true,url:target.href,label:label||"بخش داخلی هوش هرمز"},"","#بخش-"+encodeURIComponent(label||"داخلی"));
+  };
+  const showModuleFromHistory=(state)=>{
+    if(!state||!state.hormozModule||!state.url){
+      shell.classList.remove("open");
+      document.body.classList.remove("hormoz-module-open");
+      frame.src="about:blank";
+      if(previousFocus&&previousFocus.focus)previousFocus.focus();
+      return;
+    }
+    title.textContent=state.label||"بخش داخلی هوش هرمز";
+    frame.src=state.url;
+    shell.classList.add("open");
+    document.body.classList.add("hormoz-module-open");
   };
   const closeModule=()=>{
-    shell.classList.remove("open");
-    document.body.classList.remove("hormoz-module-open");
-    frame.src="about:blank";
-    if(location.hash.startsWith("#بخش-"))history.replaceState(null,"",location.pathname+location.search);
-    if(previousFocus&&previousFocus.focus)previousFocus.focus();
+    if(history.state&&history.state.hormozModule){history.back();return;}
+    showModuleFromHistory(null);
   };
   document.addEventListener("click",event=>{
     const link=event.target.closest("a[href]");
@@ -860,7 +870,7 @@ body>header .nav a.active{
   close.addEventListener("click",closeModule);
   shell.addEventListener("click",event=>{if(event.target===shell)closeModule()});
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&shell.classList.contains("open"))closeModule()});
-  addEventListener("popstate",()=>{if(shell.classList.contains("open"))closeModule()});
+  addEventListener("popstate",event=>showModuleFromHistory(event.state));
   if(location.hash.startsWith("#بخش-"))history.replaceState(null,"",location.pathname+location.search);
 })();
 </script>
