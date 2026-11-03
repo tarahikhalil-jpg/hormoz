@@ -106,11 +106,12 @@ export class OpenRouterIntelligenceProvider
           choice?.finish_reason ??
           "unknown";
 
-        // Do not spend another full provider round-trip just because the first answer
-        // reached its token budget. Return the available answer promptly; reserve retries
-        // for transient network/provider failures.
+        // Never show a cut-off answer as if it were complete. Token-budget
+        // truncation can omit critical context and produce misleading output.
+        // Fail honestly instead of returning a partial response or spending another request.
         if (finishReason === "length") {
-          console.warn("OpenRouter answer reached its token budget; returning the available answer to avoid a slow second call.");
+          retryableError = false;
+          throw new Error("OpenRouter response was truncated by its token limit");
         }
 
         if (
