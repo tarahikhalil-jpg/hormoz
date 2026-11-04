@@ -657,7 +657,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     const id=String((request.params as {id?:string}).id??""), b=(request.body??{}) as Record<string,unknown>;
     const status=String(b.status??""), pub=String(b.publicNote??"").trim().slice(0,1200), note=String(b.adminNote??"").trim().slice(0,2000);
     if(!id||!["screening","needs_information","approved","rejected","connected"].includes(status))return reply.code(400).send({message:"وضعیت معتبر نیست."});
-    if(status==="connected"&&b.authorizationConfirmed!==true)return reply.code(400).send({message:"فعال‌سازی اتصال فقط پس از تأیید مجوز رسمی سازمان ممکن است."});
+    if(status==="connected"&&(b.authorizationConfirmed!==true||note.length<8))return reply.code(400).send({message:"برای فعال‌سازی اتصال، تأیید مجوز رسمی و درج شماره/مرجع مستند مجوز در یادداشت داخلی مدیر الزامی است."});
     try{await ensureTable();const q=await db.query("UPDATE hormoz_organization_connections SET status=$2,public_note=$3,admin_note=$4,updated_at=NOW() WHERE id=$1 RETURNING reference_number,status",[id,status,pub,note]);if(!q.rows.length)return reply.code(404).send({message:"پرونده پیدا نشد."});return {ok:true,connection:q.rows[0]};}
     catch(error){request.log.error(error);return reply.code(503).send({message:"به‌روزرسانی پرونده ناموفق بود."});}
   });
