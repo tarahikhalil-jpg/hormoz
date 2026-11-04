@@ -53,20 +53,30 @@ function normalizeDatabaseUrl(value: string | undefined): string | null {
 
 const databaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
 
-const databaseHostname = (() => {
+const parsedDatabaseUrl = (() => {
   try {
-    return databaseUrl ? new URL(databaseUrl).hostname : "";
+    const parsed = databaseUrl ? new URL(databaseUrl) : null;
+    return parsed && ["postgres:", "postgresql:"].includes(parsed.protocol) ? parsed : null;
   } catch {
-    return "";
+    return null;
   }
 })();
-const isLocalDatabase = databaseHostname === "localhost" || databaseHostname === "127.0.0.1";
+const databaseHostname = parsedDatabaseUrl?.hostname ?? "";
+const isLocalDatabase = ["localhost", "127.0.0.1", "::1"].includes(databaseHostname);
 
-const db = databaseUrl
+// Pass discrete connection fields to pg. This avoids URL parser ambiguity
+// with Neon query parameters such as channel_binding=require (which can
+// otherwise be misread as the DNS hostname "base").
+const db = parsedDatabaseUrl
   ? new Pool({
-      connectionString: databaseUrl,
+      host: databaseHostname,
+      port: parsedDatabaseUrl.port ? Number(parsedDatabaseUrl.port) : 5432,
+      user: decodeURIComponent(parsedDatabaseUrl.username),
+      password: decodeURIComponent(parsedDatabaseUrl.password),
+      database: decodeURIComponent(parsedDatabaseUrl.pathname.replace(/^\\/+/, "")),
       ssl: isLocalDatabase ? false : { rejectUnauthorized: false },
-      max: 3
+      max: 3,
+      connectionTimeoutMillis: 10000
     })
   : null;
 
