@@ -90,7 +90,7 @@ jobs:
             }
             return "AI returned a non-empty answer";
           });
-          await check("Persian online TTS (female preferred, male fallback accepted)", async () => {
+          await check("Female-only Persian Nava TTS (audio or explicit unavailable; no male fallback)", async () => {
             const r = await fetch(base + "/api/v1/tts", {
               method: "POST",
               headers: { "Content-Type": "application/json", "Accept": "audio/*" },
@@ -99,11 +99,17 @@ jobs:
             });
             const bytes = await r.arrayBuffer();
             const type = r.headers.get("content-type") || "";
+            if (r.status === 503 && type.toLowerCase().includes("json")) {
+              const data = JSON.parse(new TextDecoder().decode(bytes));
+              if (typeof data.error === "string" && data.error.includes("صدای فارسی نوا")) {
+                return "no verified female provider available; explicit 503 returned instead of male fallback";
+              }
+            }
             if (!r.ok || !type.toLowerCase().includes("audio") || bytes.byteLength < 1000) {
               const detail = type.includes("json") ? new TextDecoder().decode(bytes).slice(0,220) : type;
               throw new Error("HTTP " + r.status + ", type=" + type + ", bytes=" + bytes.byteLength + ", " + detail);
             }
-            return "audio response received (" + bytes.byteLength + " bytes)";
+            return "female-provider audio response received (" + bytes.byteLength + " bytes)";
           });
           await check("Invalid order is rejected safely", async () => {
             const r = await fetch(base + "/api/v1/global-orders", {
