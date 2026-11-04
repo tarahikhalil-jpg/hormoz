@@ -15,8 +15,8 @@ export class OpenRouterIntelligenceProvider
       throw new Error("OpenRouter configuration is incomplete");
     }
 
-    // Never burn a second free-tier request after quota exhaustion or a slow timeout.
-    // One retry remains available only for transient network/5xx failures.
+    // Avoid extra free-tier requests after quota exhaustion or a slow timeout.
+    // Retry only transient network/5xx failures.
     const maxAttempts = 2;
     let lastError: Error | undefined;
 
@@ -41,9 +41,9 @@ export class OpenRouterIntelligenceProvider
             body: JSON.stringify({
               model,
               messages: request.messages,
-              // Some OpenRouter models spend part of the completion budget on internal reasoning.
-              // Give the first response enough room, with one larger retry if no final answer is returned.
-              max_tokens: attempt === 1 ? 800 : 1200,
+              // The previous 800-token ceiling was truncating ordinary Nava replies.
+              // Increase output room without adding another request on truncation.
+              max_tokens: attempt === 1 ? 1600 : 2000,
             }),
           },
         );
@@ -106,9 +106,7 @@ export class OpenRouterIntelligenceProvider
           choice?.finish_reason ??
           "unknown";
 
-        // Never show a cut-off answer as if it were complete. Token-budget
-        // truncation can omit critical context and produce misleading output.
-        // Fail honestly instead of returning a partial response or spending another request.
+        // Never show a cut-off answer as if it were complete.
         if (finishReason === "length") {
           retryableError = false;
           throw new Error("OpenRouter response was truncated by its token limit");
