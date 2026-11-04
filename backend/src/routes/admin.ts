@@ -73,7 +73,7 @@ const db = parsedDatabaseUrl
       port: parsedDatabaseUrl.port ? Number(parsedDatabaseUrl.port) : 5432,
       user: decodeURIComponent(parsedDatabaseUrl.username),
       password: decodeURIComponent(parsedDatabaseUrl.password),
-      database: decodeURIComponent(parsedDatabaseUrl.pathname.replace(/^\\/+/, "")),
+      database: decodeURIComponent(parsedDatabaseUrl.pathname.replace(/^\/+/, "")),
       ssl: isLocalDatabase ? false : { rejectUnauthorized: false },
       max: 3,
       connectionTimeoutMillis: 10000
