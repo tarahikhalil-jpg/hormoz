@@ -123,6 +123,17 @@ async function ensureTable() {
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_global_members_status_idx ON hormoz_global_members (status, created_at DESC)");
   await db.query("CREATE TABLE IF NOT EXISTS hormoz_feedback (id TEXT PRIMARY KEY, tracking_token TEXT NOT NULL UNIQUE, category TEXT NOT NULL, subject TEXT NOT NULL DEFAULT '', message TEXT NOT NULL, customer_label TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'received', staff_note TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_feedback_created_idx ON hormoz_feedback (created_at DESC)");
+  await db.query(`CREATE TABLE IF NOT EXISTS hormoz_organization_connections (
+    id TEXT PRIMARY KEY, reference_number TEXT NOT NULL UNIQUE, tracking_token TEXT NOT NULL UNIQUE,
+    organization_type TEXT NOT NULL, organization_name TEXT NOT NULL, country TEXT NOT NULL DEFAULT '',
+    region TEXT NOT NULL DEFAULT '', website TEXT NOT NULL DEFAULT '', official_email TEXT NOT NULL DEFAULT '',
+    representative_name TEXT NOT NULL, representative_title TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL,
+    services_description TEXT NOT NULL, integration_type TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'received',
+    public_note TEXT NOT NULL DEFAULT '', admin_note TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await db.query("CREATE INDEX IF NOT EXISTS hormoz_org_connections_created_idx ON hormoz_organization_connections (created_at DESC)");
+  await db.query("CREATE INDEX IF NOT EXISTS hormoz_org_connections_status_idx ON hormoz_organization_connections (status, created_at DESC)");
   tableReady = true;
 }
 
@@ -566,4 +577,72 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(503).send({ message: "ثبت فاکتور ناموفق بود." });
     }
   });
+  // Organization connection intake: no API/data exchange is enabled automatically.
+  app.post("/api/v1/organization-connections", async (request, reply) => {
+    const ipKey = "org-connection:" + String(request.ip ?? "unknown");
+    if (isOrderCreationLimited(ipKey)) return reply.code(429).send({ ok:false, message:"تعداد درخواست‌ها زیاد است؛ ۱۰ دقیقه دیگر تلاش کنید." });
+    noteOrderCreationAttempt(ipKey);
+    if (!db) return reply.code(503).send({ ok:false, message:"ذخیره‌سازی درخواست فعلاً در دسترس نیست؛ چیزی ثبت نشده است." });
+    const b = (request.body ?? {}) as Record<string, unknown>;
+    const types = new Set(["ministry","provincial","municipality","public_agency","bank_finance","insurance","judicial_registry","e_services","education","healthcare","telecom_utility","charity","private_company","business","international","other"]);
+    const methods = new Set(["public_link","service_referral","human_workflow","api_proposal","portal_panel","consultation"]);
+    const type=String(b.organizationType??""), name=String(b.organizationName??"").trim().slice(0,180);
+    const country=String(b.country??"").trim().slice(0,100), region=String(b.region??"").trim().slice(0,120);
+    const website=String(b.website??"").trim().slice(0,240), email=String(b.officialEmail??"").trim().slice(0,180);
+    const rep=String(b.representativeName??"").trim().slice(0,120), title=String(b.representativeTitle??"").trim().slice(0,120);
+    const contact=String(b.contact??"").trim().slice(0,180), details=String(b.servicesDescription??"").trim().slice(0,4000);
+    const method=String(b.integrationType??"");
+    if(!types.has(type)||!name||!rep||!contact||details.length<10||!methods.has(method)||b.consent!==true)
+      return reply.code(400).send({ok:false,message:"نوع و نام مجموعه، نماینده، راه تماس، شرح خدمات، روش همکاری و رضایت الزامی است."});
+    if(website){try{const u=new URL(website);if(!["http:","https:"].includes(u.protocol))throw new Error();}catch{return reply.code(400).send({ok:false,message:"نشانی وب‌سایت معتبر نیست."});}}
+    if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return reply.code(400).send({ok:false,message:"ایمیل رسمی معتبر نیست."});
+    const id=crypto.randomBytes(12).toString("hex").toUpperCase();
+    const ref="HZ-ORG-"+new Date().toISOString().slice(0,10).replaceAll("-","")+"-"+id.slice(0,8);
+    const token=crypto.randomBytes(24).toString("base64url");
+    try{
+      await ensureTable();
+      await db.query(`INSERT INTO hormoz_organization_connections
+      (id,reference_number,tracking_token,organization_type,organization_name,country,region,website,official_email,representative_name,representative_title,contact,services_description,integration_type)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [id,ref,token,type,name,country,region,website,email,rep,title,contact,details,method]);
+      return reply.code(201).send({ok:true,referenceNumber:ref,trackingCode:token,status:"received",message:"درخواست ثبت شد. این ثبت به معنی تأیید هویت یا اتصال فنی نیست؛ نتیجه با کد رهگیری قابل پیگیری است."});
+    }catch(error){request.log.error(error);return reply.code(503).send({ok:false,message:"ثبت درخواست انجام نشد؛ بعداً دوباره تلاش کنید."});}
+  });
+
+  app.get("/api/v1/organization-connections/track/:token", async (request,reply)=>{
+    reply.header("Cache-Control","no-store");
+    if(!db)return reply.code(503).send({ok:false,message:"پیگیری فعلاً در دسترس نیست."});
+    const token=String((request.params as {token?:string}).token??"");
+    if(!/^[A-Za-z0-9_-]{25,40}$/.test(token))return reply.code(404).send({ok:false,message:"کد رهگیری معتبر نیست."});
+    try{
+      await ensureTable();
+      const q=await db.query("SELECT reference_number,organization_name,status,public_note,created_at,updated_at FROM hormoz_organization_connections WHERE tracking_token=$1 LIMIT 1",[token]);
+      if(!q.rows.length)return reply.code(404).send({ok:false,message:"درخواستی با این کد پیدا نشد."});
+      const x=q.rows[0], labels:Record<string,string>={received:"دریافت شد",screening:"در حال بررسی اولیه",needs_information:"نیازمند تکمیل اطلاعات",approved:"تأیید اولیه",rejected:"تأیید نشد",connected:"اتصال طبق مجوز فعال شد"};
+      return {ok:true,referenceNumber:String(x.reference_number),organizationName:String(x.organization_name),status:String(x.status),statusLabel:labels[String(x.status)]??"در حال بررسی",publicNote:String(x.public_note??""),createdAt:new Date(x.created_at).toISOString(),updatedAt:new Date(x.updated_at).toISOString()};
+    }catch(error){request.log.error(error);return reply.code(503).send({ok:false,message:"پیگیری درخواست ناموفق بود."});}
+  });
+
+  app.get("/api/v1/global-admin/organization-connections",async(request,reply)=>{
+    const session=adminSession(request);
+    if(!session)return reply.code(401).send({message:"ورود مدیر لازم است."});
+    if(session.role!=="owner")return reply.code(403).send({message:"فقط مدیر اصلی مجاز است."});
+    if(!db)return reply.code(503).send({message:"پایگاه داده آماده نیست."});
+    try{await ensureTable();const q=await db.query("SELECT id,reference_number,organization_type,organization_name,country,region,website,official_email,representative_name,representative_title,contact,services_description,integration_type,status,public_note,admin_note,created_at,updated_at FROM hormoz_organization_connections ORDER BY created_at DESC LIMIT 300");return {connections:q.rows};}
+    catch(error){request.log.error(error);return reply.code(503).send({message:"دریافت پرونده‌های سازمانی ناموفق بود."});}
+  });
+
+  app.post("/api/v1/global-admin/organization-connections/:id/review",async(request,reply)=>{
+    const session=adminSession(request);
+    if(!session)return reply.code(401).send({message:"ورود مدیر لازم است."});
+    if(session.role!=="owner")return reply.code(403).send({message:"فقط مدیر اصلی مجاز به بررسی پرونده سازمانی است."});
+    if(!db)return reply.code(503).send({message:"پایگاه داده آماده نیست."});
+    const id=String((request.params as {id?:string}).id??""), b=(request.body??{}) as Record<string,unknown>;
+    const status=String(b.status??""), pub=String(b.publicNote??"").trim().slice(0,1200), note=String(b.adminNote??"").trim().slice(0,2000);
+    if(!id||!["screening","needs_information","approved","rejected","connected"].includes(status))return reply.code(400).send({message:"وضعیت معتبر نیست."});
+    if(status==="connected"&&b.authorizationConfirmed!==true)return reply.code(400).send({message:"فعال‌سازی اتصال فقط پس از تأیید مجوز رسمی سازمان ممکن است."});
+    try{await ensureTable();const q=await db.query("UPDATE hormoz_organization_connections SET status=$2,public_note=$3,admin_note=$4,updated_at=NOW() WHERE id=$1 RETURNING reference_number,status",[id,status,pub,note]);if(!q.rows.length)return reply.code(404).send({message:"پرونده پیدا نشد."});return {ok:true,connection:q.rows[0]};}
+    catch(error){request.log.error(error);return reply.code(503).send({message:"به‌روزرسانی پرونده ناموفق بود."});}
+  });
+
 };
