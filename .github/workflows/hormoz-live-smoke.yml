@@ -40,6 +40,7 @@ jobs:
         run: |
           node <<'NODE'
           const base = "https://hormoz-ai-backend-777.onrender.com";
+          const portal = "https://hormoz-portal-public-777.onrender.com";
           const failures = [];
           async function check(name, fn) {
             try {
@@ -56,6 +57,38 @@ jobs:
             if (!r.ok) throw new Error("HTTP " + r.status + " " + text.slice(0, 180));
             return { r, text };
           }
+          await check("Unified public portal", async () => {
+            const r = await fetch(portal + "/", { signal: AbortSignal.timeout(45000) });
+            const html = await r.text();
+            if (!r.ok || !html.includes('id="hormoz-module-shell"') ||
+                !html.includes('https://hormoz-ai-backend-777.onrender.com') ||
+                !html.includes('hormoz-music%20(1).mp3')) {
+              throw new Error("portal shell/API/music references missing; HTTP " + r.status);
+            }
+            return "main public page serves the unified shell, canonical backend and music player";
+          });
+          for (const path of ["/app.html", "/HormozAI.html"]) {
+            await check("Single-entry alias " + path, async () => {
+              const r = await fetch(portal + path, { signal: AbortSignal.timeout(45000) });
+              const html = await r.text();
+              if (!r.ok || !html.includes("location.replace") ||
+                  !html.includes("https://hormoz-portal-public-777.onrender.com/")) {
+                throw new Error("alias does not redirect to the canonical portal; HTTP " + r.status);
+              }
+              return "redirects to the same canonical public page";
+            });
+          }
+          await check("Shared portal/app music asset", async () => {
+            const r = await fetch(portal + "/hormoz-music%20(1).mp3", {
+              headers: { Range: "bytes=0-2047" }, signal: AbortSignal.timeout(45000)
+            });
+            const bytes = await r.arrayBuffer();
+            const type = r.headers.get("content-type") || "";
+            if (!(r.ok || r.status === 206) || !type.toLowerCase().includes("audio") || bytes.byteLength < 1000) {
+              throw new Error("music asset unavailable: HTTP " + r.status + ", " + type + ", " + bytes.byteLength + " bytes");
+            }
+            return "shared music file is publicly served (" + bytes.byteLength + " bytes checked)";
+          });
           await check("API health", async () => {
             const { text } = await get("/api/v1/health");
             const data = JSON.parse(text);
