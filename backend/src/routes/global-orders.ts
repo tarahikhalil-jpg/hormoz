@@ -25,20 +25,27 @@ function normalizeDatabaseUrl(value: string | undefined): string {
 }
 
 const databaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
-const host = (() => {
+const parsedDatabaseUrl = (() => {
   try {
     const parsed = databaseUrl ? new URL(databaseUrl) : null;
-    if (!parsed || !["postgres:", "postgresql:"].includes(parsed.protocol)) return "";
-    return parsed.hostname;
+    return parsed && ["postgres:", "postgresql:"].includes(parsed.protocol) ? parsed : null;
   } catch {
-    return "";
+    return null;
   }
 })();
-const db = databaseUrl && host
+const host = parsedDatabaseUrl?.hostname ?? "";
+// Use discrete connection fields, matching the primary persistence pool.
+// This avoids pg URL-parser ambiguity with Neon channel_binding query params.
+const db = parsedDatabaseUrl
   ? new Pool({
-      connectionString: databaseUrl,
-      ssl: host === "localhost" || host === "127.0.0.1" ? false : { rejectUnauthorized: false },
-      max: 3
+      host,
+      port: parsedDatabaseUrl.port ? Number(parsedDatabaseUrl.port) : 5432,
+      user: decodeURIComponent(parsedDatabaseUrl.username),
+      password: decodeURIComponent(parsedDatabaseUrl.password),
+      database: decodeURIComponent(parsedDatabaseUrl.pathname.replace(/^\\/+/, "")),
+      ssl: ["localhost", "127.0.0.1", "::1"].includes(host) ? false : { rejectUnauthorized: false },
+      max: 3,
+      connectionTimeoutMillis: 10000
     })
   : null;
 let tableReady = false;
