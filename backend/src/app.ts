@@ -2257,7 +2257,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
           }
         }
       } catch (error) {
-        request.log.warn({ err: error }, "Could not discover a free female Persian TTS voice; preserving the working fallback");
+        request.log.warn({ err: error }, "No verified free female Persian TTS voice was discovered; male fallback is disabled");
       }
 
       // Free anonymous TTS.ai fallback; no API key required.
