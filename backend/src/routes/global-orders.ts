@@ -777,7 +777,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     ], publicCatalog: "GET /api/v1/organization-services", notes: ["کلید API فقط پس از تأیید رسمی و فعال‌سازی سازمان صادر می‌شود.", "کلید را در مرورگر عمومی یا کد سمت کاربر قرار ندهید؛ برای اتصال تولیدی، درخواست‌ها باید از سرور امن سازمان ارسال شوند.", "این API در این مرحله کاتالوگ خدمات را مدیریت می‌کند؛ به پایگاه‌های داده داخلی ادارات دسترسی نمی‌دهد."] };
   });
 
-  app.get("/api/v1/organization-services", async (_request, reply) => {
+  app.get("/api/v1/organization-services", async (request, reply) => {
     if (!db) return reply.code(503).send({ ok: false, message: "فهرست خدمات سازمانی فعلاً در دسترس نیست." });
     try {
       await ensureTable();
