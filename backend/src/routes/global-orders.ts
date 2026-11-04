@@ -134,6 +134,23 @@ async function ensureTable() {
   )`);
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_org_connections_created_idx ON hormoz_organization_connections (created_at DESC)");
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_org_connections_status_idx ON hormoz_organization_connections (status, created_at DESC)");
+  await db.query("ALTER TABLE hormoz_organization_connections ADD COLUMN IF NOT EXISTS api_key_hash TEXT");
+  await db.query("ALTER TABLE hormoz_organization_connections ADD COLUMN IF NOT EXISTS api_key_prefix TEXT NOT NULL DEFAULT ''");
+  await db.query("ALTER TABLE hormoz_organization_connections ADD COLUMN IF NOT EXISTS api_key_created_at TIMESTAMPTZ");
+  await db.query(`CREATE TABLE IF NOT EXISTS hormoz_organization_services (
+    id TEXT PRIMARY KEY,
+    organization_id TEXT NOT NULL REFERENCES hormoz_organization_connections(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'other',
+    description TEXT NOT NULL DEFAULT '',
+    service_url TEXT NOT NULL DEFAULT '',
+    region TEXT NOT NULL DEFAULT '',
+    contact TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','submitted','published','rejected')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await db.query("CREATE INDEX IF NOT EXISTS hormoz_org_services_public_idx ON hormoz_organization_services (status, updated_at DESC)");
   tableReady = true;
 }
 
@@ -643,6 +660,158 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     if(status==="connected"&&b.authorizationConfirmed!==true)return reply.code(400).send({message:"فعال‌سازی اتصال فقط پس از تأیید مجوز رسمی سازمان ممکن است."});
     try{await ensureTable();const q=await db.query("UPDATE hormoz_organization_connections SET status=$2,public_note=$3,admin_note=$4,updated_at=NOW() WHERE id=$1 RETURNING reference_number,status",[id,status,pub,note]);if(!q.rows.length)return reply.code(404).send({message:"پرونده پیدا نشد."});return {ok:true,connection:q.rows[0]};}
     catch(error){request.log.error(error);return reply.code(503).send({message:"به‌روزرسانی پرونده ناموفق بود."});}
+  });
+
+  // Organization API keys are issued only by the Hormoz owner after formal authorization.
+  function organizationApiKey(request: any) {
+    const header = String(request.headers.authorization ?? "");
+    const key = header.startsWith("Bearer ") ? header.slice(7) : "";
+    if (!key || key.length < 40 || key.length > 120) return null;
+    return crypto.createHash("sha256").update(key).digest("hex");
+  }
+
+  async function authorizedOrganization(request: any) {
+    if (!db) return null;
+    const hash = organizationApiKey(request);
+    if (!hash) return null;
+    const result = await db.query(
+      "SELECT id, reference_number, organization_name, organization_type, status, country, region, website, official_email, representative_name, representative_title, contact FROM hormoz_organization_connections WHERE api_key_hash=$1 LIMIT 1",
+      [hash]
+    );
+    const org = result.rows[0];
+    if (!org || org.status !== "connected") return null;
+    return org;
+  }
+
+  app.post("/api/v1/global-admin/organization-connections/:id/api-key", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی مجاز است." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const id = String((request.params as { id?: string }).id ?? "");
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    if (body.authorizationConfirmed !== true) return reply.code(400).send({ message: "تأیید مستند مجوز رسمی برای صدور کلید API الزامی است." });
+    try {
+      await ensureTable();
+      const found = await db.query("SELECT status FROM hormoz_organization_connections WHERE id=$1 LIMIT 1", [id]);
+      if (!found.rows.length) return reply.code(404).send({ message: "پرونده سازمانی پیدا نشد." });
+      if (String(found.rows[0].status) !== "connected") return reply.code(409).send({ message: "ابتدا پرونده را پس از بررسی مجوز رسمی به وضعیت اتصال فعال برسانید." });
+      const apiKey = "hz_org_" + crypto.randomBytes(32).toString("base64url");
+      const hash = crypto.createHash("sha256").update(apiKey).digest("hex");
+      await db.query("UPDATE hormoz_organization_connections SET api_key_hash=$2, api_key_prefix=$3, api_key_created_at=NOW(), updated_at=NOW() WHERE id=$1", [id, hash, apiKey.slice(0, 14)]);
+      return { ok: true, apiKey, prefix: apiKey.slice(0, 14), message: "کلید فقط همین یک بار نمایش داده می‌شود. آن را در محل امن نگهداری کنید؛ در صورت افشا، کلید جدید صادر کنید." };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message: "صدور کلید API ناموفق بود." }); }
+  });
+
+  app.get("/api/v1/organization-portal/me", async (request, reply) => {
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTable();
+      const org = await authorizedOrganization(request);
+      if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نشده است." });
+      return { ok: true, organization: { referenceNumber: org.reference_number, name: org.organization_name, type: org.organization_type, country: org.country, region: org.region, website: org.website, officialEmail: org.official_email, representativeName: org.representative_name, representativeTitle: org.representative_title, contact: org.contact, status: org.status } };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message: "دریافت اطلاعات پنل سازمان ناموفق بود." }); }
+  });
+
+  app.get("/api/v1/organization-portal/services", async (request, reply) => {
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTable();
+      const org = await authorizedOrganization(request);
+      if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نشده است." });
+      const q = await db.query("SELECT id,title,category,description,service_url,region,contact,status,created_at,updated_at FROM hormoz_organization_services WHERE organization_id=$1 ORDER BY created_at DESC", [org.id]);
+      return { ok: true, services: q.rows };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message: "دریافت خدمات سازمان ناموفق بود." }); }
+  });
+
+  app.post("/api/v1/organization-portal/services", async (request, reply) => {
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTable();
+      const org = await authorizedOrganization(request);
+      if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نشده است." });
+      const b = (request.body ?? {}) as Record<string, unknown>;
+      const title = String(b.title ?? "").trim().slice(0, 160);
+      const category = String(b.category ?? "other").trim().slice(0, 60);
+      const description = String(b.description ?? "").trim().slice(0, 2500);
+      const serviceUrl = String(b.serviceUrl ?? "").trim().slice(0, 500);
+      const region = String(b.region ?? "").trim().slice(0, 120);
+      const contact = String(b.contact ?? "").trim().slice(0, 160);
+      if (!title || description.length < 10) return reply.code(400).send({ message: "عنوان و توضیحات کامل خدمت الزامی است." });
+      if (serviceUrl) { try { const u = new URL(serviceUrl); if (!["http:","https:"].includes(u.protocol)) throw new Error(); } catch { return reply.code(400).send({ message: "نشانی خدمت باید http یا https معتبر باشد." }); } }
+      const id = crypto.randomBytes(12).toString("hex");
+      await db.query("INSERT INTO hormoz_organization_services (id,organization_id,title,category,description,service_url,region,contact,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'submitted')", [id, org.id, title, category, description, serviceUrl, region, contact]);
+      return reply.code(201).send({ ok: true, id, status: "submitted", message: "خدمت ثبت شد و پس از بررسی هرمز منتشر می‌شود." });
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message: "ثبت خدمت سازمانی ناموفق بود." }); }
+  });
+
+  app.patch("/api/v1/organization-portal/services/:id", async (request, reply) => {
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTable();
+      const org = await authorizedOrganization(request);
+      if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نشده است." });
+      const id = String((request.params as { id?: string }).id ?? "");
+      const b = (request.body ?? {}) as Record<string, unknown>;
+      const title = String(b.title ?? "").trim().slice(0,160);
+      const category = String(b.category ?? "other").trim().slice(0,60);
+      const description = String(b.description ?? "").trim().slice(0,2500);
+      const serviceUrl = String(b.serviceUrl ?? "").trim().slice(0,500);
+      const region = String(b.region ?? "").trim().slice(0,120);
+      const contact = String(b.contact ?? "").trim().slice(0,160);
+      if (!id || !title || description.length < 10) return reply.code(400).send({ message: "شناسه، عنوان و توضیحات معتبر لازم است." });
+      if (serviceUrl) { try { const u = new URL(serviceUrl); if (!["http:","https:"].includes(u.protocol)) throw new Error(); } catch { return reply.code(400).send({ message: "نشانی خدمت معتبر نیست." }); } }
+      const q = await db.query("UPDATE hormoz_organization_services SET title=$3,category=$4,description=$5,service_url=$6,region=$7,contact=$8,status=CASE WHEN status='published' THEN 'submitted' ELSE status END,updated_at=NOW() WHERE id=$1 AND organization_id=$2 RETURNING id,status", [id,org.id,title,category,description,serviceUrl,region,contact]);
+      if (!q.rows.length) return reply.code(404).send({ message: "خدمت متعلق به این سازمان پیدا نشد." });
+      return { ok: true, service: q.rows[0], message: "تغییرات ذخیره شد؛ نسخه ویرایش‌شده برای بررسی مجدد ارسال شد." };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message: "ویرایش خدمت ناموفق بود." }); }
+  });
+
+  app.get("/api/v1/organization-portal/docs", async (_request, reply) => {
+    reply.header("Cache-Control", "public, max-age=300");
+    return { name: "Hormoz Organization API", version: "1.0", authentication: "Authorization: Bearer hz_org_<secret>", basePath: "/api/v1/organization-portal", endpoints: [
+      { method: "GET", path: "/me", description: "اطلاعات پایه سازمان متصل" },
+      { method: "GET", path: "/services", description: "فهرست خدمات سازمان" },
+      { method: "POST", path: "/services", description: "ثبت خدمت برای بررسی و انتشار" },
+      { method: "PATCH", path: "/services/{id}", description: "ویرایش خدمت؛ ویرایش مجدد به بررسی می‌رود" }
+    ], publicCatalog: "GET /api/v1/organization-services", notes: ["کلید API فقط پس از تأیید رسمی و فعال‌سازی سازمان صادر می‌شود.", "کلید را در مرورگر عمومی یا کد سمت کاربر قرار ندهید؛ برای اتصال تولیدی، درخواست‌ها باید از سرور امن سازمان ارسال شوند.", "این API در این مرحله کاتالوگ خدمات را مدیریت می‌کند؛ به پایگاه‌های داده داخلی ادارات دسترسی نمی‌دهد."] };
+  });
+
+  app.get("/api/v1/organization-services", async (_request, reply) => {
+    if (!db) return reply.code(503).send({ ok: false, message: "فهرست خدمات سازمانی فعلاً در دسترس نیست." });
+    try {
+      await ensureTable();
+      const q = await db.query("SELECT s.id,s.title,s.category,s.description,s.service_url,s.region,s.contact,o.organization_name,o.country FROM hormoz_organization_services s JOIN hormoz_organization_connections o ON o.id=s.organization_id WHERE s.status='published' AND o.status='connected' ORDER BY s.updated_at DESC LIMIT 200");
+      return { ok: true, services: q.rows };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ ok: false, message: "دریافت فهرست خدمات سازمانی ناموفق بود." }); }
+  });
+
+  app.get("/api/v1/global-admin/organization-services", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی مجاز است." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTable();
+      const q = await db.query("SELECT s.id,s.organization_id,s.title,s.category,s.description,s.service_url,s.region,s.contact,s.status,s.created_at,o.organization_name,o.status AS organization_status FROM hormoz_organization_services s JOIN hormoz_organization_connections o ON o.id=s.organization_id ORDER BY s.created_at DESC LIMIT 300");
+      return { ok: true, services: q.rows };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message: "دریافت خدمات جهت بررسی ناموفق بود." }); }
+  });
+
+  app.post("/api/v1/global-admin/organization-services/:id/review", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی مجاز است." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const id = String((request.params as { id?: string }).id ?? "");
+    const status = String(((request.body ?? {}) as Record<string, unknown>).status ?? "");
+    if (!id || !["published","rejected","submitted"].includes(status)) return reply.code(400).send({ message: "وضعیت خدمت معتبر نیست." });
+    try {
+      await ensureTable();
+      const q = await db.query("UPDATE hormoz_organization_services SET status=$2,updated_at=NOW() WHERE id=$1 RETURNING id,status", [id,status]);
+      if (!q.rows.length) return reply.code(404).send({ message: "خدمت پیدا نشد." });
+      return { ok: true, service: q.rows[0] };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message: "به‌روزرسانی خدمت ناموفق بود." }); }
   });
 
 };
