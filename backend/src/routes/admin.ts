@@ -1939,7 +1939,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get("/api/v1/admin/market/ads/expired", async (request, reply) => {
     if (!isAdmin(request)) return reply.code(403).send({ message: "فقط مدیر اصلی دسترسی دارد." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده تنظیم نشده است." });
-    try { await ensureHormozMarketAdsTable(); const result = await db.query("SELECT id,title,expires_at FROM hormoz_market_ads WHERE active=FALSE AND expires_at<=NOW() ORDER BY expires_at DESC LIMIT 100"); return { ok:true, ads:result.rows.map(row=>({id:String(row.id),title:String(row.title),expiresAt:new Date(row.expires_at).toISOString()})) }; }
+    try { await ensureHormozMarketAdsTable(); await db.query("UPDATE hormoz_market_ads SET active=FALSE,updated_at=NOW() WHERE active=TRUE AND expires_at<=NOW()"); const result = await db.query("SELECT id,title,expires_at FROM hormoz_market_ads WHERE active=FALSE AND expires_at<=NOW() ORDER BY expires_at DESC LIMIT 100"); return { ok:true, ads:result.rows.map(row=>({id:String(row.id),title:String(row.title),expiresAt:new Date(row.expires_at).toISOString()})) }; }
     catch(error){ request.log.error(error); return reply.code(503).send({message:"خواندن آگهی‌های منقضی‌شده ناموفق بود."}); }
   });
   app.post("/api/v1/admin/market/ads/:id/renew", async (request, reply) => {
