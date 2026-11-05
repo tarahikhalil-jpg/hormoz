@@ -1876,23 +1876,26 @@ export async function adminRoutes(app: FastifyInstance) {
         image_data TEXT NOT NULL DEFAULT '',
         active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 days')
       )
     `);
+    await db.query("ALTER TABLE hormoz_market_ads ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 days')");
   }
 
   app.get("/api/v1/market/ads", async (request, reply) => {
     if (!db) return reply.code(503).send({ message: "بازار هرمز فعلاً به پایگاه داده متصل نیست." });
     try {
       await ensureHormozMarketAdsTable();
+      await db.query("UPDATE hormoz_market_ads SET active=FALSE, updated_at=NOW() WHERE active=TRUE AND expires_at<=NOW()");
       const result = await db.query(
-        "SELECT id,title,description,price_toman,price_unit,contact,image_data,created_at FROM hormoz_market_ads WHERE active=TRUE ORDER BY created_at DESC LIMIT 100"
+        "SELECT id,title,description,price_toman,price_unit,contact,image_data,created_at,expires_at FROM hormoz_market_ads WHERE active=TRUE AND expires_at>NOW() ORDER BY created_at DESC LIMIT 100"
       );
       return { ok: true, ads: result.rows.map(row => ({
         id: String(row.id), title: String(row.title), description: String(row.description ?? ""),
         priceToman: Number(row.price_toman), priceUnit: String(row.price_unit ?? "هر کیلو"),
         contact: String(row.contact ?? ""), imageData: String(row.image_data ?? ""),
-        createdAt: new Date(row.created_at).toISOString()
+        createdAt: new Date(row.created_at).toISOString(), expiresAt: new Date(row.expires_at).toISOString()
       })) };
     } catch (error) {
       request.log.error(error);
@@ -1903,13 +1906,15 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/api/v1/admin/market/ads", async (request, reply) => {
     if (!isAdmin(request)) return reply.code(403).send({ message: "برای ثبت آگهی باید مدیر وارد شده باشد." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده تنظیم نشده است." });
-    const body = (request.body ?? {}) as { title?: unknown; description?: unknown; priceToman?: unknown; priceUnit?: unknown; contact?: unknown; imageData?: unknown };
+    const body = (request.body ?? {}) as { title?: unknown; description?: unknown; priceToman?: unknown; priceUnit?: unknown; contact?: unknown; imageData?: unknown; durationDays?: unknown };
     const title = String(body.title ?? "").trim().slice(0, 140);
     const description = String(body.description ?? "").trim().slice(0, 1800);
     const priceToman = Number(body.priceToman ?? 0);
     const priceUnit = String(body.priceUnit ?? "هر کیلو").trim().slice(0, 40) || "هر کیلو";
     const contact = String(body.contact ?? "").trim().slice(0, 160);
     const imageData = String(body.imageData ?? "");
+    const durationDays = Number(body.durationDays ?? 30);
+    if (![7,15,30,60,90].includes(durationDays)) return reply.code(400).send({ message: "مدت آگهی باید ۷، ۱۵، ۳۰، ۶۰ یا ۹۰ روز باشد." });
     if (!title || !description || !Number.isSafeInteger(priceToman) || priceToman < 0 || priceToman > 1000000000000) {
       return reply.code(400).send({ message: "عنوان، توضیحات و قیمت معتبر لازم است." });
     }
@@ -1920,17 +1925,31 @@ export async function adminRoutes(app: FastifyInstance) {
       await ensureHormozMarketAdsTable();
       const id = crypto.randomBytes(10).toString("hex").toUpperCase();
       await db.query(
-        "INSERT INTO hormoz_market_ads (id,title,description,price_toman,price_unit,contact,image_data) VALUES ($1,$2,$3,$4,$5,$6,$7)",
-        [id,title,description,priceToman,priceUnit,contact,imageData]
+        "INSERT INTO hormoz_market_ads (id,title,description,price_toman,price_unit,contact,image_data,expires_at) VALUES ($1,$2,$3,$4,$5,$6,$7,NOW()+($8 * INTERVAL '1 day'))",
+        [id,title,description,priceToman,priceUnit,contact,imageData,durationDays]
       );
       touchActivity();
-      return reply.code(201).send({ ok: true, id, message: "آگهی در بازار هرمز ثبت شد." });
+      return reply.code(201).send({ ok: true, id, message: "آگهی ثبت شد؛ پس از پایان مدت، خودکار از ویترین خارج می‌شود." });
     } catch (error) {
       request.log.error(error);
       return reply.code(503).send({ message: "ثبت آگهی ناموفق بود." });
     }
   });
 
+  app.get("/api/v1/admin/market/ads/expired", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ message: "فقط مدیر اصلی دسترسی دارد." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده تنظیم نشده است." });
+    try { await ensureHormozMarketAdsTable(); const result = await db.query("SELECT id,title,expires_at FROM hormoz_market_ads WHERE active=FALSE AND expires_at<=NOW() ORDER BY expires_at DESC LIMIT 100"); return { ok:true, ads:result.rows.map(row=>({id:String(row.id),title:String(row.title),expiresAt:new Date(row.expires_at).toISOString()})) }; }
+    catch(error){ request.log.error(error); return reply.code(503).send({message:"خواندن آگهی‌های منقضی‌شده ناموفق بود."}); }
+  });
+  app.post("/api/v1/admin/market/ads/:id/renew", async (request, reply) => {
+    if (!isAdmin(request)) return reply.code(403).send({ message: "فقط مدیر اصلی می‌تواند آگهی را تمدید کند." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده تنظیم نشده است." });
+    const params=request.params as {id?:string}; const body=(request.body??{}) as {durationDays?:unknown}; const days=Number(body.durationDays??30);
+    if (!params.id || ![7,15,30,60,90].includes(days)) return reply.code(400).send({message:"شناسه یا مدت تمدید معتبر نیست."});
+    try { await ensureHormozMarketAdsTable(); const result=await db.query("UPDATE hormoz_market_ads SET active=TRUE, expires_at=NOW()+($2 * INTERVAL '1 day'), updated_at=NOW() WHERE id=$1 RETURNING id,expires_at",[params.id,days]); if(!result.rows.length)return reply.code(404).send({message:"آگهی پیدا نشد."}); return {ok:true,message:"آگهی تمدید و دوباره منتشر شد.",expiresAt:new Date(result.rows[0].expires_at).toISOString()}; }
+    catch(error){request.log.error(error);return reply.code(503).send({message:"تمدید آگهی ناموفق بود."});}
+  });
   app.delete("/api/v1/admin/market/ads/:id", async (request, reply) => {
     if (!isAdmin(request)) return reply.code(403).send({ message: "برای مدیریت آگهی باید مدیر وارد شده باشد." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده تنظیم نشده است." });
