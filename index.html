@@ -672,9 +672,10 @@ async function registerRecoveryAccount(){
   const r=await fetch(API+"/api/v1/recovery/register",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
   const d=await r.json();if(!r.ok)throw Error(d.error||"ساخت حساب انجام نشد.");
   recoverySessionId=d.sessionId;localStorage.setItem("hormoz_recovery_session",recoverySessionId);
-  await copyLocalHistoryToCloud();
   $("recoveryCodeValue").textContent=d.recoveryCode;$("recoveryCodeDisplay").hidden=false;
-  setRecoveryStatus("حساب ساخته شد و تاریخچه فعلی در فضای ابری هرمز ذخیره شد. کد را همین حالا بیرون از گوشی نگهداری کن.");
+  setRecoveryStatus("حساب ساخته شد. اول کد را بیرون از گوشی نگهداری کن؛ سپس تاریخچه را ذخیره می‌کنم…");
+  try{await copyLocalHistoryToCloud();setRecoveryStatus("حساب ساخته شد و تاریخچه فعلی در فضای ابری هرمز ذخیره شد. کد را بیرون از گوشی نگهداری کن.");}
+  catch(syncError){setRecoveryStatus("حساب و کد بازیابی ساخته شد، اما انتقال تاریخچه کامل نشد. کد را فوراً امن نگه دار؛ بعداً می‌توانیم انتقال را بررسی کنیم.");}
  }catch(e){setRecoveryStatus("حساب یا ذخیره تاریخچه کامل نشد: "+(e.message||"خطا")+"؛ لطفاً دوباره تلاش کن.");}
  finally{button.disabled=false;}
 }
