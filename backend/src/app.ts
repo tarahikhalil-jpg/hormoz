@@ -2482,10 +2482,10 @@ return reply.type("application/xml; charset=utf-8").send(content);
   // The backend remains the shared API and serves feature modules under their
   // existing paths; its root must never expose a second, divergent home screen.
   const canonicalPortal = "https://hormoz-portal-public-777.onrender.com/";
-  app.get("/", async (_request, reply) => reply.redirect(308, canonicalPortal));
+  app.get("/", async (_request, reply) => reply.redirect(canonicalPortal, 308));
 
   // Legacy entry points converge on the same public home.
-  app.get("/chat", async (_request, reply) => reply.redirect(308, canonicalPortal));
+  app.get("/chat", async (_request, reply) => reply.redirect(canonicalPortal, 308));
 
 
   /* ===== ADMIN PANEL ===== */
