@@ -2453,9 +2453,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
   app.register(recoveryRoutes, { pool: persistencePool, identityService });
 
 
-  app.register(
-    healthRoutes
-  );
+  app.register(healthRoutes, { pool: persistencePool });
 
   app.register(imageGenerationRoutes);
 
