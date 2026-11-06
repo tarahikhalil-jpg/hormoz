@@ -2476,21 +2476,16 @@ return reply.type("application/xml; charset=utf-8").send(content);
   );
 
 
-  /* ===== SINGLE PUBLIC HOME ===== */
+  /* ===== SINGLE CANONICAL PUBLIC HOME ===== */
 
-  app.get(
-    "/",
-    async (_request, reply) => {
-      // The repository-root index.html is the one canonical public product home.
-      // All feature pages are opened from this page in the in-page module frame.
-      const mainPagePath = path.join(__dirname, "../../index.html");
-      const mainPage = await fs.readFile(mainPagePath, "utf8");
-      return reply.type("text/html; charset=utf-8").send(mainPage);
-    }
-  );
+  // The static portal is the only public application shell.
+  // The backend remains the shared API and serves feature modules under their
+  // existing paths; its root must never expose a second, divergent home screen.
+  const canonicalPortal = "https://hormoz-portal-public-777.onrender.com/";
+  app.get("/", async (_request, reply) => reply.redirect(308, canonicalPortal));
 
-  /* Keep the legacy chat address as an alias to the single canonical home. */
-  app.get("/chat", async (_request, reply) => reply.redirect("/"));
+  // Legacy entry points converge on the same public home.
+  app.get("/chat", async (_request, reply) => reply.redirect(308, canonicalPortal));
 
 
   /* ===== ADMIN PANEL ===== */
