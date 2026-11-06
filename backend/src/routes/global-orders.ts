@@ -189,10 +189,37 @@ function invoiceFromRow(row: any) {
 }
 
 export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
-  app.get("/api/v1/global-orders/health", async (_request, reply) => {
-    if (!db) return reply.code(503).send({ ok: false, storage: "unavailable" });
-    try { await ensureTable(); await db.query("SELECT 1"); return { ok: true, storage: "persistent" }; }
-    catch { return reply.code(503).send({ ok: false, storage: "unavailable" }); }
+  app.get("/api/v1/global-orders/health", async (request, reply) => {
+    if (!db) return reply.code(503).send({ ok: false, storage: "unavailable", checks: { connection: false, orderTable: false, writeRead: false } });
+    let client: any;
+    let inTransaction = false;
+    try {
+      await ensureTable();
+      client = await db.connect();
+      await client.query("BEGIN");
+      inTransaction = true;
+      const id = "HEALTH-" + crypto.randomBytes(12).toString("hex").toUpperCase();
+      const orderNumber = "HZ-HEALTH-" + crypto.randomBytes(8).toString("hex").toUpperCase();
+      const invoiceNumber = "HZ-HEALTH-INV-" + crypto.randomBytes(8).toString("hex").toUpperCase();
+      const trackingToken = crypto.randomBytes(24).toString("base64url");
+      await client.query(
+        "INSERT INTO hormoz_global_orders (id, order_number, invoice_number, tracking_token, customer_label, contact, customer_language, service_type, request_details, status_history, invoice_history) VALUES ($1,$2,$3,$4,'health-check','', 'fa','health_check',$5::jsonb,'[]'::jsonb,'[]'::jsonb)",
+        [id, orderNumber, invoiceNumber, trackingToken, JSON.stringify({ probe: true })]
+      );
+      const check = await client.query("SELECT id FROM hormoz_global_orders WHERE id=$1 AND tracking_token=$2 LIMIT 1", [id, trackingToken]);
+      if (check.rowCount !== 1) throw new Error("ORDER_STORAGE_WRITE_READ_CHECK_FAILED");
+      await client.query("ROLLBACK");
+      inTransaction = false;
+      return { ok: true, storage: "persistent", checks: { connection: true, orderTable: true, writeRead: true }, probe: "rolled_back_no_test_order_saved" };
+    } catch (error) {
+      if (client && inTransaction) {
+        try { await client.query("ROLLBACK"); } catch {}
+      }
+      request.log.error({ err: error }, "Global order storage health check failed");
+      return reply.code(503).send({ ok: false, storage: "unavailable", checks: { connection: true, orderTable: false, writeRead: false } });
+    } finally {
+      client?.release();
+    }
   });
 
   app.post("/api/v1/unified-feedback", async (request, reply) => {
