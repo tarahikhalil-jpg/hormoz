@@ -948,5 +948,55 @@ body>header .nav a.active{
 })();
 </script>
 
+
+<script id="hormoz-truthful-live-check-2026">
+(function(){
+  const api="https://hormoz-ai-backend-777.onrender.com";
+  const $=id=>document.getElementById(id);
+  const set=(id,text,ok)=>{const el=$(id);if(!el)return;el.textContent=text;el.style.color=ok===true?"#9cf0bd":ok===false?"#ffb4a9":"#ffd98b";};
+  async function check(){
+    const button=$("hormoz-check-now");
+    if(button){button.disabled=true;button.textContent="در حال بررسی…";}
+    set("hormoz-status-portal","در حال بررسی…",null);
+    set("hormoz-status-api","در حال بررسی…",null);
+    set("hormoz-status-orders","در حال بررسی…",null);
+    const note=$("hormoz-status-note");
+    if(note)note.textContent="در حال بررسی دسترسی درگاه، سلامت بک‌اند و اتصال پایگاه‌داده…";
+    const portalCheck=(async()=>{
+      try{
+        const r=await fetch(location.origin+"/",{method:"HEAD",cache:"no-store"});
+        if(!r.ok)throw new Error("HTTP "+r.status);
+        set("hormoz-status-portal","درگاه در دسترس است (HTTP "+r.status+")",true);
+      }catch(e){set("hormoz-status-portal","درگاه قابل دسترسی نیست",false);}
+    })();
+    const backendCheck=(async()=>{
+      try{
+        const controller=new AbortController();
+        const timer=setTimeout(()=>controller.abort(),12000);
+        let r;
+        try{r=await fetch(api+"/api/v1/health",{cache:"no-store",signal:controller.signal});}
+        finally{clearTimeout(timer);}
+        if(!r.ok)throw new Error("HTTP "+r.status);
+        const data=await r.json();
+        if(data.status!=="ok")throw new Error("وضعیت سلامت: "+(data.status||"نامشخص"));
+        set("hormoz-status-api","بک‌اند سالم؛ وضعیت سلامت OK",true);
+        const dbOk=data.checks&&data.checks.database==="ok";
+        set("hormoz-status-orders",dbOk?"اتصال پایگاه‌داده تأیید شد":"اتصال پایگاه‌داده تأیید نشد",!!dbOk);
+        if(note)note.textContent="پاسخ سلامت بک‌اند و SELECT 1 پایگاه‌داده بررسی شد. وضعیت AI فقط وجود تنظیمات را نشان می‌دهد و اتصال زنده/کیفیت پاسخ نوا با این آزمون اثبات نمی‌شود.";
+      }catch(e){
+        set("hormoz-status-api","سلامت بک‌اند تأیید نشد",false);
+        set("hormoz-status-orders","قابل تأیید نیست",null);
+        if(note)note.textContent="بررسی بک‌اند ناموفق بود؛ وضعیت پایگاه‌داده و موتور نوا قابل تأیید نیست. لطفاً بعداً دوباره بررسی کن.";
+      }
+    })();
+    await Promise.all([portalCheck,backendCheck]);
+    if(button){button.disabled=false;button.textContent="بررسی دوباره";}
+  }
+  const button=$("hormoz-check-now");
+  if(button)button.addEventListener("click",check);
+  check();
+})();
+</script>
+
 </body>
 </html>
