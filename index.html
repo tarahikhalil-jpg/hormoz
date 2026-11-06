@@ -953,7 +953,17 @@ body>header .nav a.active{
 (function(){
   const api="https://hormoz-ai-backend-777.onrender.com";
   const $=id=>document.getElementById(id);
-  const set=(id,text,ok)=>{const el=$(id);if(!el)return;el.textContent=text;el.style.color=ok===true?"#9cf0bd":ok===false?"#ffb4a9":"#ffd98b";};
+  const set=(id,text,ok)=>{const el=$(id);if(!el)return;el.textContent=text;el.style.color=ok===true?"#16845b":ok===false?"#b42318":"#9a6700";};
+  async function requestJson(url,timeoutMs=15000){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    try{
+      const response=await fetch(url,{cache:"no-store",signal:controller.signal});
+      let data={};
+      try{data=await response.json();}catch{}
+      return {response,data};
+    }finally{clearTimeout(timer);}
+  }
   async function check(){
     const button=$("hormoz-check-now");
     if(button){button.disabled=true;button.textContent="در حال بررسی…";}
@@ -961,35 +971,38 @@ body>header .nav a.active{
     set("hormoz-status-api","در حال بررسی…",null);
     set("hormoz-status-orders","در حال بررسی…",null);
     const note=$("hormoz-status-note");
-    if(note)note.textContent="در حال بررسی دسترسی درگاه، سلامت بک‌اند و اتصال پایگاه‌داده…";
-    const portalCheck=(async()=>{
-      try{
+    if(note)note.textContent="در حال بررسی مستقل درگاه، پاسخ‌گویی بک‌اند و پایگاه‌داده اختصاصی سفارش‌ها…";
+    const checks=await Promise.allSettled([
+      (async()=>{
         const r=await fetch(location.origin+"/",{method:"HEAD",cache:"no-store"});
         if(!r.ok)throw new Error("HTTP "+r.status);
-        set("hormoz-status-portal","درگاه در دسترس است (HTTP "+r.status+")",true);
-      }catch(e){set("hormoz-status-portal","درگاه قابل دسترسی نیست",false);}
-    })();
-    const backendCheck=(async()=>{
-      try{
-        const controller=new AbortController();
-        const timer=setTimeout(()=>controller.abort(),12000);
-        let r;
-        try{r=await fetch(api+"/api/v1/health",{cache:"no-store",signal:controller.signal});}
-        finally{clearTimeout(timer);}
-        if(!r.ok)throw new Error("HTTP "+r.status);
-        const data=await r.json();
-        if(data.status!=="ok")throw new Error("وضعیت سلامت: "+(data.status||"نامشخص"));
-        set("hormoz-status-api","بک‌اند سالم؛ وضعیت سلامت OK",true);
+        set("hormoz-status-portal","درگاه عمومی در دسترس است (HTTP "+r.status+")",true);
+      })(),
+      (async()=>{
+        const {response,data}=await requestJson(api+"/api/v1/health");
+        if(!response.ok)throw new Error("HTTP "+response.status);
+        set("hormoz-status-api",data.status==="ok"?"بک‌اند پاسخ‌گو است؛ سلامت پایگاه اصلی تأیید شد":"بک‌اند پاسخ‌گو است؛ وضعیت کلی: "+(data.status||"نامشخص"),data.status==="ok");
         const dbOk=data.checks&&data.checks.database==="ok";
-        set("hormoz-status-orders",dbOk?"اتصال پایگاه‌داده تأیید شد":"اتصال پایگاه‌داده تأیید نشد",!!dbOk);
-        if(note)note.textContent="پاسخ سلامت بک‌اند و SELECT 1 پایگاه‌داده بررسی شد. وضعیت AI فقط وجود تنظیمات را نشان می‌دهد و اتصال زنده/کیفیت پاسخ نوا با این آزمون اثبات نمی‌شود.";
-      }catch(e){
-        set("hormoz-status-api","سلامت بک‌اند تأیید نشد",false);
-        set("hormoz-status-orders","قابل تأیید نیست",null);
-        if(note)note.textContent="بررسی بک‌اند ناموفق بود؛ وضعیت پایگاه‌داده و موتور نوا قابل تأیید نیست. لطفاً بعداً دوباره بررسی کن.";
-      }
-    })();
-    await Promise.all([portalCheck,backendCheck]);
+        if(!dbOk && note)note.textContent="بک‌اند پاسخ‌گو است، اما پایگاه داده اصلی تأیید نشده؛ بررسی ذخیره سفارش‌ها جداگانه ادامه دارد.";
+      })(),
+      (async()=>{
+        const {response,data}=await requestJson(api+"/api/v1/global-orders/health",20000);
+        if(!response.ok||data.ok!==true||data.storage!=="persistent")throw new Error(data.message||"ذخیره‌سازی سفارش‌ها در دسترس نیست");
+        set("hormoz-status-orders","پایگاه‌داده سفارش‌ها و آماده‌بودن جدول‌ها تأیید شد",true);
+      })()
+    ]);
+    const failed=checks.filter(x=>x.status==="rejected").length;
+    const portalFailed=checks[0].status==="rejected";
+    const apiFailed=checks[1].status==="rejected";
+    const ordersFailed=checks[2].status==="rejected";
+    if(portalFailed)set("hormoz-status-portal","دسترسی درگاه تأیید نشد",false);
+    if(apiFailed)set("hormoz-status-api","پاسخ بک‌اند تأیید نشد",false);
+    if(ordersFailed)set("hormoz-status-orders","ذخیره‌سازی سفارش‌ها تأیید نشد",false);
+    if(note){
+      note.textContent=failed===0
+        ?"سه بررسی مستقل موفق بود: درگاه عمومی، پاسخ بک‌اند و سلامت ذخیره‌سازی اختصاصی سفارش‌ها. این آزمون، کیفیت پاسخ نوا یا انجام رزرو/پرداخت را تضمین نمی‌کند."
+        :"نتیجه بررسی: "+(portalFailed?"درگاه ناموفق؛ ":"")+(apiFailed?"بک‌اند ناموفق؛ ":"")+(ordersFailed?"ذخیره‌سازی سفارش‌ها ناموفق؛ ":"")+"موارد ناموفق هنوز تأیید نشده‌اند. تنظیمات AI به‌تنهایی به معنی پاسخ‌گویی زنده نوا نیست.";
+    }
     if(button){button.disabled=false;button.textContent="بررسی دوباره";}
   }
   const button=$("hormoz-check-now");
