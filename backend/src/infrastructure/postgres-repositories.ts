@@ -17,6 +17,12 @@ export async function initializeHormozPersistence(pool: Pool): Promise<void> {
       metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
       created_at TIMESTAMPTZ NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS hormoz_recovery_credentials (
+      user_id TEXT PRIMARY KEY REFERENCES hormoz_identity_users(user_id) ON DELETE CASCADE,
+      recovery_hash TEXT NOT NULL UNIQUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS hormoz_identity_sessions (
       session_id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES hormoz_identity_users(user_id) ON DELETE CASCADE,

@@ -460,6 +460,20 @@ body.hormoz-module-open{overflow:hidden!important}
 <div class="section-head"><h2>با نوا صحبت کن</h2><p class="hint">درخواستت را بنویس یا اگر گوشی پشتیبانی می‌کند، با صدایت بگو. همه‌چیز از همین صفحه انجام می‌شود.</p></div>
 <div class="chat">
 <div class="statusline"><strong>🤖 نوا، دستیار هوشمند هرمز</strong><span class="pill neutral" id="connectionStatus">آماده برای گفت‌وگو</span></div>
+<div class="recovery-box" id="recoveryPanel" style="margin:12px 0;padding:14px;border:1px solid var(--border,#777);border-radius:14px">
+<strong>🔐 پشتیبان امن هرمز؛ مستقل از گوشی</strong>
+<p class="hint" style="margin:6px 0">یک‌بار حساب بساز و کد بازیابی را بیرون از گوشی نگه دار. با آن می‌توانی از دستگاه دیگری وارد شوی.</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+<button class="btn alt" id="createRecoveryAccount" type="button">ساخت حساب و کد بازیابی</button>
+<input id="recoveryCodeInput" type="text" inputmode="text" autocomplete="off" maxlength="40" placeholder="کد بازیابی را وارد کن" aria-label="کد بازیابی" style="flex:1;min-width:180px">
+<button class="btn" id="restoreRecoveryAccount" type="button">ورود و بازیابی</button>
+</div>
+<div id="recoveryCodeDisplay" hidden style="padding:12px;background:rgba(30,120,80,.12);border-radius:10px;overflow-wrap:anywhere">
+<p><strong>کد بازیابی محرمانه (فقط همین یک‌بار):</strong></p><code id="recoveryCodeValue" style="font-size:1.15em;letter-spacing:1px"></code>
+<p class="hint">این کد را روی کاغذ یا جای امن دیگری نگه دار؛ در اختیار هیچ‌کس نگذار. ما آن را دوباره نمایش نمی‌دهیم.</p>
+</div>
+<p id="recoveryStatus" class="hint" role="status" aria-live="polite">هنوز حساب بازیابی روی این مرورگر فعال نشده است.</p>
+</div>
 <div id="conversationHistory" class="conversation-history" role="log" aria-live="polite" aria-label="تاریخچه گفت‌وگو با نوا"><div class="chat-turn chat-nava">سلام! من نوا هستم. گفت‌وگو را ادامه بده؛ برای پرسش بعدی لازم نیست از صفحه خارج شوی.</div></div>
 <div class="chat-composer">
 <label id="message-label" for="message">پیام تو (اگر خواستی بنویس؛ می‌توانی فقط صحبت هم بکنی)</label>
@@ -638,6 +652,57 @@ const $=id=>document.getElementById(id);
 const input=$("message"),answer=$("answer"),sendBtn=$("sendBtn"),audioActions=$("audioActions");
 let audio=null,audioUrl=null,requestId=0,recognition=null,easyMode=false;
 const historyBox=$("conversationHistory");
+let recoverySessionId="";let recoveryConversationId="";
+try{recoverySessionId=localStorage.getItem("hormoz_recovery_session")||"";recoveryConversationId=localStorage.getItem("hormoz_recovery_conversation")||""}catch{}
+function recoveryHeaders(){return {"Content-Type":"application/json","x-session-id":recoverySessionId}}
+function setRecoveryStatus(message){$("recoveryStatus").textContent=message}
+async function createCloudConversation(title="گفت‌وگوی نوا"){
+ const r=await fetch(API+"/api/v1/conversations",{method:"POST",headers:recoveryHeaders(),body:JSON.stringify({title})});
+ if(!r.ok)throw Error("ساخت فضای ذخیره‌سازی گفت‌وگو ناموفق بود.");
+ const d=await r.json();recoveryConversationId=d.id;localStorage.setItem("hormoz_recovery_conversation",recoveryConversationId);return d;
+}
+async function copyLocalHistoryToCloud(){
+ const old=[...conversationHistory].filter(m=>m.role==="user"||m.role==="assistant").slice(-40);
+ await createCloudConversation("گفت‌وگوی ذخیره‌شده نوا");
+ for(const m of old){const r=await fetch(API+"/api/v1/conversations/"+encodeURIComponent(recoveryConversationId)+"/messages",{method:"POST",headers:recoveryHeaders(),body:JSON.stringify({role:m.role,content:m.content})});if(!r.ok)throw Error("ذخیره بخشی از تاریخچه گفت‌وگو انجام نشد.");}
+}
+async function registerRecoveryAccount(){
+ const button=$("createRecoveryAccount");button.disabled=true;setRecoveryStatus("در حال ساخت حساب امن و ذخیره تاریخچه…");
+ try{
+  const r=await fetch(API+"/api/v1/recovery/register",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+  const d=await r.json();if(!r.ok)throw Error(d.error||"ساخت حساب انجام نشد.");
+  recoverySessionId=d.sessionId;localStorage.setItem("hormoz_recovery_session",recoverySessionId);
+  $("recoveryCodeValue").textContent=d.recoveryCode;$("recoveryCodeDisplay").hidden=false;
+  setRecoveryStatus("حساب ساخته شد. اول کد را بیرون از گوشی نگهداری کن؛ سپس تاریخچه را ذخیره می‌کنم…");
+  try{await copyLocalHistoryToCloud();setRecoveryStatus("حساب ساخته شد و تاریخچه فعلی در فضای ابری هرمز ذخیره شد. کد را بیرون از گوشی نگهداری کن.");}
+  catch(syncError){setRecoveryStatus("حساب و کد بازیابی ساخته شد، اما انتقال تاریخچه کامل نشد. کد را فوراً امن نگه دار؛ بعداً می‌توانیم انتقال را بررسی کنیم.");}
+ }catch(e){setRecoveryStatus("حساب یا ذخیره تاریخچه کامل نشد: "+(e.message||"خطا")+"؛ لطفاً دوباره تلاش کن.");}
+ finally{button.disabled=false;}
+}
+async function restoreRecoveryAccount(){
+ const button=$("restoreRecoveryAccount");button.disabled=true;setRecoveryStatus("در حال بررسی کد و دریافت گفت‌وگوهای ذخیره‌شده…");
+ try{
+  const recoveryCode=$("recoveryCodeInput").value.trim();
+  const r=await fetch(API+"/api/v1/recovery/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recoveryCode})});
+  const d=await r.json();if(!r.ok)throw Error(d.error||"کد بازیابی معتبر نیست.");
+  recoverySessionId=d.sessionId;localStorage.setItem("hormoz_recovery_session",recoverySessionId);
+  const listRes=await fetch(API+"/api/v1/conversations",{headers:recoveryHeaders()});if(!listRes.ok)throw Error("دریافت فهرست گفت‌وگوها ناموفق بود.");
+  const list=await listRes.json();const latest=Array.isArray(list)?list[0]:null;
+  conversationHistory=[];
+  if(latest){
+   recoveryConversationId=latest.id;localStorage.setItem("hormoz_recovery_conversation",recoveryConversationId);
+   const itemRes=await fetch(API+"/api/v1/conversations/"+encodeURIComponent(recoveryConversationId),{headers:recoveryHeaders()});if(!itemRes.ok)throw Error("دریافت تاریخچه گفت‌وگو ناموفق بود.");
+   const item=await itemRes.json();conversationHistory=(item.messages||[]).filter(m=>m&&(m.role==="user"||m.role==="assistant")&&typeof m.content==="string").slice(-40).map(m=>({role:m.role,content:m.content}));
+  }else{recoveryConversationId="";localStorage.removeItem("hormoz_recovery_conversation");}
+  historyBox.replaceChildren();conversationHistory.forEach(m=>addChatBubble(m.role,m.content));saveConversation();
+  setRecoveryStatus("ورود موفق بود؛ "+(conversationHistory.length?"تاریخچه گفت‌وگو بازیابی شد.":"حساب امن است؛ هنوز گفت‌وگویی ذخیره نشده.")+" اکنون می‌توانی از این دستگاه استفاده کنی.");
+ }catch(e){setRecoveryStatus("بازیابی انجام نشد: "+(e.message||"خطا"));}
+ finally{button.disabled=false;}
+}
+$("createRecoveryAccount").addEventListener("click",registerRecoveryAccount);
+$("restoreRecoveryAccount").addEventListener("click",restoreRecoveryAccount);
+if(recoverySessionId){setRecoveryStatus("حساب بازیابی روی این مرورگر فعال است؛ برای ورود روی دستگاه دیگر از کد بازیابی استفاده کن.");}
+
 let conversationHistory=[];
 try{const saved=JSON.parse(localStorage.getItem("hormoz_nava_chat_history")||"[]");if(Array.isArray(saved)){conversationHistory=saved.filter(m=>m&&(m.role==="user"||m.role==="assistant")&&typeof m.content==="string").slice(-40);conversationHistory.forEach(m=>addChatBubble(m.role,m.content));}}catch{}
 function scrollConversationToBottom(){requestAnimationFrame(()=>{historyBox.scrollTop=historyBox.scrollHeight;});}
@@ -679,7 +744,7 @@ function addServiceRoute(message){
 }
 document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>askWith(b.dataset.prompt)));
 $("clearBtn").addEventListener("click",()=>{input.value="";input.focus()});
-async function sendMessage(){const message=input.value.trim();if(!message){input.focus();return}stopAudio();audioActions.classList.add("hidden");$("audioStatus").textContent="";sendBtn.disabled=true;$("connectionStatus").textContent="نوا در حال پاسخ‌گویی است…";$("connectionStatus").className="pill neutral";addChatBubble("user",message);input.value="";const pending=addChatBubble("assistant","نوا در حال آماده شدن است؛ بار اول ممکن است کمی زمان ببرد.",true);try{const res=await fetch(API+"/api/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-user-id":guestId()},body:JSON.stringify({message,history:conversationHistory.slice(-10)})});let data;try{data=await res.json()}catch{throw Error("پاسخ قابل خواندن از سرور دریافت نشد.")}if(!res.ok)throw Error(data.error||"ارتباط با نوا ناموفق بود.");const reply=data.response||data.message||"";if(!reply)throw Error("نوا این بار پاسخ متنی دریافت نکرد.");pending.classList.remove("chat-pending");pending.textContent=reply;addServiceRoute(message);answer.textContent=reply;conversationHistory.push({role:"user",content:message},{role:"assistant",content:reply});conversationHistory=conversationHistory.slice(-10);saveConversation();audioActions.classList.remove("hidden");$("connectionStatus").textContent="پاسخ دریافت شد";$("connectionStatus").className="pill";input.focus();scrollConversationToBottom();speakAnswer()}catch(e){pending.classList.remove("chat-pending");pending.textContent="ارتباط با نوا برقرار نشد. می‌توانی همین‌جا دوباره تلاش کنی. ("+(e.message||"خطای ارتباط")+")";addServiceRoute(message);$("connectionStatus").textContent="ارتباط برقرار نشد";$("connectionStatus").className="pill neutral";input.focus()}finally{sendBtn.disabled=false}}
+async function sendMessage(){const message=input.value.trim();if(!message){input.focus();return}stopAudio();audioActions.classList.add("hidden");$("audioStatus").textContent="";sendBtn.disabled=true;$("connectionStatus").textContent="نوا در حال پاسخ‌گویی است…";$("connectionStatus").className="pill neutral";addChatBubble("user",message);input.value="";const pending=addChatBubble("assistant","نوا در حال آماده شدن است؛ بار اول ممکن است کمی زمان ببرد.",true);try{if(recoverySessionId&&!recoveryConversationId)await createCloudConversation();const chatHeaders=recoverySessionId?recoveryHeaders():{"Content-Type":"application/json","x-user-id":guestId()};const chatBody=recoverySessionId?{message,conversationId:recoveryConversationId}:{message,history:conversationHistory.slice(-10)};const res=await fetch(API+"/api/v1/chat",{method:"POST",headers:chatHeaders,body:JSON.stringify(chatBody)});let data;try{data=await res.json()}catch{throw Error("پاسخ قابل خواندن از سرور دریافت نشد.")}if(!res.ok)throw Error(data.error||"ارتباط با نوا ناموفق بود.");const reply=data.response||data.message||"";if(!reply)throw Error("نوا این بار پاسخ متنی دریافت نکرد.");pending.classList.remove("chat-pending");pending.textContent=reply;addServiceRoute(message);answer.textContent=reply;conversationHistory.push({role:"user",content:message},{role:"assistant",content:reply});conversationHistory=conversationHistory.slice(-10);saveConversation();audioActions.classList.remove("hidden");$("connectionStatus").textContent="پاسخ دریافت شد";$("connectionStatus").className="pill";input.focus();scrollConversationToBottom();speakAnswer()}catch(e){pending.classList.remove("chat-pending");pending.textContent="ارتباط با نوا برقرار نشد. می‌توانی همین‌جا دوباره تلاش کنی. ("+(e.message||"خطای ارتباط")+")";addServiceRoute(message);$("connectionStatus").textContent="ارتباط برقرار نشد";$("connectionStatus").className="pill neutral";input.focus()}finally{sendBtn.disabled=false}}
 sendBtn.addEventListener("click",sendMessage);
 input.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();sendMessage()}});
 function stopAudio(){requestId++;if(audio){audio.pause();audio.removeAttribute("src");audio=null}if(audioUrl){URL.revokeObjectURL(audioUrl);audioUrl=null}if("speechSynthesis"in window)window.speechSynthesis.cancel();$("speakBtn").disabled=false}

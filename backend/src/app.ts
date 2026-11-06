@@ -13,6 +13,7 @@ import { ActionDispatcher } from "./modules/action/dispatcher.js";
 import type { LightDevice } from "./modules/device/light.js";
 import { MockLight } from "./modules/device/mock-light.js";
 import { conversationRoutes } from "./routes/conversation.js";
+import { recoveryRoutes } from "./routes/recovery.js";
 import { healthRoutes } from "./routes/health.js";
 import { memoryRoutes } from "./routes/memory.js";
 import { IdentityService } from "./modules/identity/identity.service.js";
@@ -2448,6 +2449,8 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
     }
   );
+
+  app.register(recoveryRoutes, { pool: persistencePool, identityService });
 
 
   app.register(
