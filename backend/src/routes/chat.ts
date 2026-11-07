@@ -38,7 +38,7 @@ export const chatRoutes: FastifyPluginAsync<ChatRoutesOptions> = async (
   },
 ) => {
   app.post("/api/v1/chat", async (request, reply) => {
-    const body = request.body as {
+    const body = (request.body ?? {}) as {
       message?: string;
       conversationId?: string;
       history?: Array<{ role?: string; content?: string }>;
