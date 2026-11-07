@@ -989,7 +989,6 @@ body>header .nav a.active{
         const apiLabel=data.status==="ok"?(dbOk?"بک‌اند و پایگاه داده اصلی پاسخ‌گو هستند":"بک‌اند پاسخ‌گو است؛ سلامت پایگاه داده جداگانه تأیید نشده"):"بک‌اند پاسخ‌گو است؛ وضعیت کلی: "+(data.status||"نامشخص");
         set("hormoz-status-api",apiLabel,data.status==="ok"&&dbOk);
         if(data.status==="ok"&&!dbOk&&note)note.textContent="بک‌اند پاسخ‌گو است، اما سلامت پایگاه داده اصلی تأیید نشده است؛ ذخیره‌سازی سفارش‌ها جداگانه بررسی می‌شود.";
-        const dbOk=data.checks&&data.checks.database==="ok";
         if(!dbOk && note)note.textContent="بک‌اند پاسخ‌گو است، اما پایگاه داده اصلی تأیید نشده؛ بررسی ذخیره سفارش‌ها جداگانه ادامه دارد.";
       })(),
       (async()=>{
