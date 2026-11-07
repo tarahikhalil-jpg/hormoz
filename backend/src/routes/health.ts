@@ -26,7 +26,7 @@ export const healthRoutes: FastifyPluginAsync<HealthRoutesOptions> = async (app,
 
     const ready = database === "ok" && aiConfigured;
 
-    return reply.code(200).send({
+    return reply.code(ready ? 200 : 503).send({
       status: ready ? "ok" : "degraded",
       checks: {
         database,
