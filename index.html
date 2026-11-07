@@ -985,7 +985,10 @@ body>header .nav a.active{
       (async()=>{
         const {response,data}=await requestJson(api+"/api/v1/health");
         if(!response.ok)throw new Error("HTTP "+response.status);
-        set("hormoz-status-api",data.status==="ok"?"بک‌اند پاسخ‌گو است؛ سلامت پایگاه اصلی تأیید شد":"بک‌اند پاسخ‌گو است؛ وضعیت کلی: "+(data.status||"نامشخص"),data.status==="ok");
+        const dbOk=data.checks&&data.checks.database==="ok";
+        const apiLabel=data.status==="ok"?(dbOk?"بک‌اند و پایگاه داده اصلی پاسخ‌گو هستند":"بک‌اند پاسخ‌گو است؛ سلامت پایگاه داده جداگانه تأیید نشده"):"بک‌اند پاسخ‌گو است؛ وضعیت کلی: "+(data.status||"نامشخص");
+        set("hormoz-status-api",apiLabel,data.status==="ok"&&dbOk);
+        if(data.status==="ok"&&!dbOk&&note)note.textContent="بک‌اند پاسخ‌گو است، اما سلامت پایگاه داده اصلی تأیید نشده است؛ ذخیره‌سازی سفارش‌ها جداگانه بررسی می‌شود.";
         const dbOk=data.checks&&data.checks.database==="ok";
         if(!dbOk && note)note.textContent="بک‌اند پاسخ‌گو است، اما پایگاه داده اصلی تأیید نشده؛ بررسی ذخیره سفارش‌ها جداگانه ادامه دارد.";
       })(),
