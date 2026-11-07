@@ -1925,6 +1925,13 @@ export function buildApp(
       })()
     : null;
 
+  // Production must never silently fall back to in-memory identity, session,
+  // conversation, or memory repositories. That would make user data disappear
+  // after a restart while the service still appears healthy.
+  if (!persistencePool && process.env.NODE_ENV === "production") {
+    throw new Error("DATABASE_URL is required in production; refusing volatile in-memory storage");
+  }
+
   if (persistencePool) {
     app.addHook("onReady", async () => {
       await initializeHormozPersistence(persistencePool);
