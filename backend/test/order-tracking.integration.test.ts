@@ -85,6 +85,59 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
       }
     });
 
+    await t.test("global order portal flow creates and tracks an order without exposing customer data", async () => {
+      const created = await app.inject({
+        method: "POST", url: "/api/v1/global-orders",
+        payload: {
+          serviceType: "integration_test_service",
+          customerLabel: "Global Private Test Customer",
+          contact: "global-private@example.invalid",
+          language: "en",
+          details: { subject: "Private global subject", request: "Global order integration test" },
+          consent: true
+        }
+      });
+      assert.equal(created.statusCode, 201, created.body);
+      const createdBody = created.json();
+      assert.equal(createdBody.ok, true);
+      assert.match(createdBody.orderNumber, /^HZ-GLOBAL-\\d{8}-[A-F0-9]{8}$/);
+      assert.match(createdBody.trackingCode, /^[A-Za-z0-9_-]{25,40}$/);
+      assert.equal(createdBody.status, "submitted");
+      assert.equal(createdBody.invoiceStatus, "awaiting_review");
+
+      const tracked = await app.inject({
+        method: "GET",
+        url: "/api/v1/global-orders/track/" + encodeURIComponent(createdBody.trackingCode)
+      });
+      assert.equal(tracked.statusCode, 200, tracked.body);
+      assert.equal(tracked.headers["cache-control"], "no-store");
+      const trackedBody = tracked.json();
+      assert.equal(trackedBody.ok, true);
+      assert.equal(trackedBody.orderNumber, createdBody.orderNumber);
+      assert.equal(trackedBody.serviceType, "integration_test_service");
+      assert.equal(trackedBody.status, "submitted");
+      assert.equal(trackedBody.invoice.status, "awaiting_review");
+      assert.ok(Array.isArray(trackedBody.history));
+      for (const privateValue of [
+        "global-private@example.invalid",
+        "Global Private Test Customer",
+        "Private global subject",
+        "Global order integration test"
+      ]) {
+        assert.equal(JSON.stringify(trackedBody).includes(privateValue), false);
+      }
+    });
+
+    await t.test("global order tracking rejects malformed and unknown tokens", async () => {
+      const malformed = await app.inject({ method: "GET", url: "/api/v1/global-orders/track/short" });
+      assert.equal(malformed.statusCode, 404);
+      const unknown = await app.inject({
+        method: "GET",
+        url: "/api/v1/global-orders/track/" + "Z".repeat(32)
+      });
+      assert.equal(unknown.statusCode, 404);
+    });
+
     await t.test("tracking returns not found for malformed and unknown tokens", async () => {
       assert.equal((await app.inject({ method: "GET", url: "/api/v1/orders/track/short" })).statusCode, 404);
       const unknown = await app.inject({ method: "GET", url: "/api/v1/orders/track/" + "Z".repeat(24) });
