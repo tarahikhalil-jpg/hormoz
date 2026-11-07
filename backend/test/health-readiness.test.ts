@@ -41,7 +41,7 @@ test("health reports ready only when PostgreSQL responds and AI is configured", 
 test("health reports degraded when persistent storage is not configured", async () => {
   await withApp(null, async (app) => {
     const response = await app.inject({ method: "GET", url: "/api/v1/health" });
-    assert.equal(response.statusCode, 200);
+    assert.equal(response.statusCode, 503);
     assert.deepEqual(response.json(), {
       status: "degraded",
       checks: { database: "unavailable", aiProvider: "configured" }
