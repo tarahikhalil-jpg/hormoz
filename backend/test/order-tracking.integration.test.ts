@@ -100,7 +100,7 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
       assert.equal(created.statusCode, 201, created.body);
       const createdBody = created.json();
       assert.equal(createdBody.ok, true);
-      assert.match(createdBody.orderNumber, /^HZ-GLOBAL-\\d{8}-[A-F0-9]{8}$/);
+      assert.match(createdBody.orderNumber, /^HZ-GLOBAL-\d{8}-[A-F0-9]{8}$/);
       assert.match(createdBody.trackingCode, /^[A-Za-z0-9_-]{25,40}$/);
       assert.equal(createdBody.status, "submitted");
       assert.equal(createdBody.invoiceStatus, "awaiting_review");
