@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/hormoz-live-smoke.yml"
+      - ".github/workflows/backend-ci.yml"
       - "backend/src/**"
       - "backend/public/**"
       - "backend/package.json"
