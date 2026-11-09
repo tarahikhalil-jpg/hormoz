@@ -53,7 +53,7 @@ test("health reports degraded when the database query fails", async () => {
   const pool = { query: async () => { throw new Error("database unavailable"); } } as unknown as Pool;
   await withApp(pool, async (app) => {
     const response = await app.inject({ method: "GET", url: "/api/v1/health" });
-    assert.equal(response.statusCode, 200);
+    assert.equal(response.statusCode, 503);
     assert.deepEqual(response.json(), {
       status: "degraded",
       checks: { database: "unavailable", aiProvider: "configured" }
