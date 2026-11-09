@@ -19,9 +19,25 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hormoz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hormoz_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
+    env:
+      HORMOZ_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/hormoz_test
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -31,7 +47,7 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-package-lock
-      - name: Run automated tests
+      - name: Run automated tests including PostgreSQL order integration
         run: npm test
       - name: Compile TypeScript
         run: npm run build
