@@ -7,27 +7,30 @@ on:
       - "backend/**"
       - ".github/workflows/backend-ci.yml"
   pull_request:
+    branches: [main]
     paths:
       - "backend/**"
       - ".github/workflows/backend-ci.yml"
 
+permissions:
+  contents: read
+
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     defaults:
       run:
         working-directory: backend
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Set up Node.js
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-package-lock
       - name: Run automated tests
         run: npm test
       - name: Compile TypeScript
