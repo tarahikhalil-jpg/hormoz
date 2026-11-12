@@ -51,7 +51,7 @@ function setLanguage(lang){
  document.querySelector('label[for="trackingCode"]').textContent=L.codeLabel;
  $("trackingCode").placeholder=L.placeholder;$("lookupButton").textContent=L.submit;
  document.querySelector('a[href="/orders.html"]').textContent=L.newRequest;
- document.querySelector(".screen-only .muted").textContent=L.printHelp;
+ document.querySelector("p.screen-only.muted").textContent=L.printHelp;
  $("shareButton").textContent="🔗 "+L.share;
  document.querySelector('button[onclick="window.print()"]').textContent="🖨️ "+L.print;
 }
