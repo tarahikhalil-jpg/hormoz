@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#082f49">
+<meta name="description" content="نمونه آزمایشی مرکز مالی هوشمند هرمز برای ثبت محلی درآمد و هزینه.">
+<title>مرکز مالی هوشمند هرمز | نسخه آزمایشی</title>
+<style>
+:root{--bg:#071b2b;--panel:#102b40;--panel2:#13364e;--text:#f3f8fc;--muted:#c3d4e1;--aqua:#63e6d1;--gold:#ffd27a;--line:#2c4c61;--red:#ff9d9d}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#123c56 0,#071b2b 58%);color:var(--text);font:16px/1.9 Tahoma,Arial,sans-serif}.wrap{width:min(920px,92%);margin:auto}header{padding:20px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{color:var(--aqua);font-weight:bold;font-size:20px}a{color:var(--aqua)}.hero{text-align:center;padding:22px 0}.lamp{font-size:44px}h1{font-size:clamp(26px,5vw,40px);margin:4px 0}.muted{color:var(--muted)}.notice{border:1px solid #8d703b;background:#332b1d;border-radius:14px;padding:14px;margin:16px 0;color:#ffe5aa}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px}.card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}.stat{font-size:25px;font-weight:bold;color:var(--aqua);overflow-wrap:anywhere}.stat.gold{color:var(--gold)}label{display:block;margin:8px 0 4px;color:var(--muted)}input,select,button{font:inherit;border-radius:10px;padding:11px;border:1px solid #54768a;width:100%}input,select{background:#071b2b;color:var(--text)}button{background:var(--aqua);color:#062532;font-weight:bold;cursor:pointer;border:0}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.secondary{background:transparent;color:var(--text);border:1px solid #54768a}.danger{background:#532c35;color:#ffe4e4}.entry{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:10px 0}.entry:last-child{border-bottom:0}.amount.income{color:var(--aqua)}.amount.expense{color:var(--gold)}.small{font-size:13px}.empty{text-align:center;padding:16px;color:var(--muted)}footer{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="brand">💡 هوش هرمز | نوا</div><a href="./index.html">بازگشت به خانه هرمز ←</a></header>
+<section class="hero"><div class="lamp">🏦💡</div><h1>مرکز مالی هوشمند هرمز</h1><p class="muted">دفتر ساده و شفاف درآمد و هزینه؛ گامی کوچک برای مدیریت بهتر منابع.</p></section>
+<div class="notice"><strong>نسخه آزمایشی — این بانک واقعی نیست.</strong><br>این صفحه هیچ پولی دریافت یا منتقل نمی‌کند، به حساب بانکی متصل نیست و هویت کاربران را احراز نمی‌کند. اطلاعات واردشده فقط در حافظه همین مرورگر ذخیره می‌شود؛ برای اطلاعات حساس یا واقعی مالی از این نسخه استفاده نکنید. اعتبار داخلی هرمز پول بانکی محسوب نمی‌شود.</div>
+<section class="grid" aria-label="خلاصه مالی">
+<div class="card"><div class="muted">مجموع درآمد ثبت‌شده</div><div class="stat" id="incomeTotal">۰ تومان</div></div>
+<div class="card"><div class="muted">مجموع هزینه ثبت‌شده</div><div class="stat gold" id="expenseTotal">۰ تومان</div></div>
+<div class="card"><div class="muted">مانده محاسباتی</div><div class="stat" id="balanceTotal">۰ تومان</div></div>
+</section>
+<section class="card">
+<h2>ثبت یک مورد</h2><form id="entryForm">
+<label for="kind">نوع</label><select id="kind"><option value="income">درآمد</option><option value="expense">هزینه</option></select>
+<label for="title">شرح کوتاه</label><input id="title" maxlength="80" required placeholder="مثلاً درآمد تبلیغات یک کسب‌وکار">
+<label for="amount">مبلغ (تومان)</label><input id="amount" type="number" min="1" max="1000000000000" step="1" inputmode="numeric" required placeholder="فقط عدد">
+<label for="date">تاریخ</label><input id="date" type="date" required>
+<div class="buttons"><button type="submit">ثبت در همین دستگاه</button><button class="secondary" type="button" id="exportBtn">خروجی CSV</button></div>
+</form><p class="muted small">ثبت‌ها فقط برای آزمایش رابط کاربری هستند؛ در سرور ارسال نمی‌شوند.</p>
+</section>
+<section class="card"><h2>دفتر ثبت‌ها</h2><div id="entries" class="empty">هنوز موردی ثبت نشده است.</div><button type="button" class="danger" id="clearBtn">پاک کردن همه ثبت‌های این دستگاه</button></section>
+<footer>رؤیا • تلاش • ادامه<br>«نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.»<br>این نمونه به‌تنهایی مجوز ارائه خدمات بانکی یا پرداخت نیست.</footer>
+</div>
+<script>
+(function(){
+'use strict';
+const KEY='hormoz_finance_demo_v1';
+const $=id=>document.getElementById(id);
+const fmt=n=>new Intl.NumberFormat('fa-IR').format(n)+' تومان';
+const today=new Date();$('date').value=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v.filter(x=>x&&typeof x.title==='string'&&Number.isSafeInteger(x.amount)&&x.amount>0&&(x.kind==='income'||x.kind==='expense')):[]}catch(_){return []}}
+let rows=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(rows));return true}catch(_){alert('ذخیره محلی ممکن نشد؛ شاید حافظه مرورگر محدود باشد.');return false}}
+function render(){
+ const inc=rows.filter(x=>x.kind==='income').reduce((s,x)=>s+x.amount,0);
+ const exp=rows.filter(x=>x.kind==='expense').reduce((s,x)=>s+x.amount,0);
+ $('incomeTotal').textContent=fmt(inc);$('expenseTotal').textContent=fmt(exp);$('balanceTotal').textContent=fmt(inc-exp);
+ const box=$('entries');box.replaceChildren();
+ if(!rows.length){box.className='empty';box.textContent='هنوز موردی ثبت نشده است.';return}
+ box.className='';
+ [...rows].reverse().forEach(row=>{
+  const el=document.createElement('div');el.className='entry';
+  const info=document.createElement('div');const title=document.createElement('strong');title.textContent=row.title;
+  const date=document.createElement('div');date.className='muted small';date.textContent=row.date+' • '+(row.kind==='income'?'درآمد':'هزینه');info.append(title,date);
+  const right=document.createElement('div');right.style.textAlign='left';
+  const amount=document.createElement('div');amount.className='amount '+row.kind;amount.textContent=(row.kind==='income'?'+':'−')+fmt(row.amount);
+  const del=document.createElement('button');del.type='button';del.className='secondary small';del.textContent='حذف';del.style.marginTop='5px';del.style.padding='4px 10px';
+  del.addEventListener('click',()=>{rows=rows.filter(x=>x.id!==row.id);save();render()});right.append(amount,del);el.append(info,right);box.append(el)
+ })
+}
+$('entryForm').addEventListener('submit',e=>{e.preventDefault();const title=$('title').value.trim();const amount=Number($('amount').value);const date=$('date').value;const kind=$('kind').value;if(!title||!Number.isSafeInteger(amount)||amount<1||!date){alert('شرح، مبلغ صحیح و تاریخ را بررسی کنید.');return}rows.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),title,amount,date,kind});if(save()){ $('title').value='';$('amount').value='';render()}});
+$('clearBtn').addEventListener('click',()=>{if(confirm('همه ثبت‌های آزمایشی این مرورگر پاک شوند؟')){rows=[];save();render()}});
+$('exportBtn').addEventListener('click',()=>{if(!rows.length){alert('هنوز موردی برای خروجی وجود ندارد.');return}const esc=s=>'"'+String(s).replace(/"/g,'""')+'"';const csv='نوع,شرح,مبلغ_تومان,تاریخ\n'+rows.map(x=>[x.kind==='income'?'درآمد':'هزینه',x.title,x.amount,x.date].map(esc).join(',')).join('\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='hormoz-finance-demo.csv';a.click();URL.revokeObjectURL(url)});
+render();
+})();
+</script>
+</body></html>
