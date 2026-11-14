@@ -50,10 +50,12 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
       const employeePage = await app.inject({ method: "GET", url: "/organization-employee.html" });
       assert.equal(employeePage.statusCode, 200);
       assert.match(employeePage.body, /noindex,nofollow/);
-      assert.match(employeePage.body, /passwordForm/);\n      assert.match(employeePage.body, /leaveForm/);
+      assert.match(employeePage.body, /passwordForm/);
+      assert.match(employeePage.body, /leaveForm/);
       const organizationPage = await app.inject({ method: "GET", url: "/organization-portal.html" });
       assert.equal(organizationPage.statusCode, 200);
-      assert.match(organizationPage.body, /employeeForm/);\n      assert.match(organizationPage.body, /leaveRequests/);
+      assert.match(organizationPage.body, /employeeForm/);
+      assert.match(organizationPage.body, /leaveRequests/);
     });
 
     await t.test("new order can be created and tracked without exposing private fields", async () => {
