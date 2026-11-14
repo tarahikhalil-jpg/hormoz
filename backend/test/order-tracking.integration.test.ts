@@ -130,6 +130,9 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
     });
 
     await t.test("approved organization API keys manage only their own units", async () => {
+      const portalPage = await app.inject({ method: "GET", url: "/organization-portal.html" });
+      assert.equal(portalPage.statusCode, 200);
+      assert.match(portalPage.body, /id="unitForm"/);
       const suffix = crypto.randomUUID();
       const connectionIds: string[] = [];
       const previousAdminPassword = process.env.HORMOZ_ADMIN_PASSWORD;
