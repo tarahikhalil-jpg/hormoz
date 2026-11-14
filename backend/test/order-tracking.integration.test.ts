@@ -171,6 +171,20 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         assert.equal(found.rowCount, 1);
         const id = String(found.rows[0].id);
         connectionIds.push(id);
+        const prematureKey = await app.inject({
+          method: "POST",
+          url: "/api/v1/global-admin/organization-connections/" + encodeURIComponent(id) + "/api-key",
+          headers: { Authorization: "Bearer " + adminToken },
+          payload: { authorizationConfirmed: true },
+        });
+        assert.equal(prematureKey.statusCode, 409, prematureKey.body);
+        const unverifiedReview = await app.inject({
+          method: "POST",
+          url: "/api/v1/global-admin/organization-connections/" + encodeURIComponent(id) + "/review",
+          headers: { Authorization: "Bearer " + adminToken },
+          payload: { status: "connected", publicNote: "", adminNote: "", authorizationConfirmed: false },
+        });
+        assert.equal(unverifiedReview.statusCode, 400, unverifiedReview.body);
         const review = await app.inject({
           method: "POST",
           url: "/api/v1/global-admin/organization-connections/" + encodeURIComponent(id) + "/review",
