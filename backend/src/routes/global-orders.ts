@@ -162,7 +162,7 @@ async function ensureTable() {
     id TEXT PRIMARY KEY,
     organization_id TEXT NOT NULL REFERENCES hormoz_organization_connections(id) ON DELETE CASCADE,
     name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 2 AND 120),
-    code TEXT NOT NULL CHECK (length(trim(code)) BETWEEN 2 AND 40 AND code ~ '^[A-Z0-9_-]{2,40}
+    code TEXT NOT NULL CHECK (length(trim(code)) BETWEEN 2 AND 40 AND code ~ '^[A-Z0-9_-]{2,40}$'),
     parent_unit_id TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (organization_id, code),
