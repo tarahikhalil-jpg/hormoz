@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#071725">
+<title>پرونده شخصی کارکنان | هوش هرمز</title>
+<style>
+:root{color-scheme:dark;--bg:#071725;--panel:#102b40;--line:#31566c;--text:#f4f9fc;--muted:#c0d1dc;--aqua:#7cebdc;--gold:#ffdc9b}
+*{box-sizing:border-box}body{margin:0;padding:14px;background:radial-gradient(ellipse at top,#17445a,#071725 65%);color:var(--text);font:15px/1.9 Tahoma,Arial,sans-serif}
+main{max-width:760px;margin:auto}.panel{background:linear-gradient(145deg,#12354a,#0b1e2d);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0}
+h1,h2{color:var(--aqua)}label{display:block;margin:8px 0 4px}input{width:100%;padding:12px;border:1px solid #456a7e;border-radius:9px;background:#071725;color:var(--text);font:inherit}
+button{padding:10px 16px;border:0;border-radius:10px;background:linear-gradient(145deg,#fff0bd,#d39a43);color:#142536;font:inherit;font-weight:bold;cursor:pointer;margin-top:12px}
+.muted{color:var(--muted);font-size:13px}.hidden{display:none!important}.error{color:#ffc0c0}.success{color:#b8f5d6}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{min-width:0}.value{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#071725;overflow-wrap:anywhere}
+@media(max-width:560px){body{padding:8px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body><main>
+<h1>پرونده شخصی کارکنان هوش هرمز</h1>
+<p class="muted">ورود با کد سازمان، نام کاربری و گذرواژه‌ای که سازمان در اختیار شما قرار داده است. این صفحه فقط اطلاعات پایه شغلی خودتان را نمایش می‌دهد.</p>
+<section class="panel" id="loginPanel">
+<h2>ورود کارمند</h2>
+<form id="loginForm">
+<div class="field"><label for="orgRef">کد / شماره مرجع سازمان</label><input id="orgRef" autocomplete="organization" required maxlength="80"></div>
+<div class="field"><label for="username">نام کاربری</label><input id="username" autocomplete="username" required maxlength="40"></div>
+<div class="field"><label for="password">گذرواژه</label><input id="password" type="password" autocomplete="current-password" required maxlength="200"></div>
+<button id="loginButton" type="submit">ورود امن</button><p id="loginMessage" aria-live="polite"></p>
+</form>
+</section>
+<section class="panel hidden" id="profilePanel">
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><h2>اطلاعات شغلی من</h2><button id="logoutButton" type="button">خروج امن</button></div>
+<div class="grid">
+<div><label>نام و نام خانوادگی</label><div class="value" id="fullName">—</div></div>
+<div><label>کد کارمندی</label><div class="value" id="employeeCode">—</div></div>
+<div><label>عنوان شغلی</label><div class="value" id="jobTitle">—</div></div>
+<div><label>واحد سازمانی</label><div class="value" id="unitName">—</div></div>
+<div><label>سازمان</label><div class="value" id="organizationName">—</div></div>
+<div><label>وضعیت پرونده</label><div class="value" id="employeeStatus">—</div></div>
+</div>
+<p class="muted">این نسخه اولیه فقط اطلاعات پایه پرونده را نمایش می‌دهد. فیش حقوقی، احکام، بیمه و اسناد محرمانه تا تکمیل مجوزها و کنترل‌های دسترسی فعال نیستند.</p>
+</section>
+<footer class="muted" style="text-align:center;padding:18px">هوش هرمز | نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</footer>
+</main>
+<script>
+let sessionId="";
+const $=id=>document.getElementById(id);
+async function api(path,method="GET",body){const headers={"Content-Type":"application/json"};if(sessionId)headers["x-session-id"]=sessionId;const response=await fetch("/api/v1/organization-hr"+path,{method,headers,...(body?{body:JSON.stringify(body)}:{}) ,cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.message||"خطای ارتباط با سرور");return data;}
+$("loginForm").addEventListener("submit",async event=>{event.preventDefault();const button=$("loginButton");button.disabled=true;$("loginMessage").textContent="در حال بررسی اطلاعات ورود…";try{const result=await api("/login","POST",{organizationReference:$("orgRef").value.trim(),username:$("username").value.trim(),password:$("password").value});sessionId=result.sessionId;const profile=await api("/me");const employee=profile.employee;for(const [id,value] of [["fullName",employee.full_name],["employeeCode",employee.employee_code],["jobTitle",employee.job_title||"ثبت نشده"],["unitName",employee.unit_name||"ثبت نشده"],["organizationName",employee.organization_name],["employeeStatus",employee.status]])$(id).textContent=value;$("loginPanel").classList.add("hidden");$("profilePanel").classList.remove("hidden");$("password").value="";}catch(error){sessionId="";$("loginMessage").className="error";$("loginMessage").textContent=error.message;}finally{button.disabled=false;}});
+$("logoutButton").addEventListener("click",async()=>{try{await api("/logout","POST");}catch{}sessionId="";$("profilePanel").classList.add("hidden");$("loginPanel").classList.remove("hidden");$("loginMessage").textContent="از حساب خارج شدید.";});
+</script>
+</body></html>
