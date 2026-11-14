@@ -102,13 +102,26 @@ jobs:
             if (data.ok !== true || data.storage !== "persistent") throw new Error("database not persistent: " + text.slice(0,180));
             return "database query and order-table setup passed";
           });
-          for (const path of ["/", "/orders.html", "/track-order.html", "/invoice.html"]) {
+          for (const path of ["/", "/orders.html", "/track-order.html", "/invoice.html", "/market.html", "/organization-portal.html", "/agency-connect.html"]) {
             await check("Page " + path, async () => {
               const { r, text } = await get(path);
               if (!text.trim()) throw new Error("empty page");
+              if (path === "/organization-portal.html" &&
+                  (!text.includes('Authorization') || /demoLogin|demoMode|ورود به نسخه آزمایشی/.test(text))) {
+                throw new Error("organization portal is not real-key-only or demo UI remains");
+              }
+              if (path === "/agency-connect.html" && !text.includes("ثبت درخواست اتصال سازمانی")) {
+                throw new Error("organization onboarding form missing");
+              }
               return "HTTP " + r.status + ", " + text.length + " characters";
             });
           }
+          await check("Market public listing API", async () => {
+            const { text } = await get("/api/v1/market/ads");
+            const data = JSON.parse(text);
+            if (!Array.isArray(data.ads)) throw new Error("market API did not return an ads array: " + text.slice(0,180));
+            return "public ads endpoint returned " + data.ads.length + " active listing(s)";
+          });
           await check("Nava AI response", async () => {
             const r = await fetch(base + "/api/v1/chat", {
               method: "POST",
@@ -136,7 +149,7 @@ jobs:
             if (r.status === 503 && type.toLowerCase().includes("json")) {
               const data = JSON.parse(new TextDecoder().decode(bytes));
               if (typeof data.error === "string" && data.error.includes("صدای فارسی نوا")) {
-                return "no verified female provider available; explicit 503 returned instead of male fallback";
+                throw new Error("female Persian voice provider is unavailable; release gate requires working female audio");
               }
             }
             if (!r.ok || !type.toLowerCase().includes("audio") || bytes.byteLength < 1000) {
