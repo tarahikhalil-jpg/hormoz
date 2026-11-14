@@ -26,6 +26,7 @@ test("organization routes enforce tenant isolation and membership permissions in
     ownerA: "org-owner-a-" + suffix,
     ownerB: "org-owner-b-" + suffix,
     manager: "org-manager-" + suffix,
+    admin: "org-admin-" + suffix,
     staff: "org-staff-" + suffix,
     viewer: "org-viewer-" + suffix,
     invited: "org-invited-" + suffix,
@@ -91,9 +92,9 @@ test("organization routes enforce tenant isolation and membership permissions in
 
     await pool.query(
       `INSERT INTO hormoz_organization_memberships (organization_id,user_id,role,status)
-       VALUES ($1,$2,'manager','active'),($1,$3,'staff','active'),($1,$4,'viewer','active'),
-              ($1,$5,'staff','invited'),($1,$6,'staff','disabled')`,
-      [organizationAId, userIds.manager, userIds.staff, userIds.viewer, userIds.invited, userIds.disabled],
+       VALUES ($1,$2,'manager','active'),($1,$3,'admin','active'),($1,$4,'staff','active'),($1,$5,'viewer','active'),
+              ($1,$6,'staff','invited'),($1,$7,'staff','disabled')`,
+      [organizationAId, userIds.manager, userIds.admin, userIds.staff, userIds.viewer, userIds.invited, userIds.disabled],
     );
 
     await t.test("prevents cross-tenant reads and limits organization lists", async () => {
@@ -113,6 +114,11 @@ test("organization routes enforce tenant isolation and membership permissions in
       });
       assert.equal(root.statusCode, 201, root.body);
       rootUnitId = root.json().unit.id;
+
+      const adminUnit = await request("POST", "/api/v1/organizations/" + organizationAId + "/units", sessions.admin, {
+        name: "Administration", code: "ADM",
+      });
+      assert.equal(adminUnit.statusCode, 201, adminUnit.body);
 
       const child = await request("POST", "/api/v1/organizations/" + organizationAId + "/units", sessions.manager, {
         name: "Finance", code: "FIN", parentUnitId: rootUnitId,
