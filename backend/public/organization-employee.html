@@ -38,6 +38,18 @@ button{padding:10px 16px;border:0;border-radius:10px;background:linear-gradient(
 <div><label>وضعیت پرونده</label><div class="value" id="employeeStatus">—</div></div>
 </div>
 <p class="muted">این نسخه اولیه فقط اطلاعات پایه پرونده را نمایش می‌دهد. فیش حقوقی، احکام، بیمه و اسناد محرمانه تا تکمیل مجوزها و کنترل‌های دسترسی فعال نیستند.</p>
+<section class="panel" id="leavePanel">
+<h2>درخواست مرخصی</h2>
+<form id="leaveForm">
+<div class="grid">
+<div><label for="leaveType">نوع درخواست</label><select id="leaveType"><option value="annual">استحقاقی</option><option value="sick">استعلاجی</option><option value="unpaid">بدون حقوق</option><option value="other">سایر</option></select></div>
+<div><label for="leaveStart">از تاریخ</label><input id="leaveStart" type="date" required></div>
+<div><label for="leaveEnd">تا تاریخ</label><input id="leaveEnd" type="date" required></div>
+<div><label for="leaveReason">شرح درخواست</label><input id="leaveReason" maxlength="1000" required></div>
+</div><button id="leaveSubmit" type="submit">ثبت درخواست</button><p id="leaveMessage" aria-live="polite"></p>
+</form>
+<h3>درخواست‌های من</h3><div id="myLeaveRequests" aria-live="polite">در حال دریافت…</div>
+</section>
 </section>
 <footer class="muted" style="text-align:center;padding:18px">هوش هرمز | نوا کمک می‌کند، هرمز هماهنگ می‌کند، انسان تصمیم می‌گیرد.</footer>
 </main>
@@ -46,7 +58,11 @@ let sessionId="";
 const $=id=>document.getElementById(id);
 async function api(path,method="GET",body){const headers={"Content-Type":"application/json"};if(sessionId)headers["x-session-id"]=sessionId;const response=await fetch("/api/v1/organization-hr"+path,{method,headers,...(body?{body:JSON.stringify(body)}:{}) ,cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.message||"خطای ارتباط با سرور");return data;}
 $("loginForm").addEventListener("submit",async event=>{event.preventDefault();const button=$("loginButton");button.disabled=true;$("loginMessage").textContent="در حال بررسی اطلاعات ورود…";try{const result=await api("/login","POST",{organizationReference:$("orgRef").value.trim(),username:$("username").value.trim(),password:$("password").value});sessionId=result.sessionId;$("loginPanel").classList.add("hidden");$("password").value="";if(result.mustChangePassword){$("passwordPanel").classList.remove("hidden");return;}await showProfile();}catch(error){sessionId="";$("loginPanel").classList.remove("hidden");$("passwordPanel").classList.add("hidden");$("profilePanel").classList.add("hidden");$("loginMessage").className="error";$("loginMessage").textContent=error.message;}finally{button.disabled=false;}});
-async function showProfile(){const profile=await api("/me");const employee=profile.employee;for(const [id,value] of [["fullName",employee.full_name],["employeeCode",employee.employee_code],["jobTitle",employee.job_title||"ثبت نشده"],["unitName",employee.unit_name||"ثبت نشده"],["organizationName",employee.organization_name],["employeeStatus",employee.status]])$(id).textContent=value;$("passwordPanel").classList.add("hidden");$("profilePanel").classList.remove("hidden");}
+const leaveTypeLabels={annual:"استحقاقی",sick:"استعلاجی",unpaid:"بدون حقوق",other:"سایر"};
+const leaveStatusLabels={pending:"در انتظار بررسی",approved:"تأییدشده",rejected:"ردشده",cancelled:"لغوشده"};
+async function loadMyLeaveRequests(){const box=$("myLeaveRequests");box.textContent="در حال دریافت…";try{const data=await api("/leave-requests/mine");box.replaceChildren();if(!data.requests.length){box.textContent="هنوز درخواستی ثبت نکرده‌اید.";return;}for(const item of data.requests){const card=document.createElement("article");card.className="value";const heading=document.createElement("strong");heading.textContent=leaveTypeLabels[item.request_type]||item.request_type;const dates=document.createElement("p");dates.textContent=String(item.start_date).slice(0,10)+" تا "+String(item.end_date).slice(0,10);const status=document.createElement("p");status.textContent=leaveStatusLabels[item.status]||item.status;const reason=document.createElement("p");reason.textContent="شرح: "+item.reason;card.append(heading,dates,status,reason);if(item.review_note){const note=document.createElement("p");note.textContent="توضیح بررسی: "+item.review_note;card.append(note);}box.append(card);}}catch(error){box.textContent=error.message;}}
+$("leaveForm").addEventListener("submit",async event=>{event.preventDefault();const button=$("leaveSubmit");button.disabled=true;try{const data=await api("/leave-requests","POST",{requestType:$("leaveType").value,startDate:$("leaveStart").value,endDate:$("leaveEnd").value,reason:$("leaveReason").value});$("leaveMessage").className="success";$("leaveMessage").textContent=data.message;$("leaveForm").reset();await loadMyLeaveRequests();}catch(error){$("leaveMessage").className="error";$("leaveMessage").textContent=error.message;}finally{button.disabled=false;}});
+async function showProfile(){const profile=await api("/me");const employee=profile.employee;for(const [id,value] of [["fullName",employee.full_name],["employeeCode",employee.employee_code],["jobTitle",employee.job_title||"ثبت نشده"],["unitName",employee.unit_name||"ثبت نشده"],["organizationName",employee.organization_name],["employeeStatus",employee.status]])$(id).textContent=value;$("passwordPanel").classList.add("hidden");$("profilePanel").classList.remove("hidden");await loadMyLeaveRequests();}
 $("passwordForm").addEventListener("submit",async event=>{event.preventDefault();const button=$("changePasswordButton");button.disabled=true;try{const result=await api("/password","POST",{currentPassword:$("currentPassword").value,newPassword:$("newPassword").value});$("passwordMessage").className="success";$("passwordMessage").textContent=result.message;$("passwordForm").reset();await showProfile();}catch(error){$("passwordMessage").className="error";$("passwordMessage").textContent=error.message;}finally{button.disabled=false;}});
 $("logoutButton").addEventListener("click",async()=>{try{await api("/logout","POST");}catch{}sessionId="";$("profilePanel").classList.add("hidden");$("passwordPanel").classList.add("hidden");$("loginPanel").classList.remove("hidden");$("loginMessage").textContent="از حساب خارج شدید.";});
 </script>
