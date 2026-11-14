@@ -761,6 +761,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.get("/api/v1/organization-portal/units", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
     try {
       await ensureTable();
@@ -778,6 +779,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/api/v1/organization-portal/units", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
     try {
       await ensureTable();
