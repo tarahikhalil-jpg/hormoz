@@ -224,6 +224,9 @@ export const organizationHrRoutes: FastifyPluginAsync<OrganizationHrOptions> = a
       const result = await pool.query("UPDATE hormoz_org_employees SET status=$3,updated_at=NOW() WHERE id=$1 AND organization_id=$2 RETURNING id,status", [employeeId, org.id, status]);
       if (!result.rowCount) return reply.code(404).send({ message: "پرونده کارمند در این سازمان پیدا نشد." });
       await pool.query("UPDATE hormoz_org_employee_accounts SET status=$2,updated_at=NOW() WHERE employee_id=$1", [employeeId, status === "active" ? "active" : "disabled"]);
+      if (status !== "active") {
+        await pool.query("UPDATE hormoz_identity_sessions SET invalidated_at=NOW() WHERE user_id IN (SELECT identity_user_id FROM hormoz_org_employee_accounts WHERE employee_id=$1)", [employeeId]);
+      }
       await pool.query("INSERT INTO hormoz_org_hr_audit (id,organization_id,employee_id,action) VALUES ($1,$2,$3,$4)", [crypto.randomUUID(), org.id, employeeId, "employee_status_" + String(status)]);
       return { ok: true, employee: result.rows[0], message: "وضعیت پرونده به‌روزرسانی شد." };
     } catch (error) {
