@@ -271,6 +271,7 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
 
         const listA = await app.inject({ method: "GET", url: "/api/v1/organization-portal/units", headers: headersA });
         assert.equal(listA.statusCode, 200);
+        assert.equal(listA.headers["cache-control"], "no-store");
         assert.deepEqual(listA.json().units.map((unit: any) => unit.code).sort(), ["FIN", "HQ"]);
         const listB = await app.inject({ method: "GET", url: "/api/v1/organization-portal/units", headers: headersB });
         assert.equal(listB.statusCode, 200);
