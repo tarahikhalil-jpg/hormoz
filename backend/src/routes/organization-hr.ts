@@ -209,6 +209,28 @@ export const organizationHrRoutes: FastifyPluginAsync<OrganizationHrOptions> = a
     }
   });
 
+  app.patch("/api/v1/organization-hr/employees/:id/status", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    if (!pool) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const params = request.params as { id?: string };
+    const employeeId = typeof params.id === "string" ? params.id : "";
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const status = body.status;
+    if (!/^[0-9a-f-]{36}$/i.test(employeeId) || !["active", "inactive", "leave"].includes(String(status))) return reply.code(400).send({ message: "شناسه یا وضعیت پرونده معتبر نیست." });
+    try {
+      await ensureSchema(pool);
+      const org = await authorizedOrganization(pool, request);
+      if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نیست." });
+      const result = await pool.query("UPDATE hormoz_org_employees SET status=$3,updated_at=NOW() WHERE id=$1 AND organization_id=$2 RETURNING id,status", [employeeId, org.id, status]);
+      if (!result.rowCount) return reply.code(404).send({ message: "پرونده کارمند در این سازمان پیدا نشد." });
+      await pool.query("UPDATE hormoz_org_employee_accounts SET status=$2,updated_at=NOW() WHERE employee_id=$1", [employeeId, status === "active" ? "active" : "disabled"]);
+      await pool.query("INSERT INTO hormoz_org_hr_audit (id,organization_id,employee_id,action) VALUES ($1,$2,$3,$4)", [crypto.randomUUID(), org.id, employeeId, "employee_status_" + String(status)]);
+      return { ok: true, employee: result.rows[0], message: "وضعیت پرونده به‌روزرسانی شد." };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "تغییر وضعیت پرونده ناموفق بود." });
+    }
+  });
   app.post("/api/v1/organization-hr/login", async (request, reply) => {
     reply.header("Cache-Control", "no-store");
     if (!pool) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
