@@ -51,9 +51,11 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
       assert.equal(employeePage.statusCode, 200);
       assert.match(employeePage.body, /noindex,nofollow/);
       assert.match(employeePage.body, /passwordForm/);
+      assert.match(employeePage.body, /leaveForm/);
       const organizationPage = await app.inject({ method: "GET", url: "/organization-portal.html" });
       assert.equal(organizationPage.statusCode, 200);
       assert.match(organizationPage.body, /employeeForm/);
+      assert.match(organizationPage.body, /leaveRequests/);
     });
 
     await t.test("new order can be created and tracked without exposing private fields", async () => {
@@ -356,6 +358,30 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         assert.equal(employeeMe.statusCode, 200, employeeMe.body);
         assert.equal(employeeMe.json().employee.id, employeeId);
         assert.equal(employeeMe.json().employee.organization_name, "Unit Test A " + suffix.slice(0, 8));
+        const invalidLeave = await app.inject({ method: "POST", url: "/api/v1/organization-hr/leave-requests", headers: { "x-session-id": employeeSession }, payload: { requestType: "annual", startDate: "2026-12-05", endDate: "2026-12-01", reason: "تست مرخصی" } });
+        assert.equal(invalidLeave.statusCode, 400);
+        const submittedLeave = await app.inject({ method: "POST", url: "/api/v1/organization-hr/leave-requests", headers: { "x-session-id": employeeSession }, payload: { requestType: "annual", startDate: "2026-12-01", endDate: "2026-12-03", reason: "درخواست مرخصی آزمایشی" } });
+        assert.equal(submittedLeave.statusCode, 201, submittedLeave.body);
+        assert.equal(submittedLeave.headers["cache-control"], "no-store");
+        const leaveId = submittedLeave.json().request.id;
+        const myLeaves = await app.inject({ method: "GET", url: "/api/v1/organization-hr/leave-requests/mine", headers: { "x-session-id": employeeSession } });
+        assert.equal(myLeaves.statusCode, 200, myLeaves.body);
+        assert.equal(myLeaves.json().requests.length, 1);
+        assert.equal(myLeaves.json().requests[0].id, leaveId);
+        const orgLeavesA = await app.inject({ method: "GET", url: "/api/v1/organization-hr/leave-requests", headers: headersA });
+        assert.equal(orgLeavesA.statusCode, 200, orgLeavesA.body);
+        assert.equal(orgLeavesA.json().requests.length, 1);
+        const orgLeavesB = await app.inject({ method: "GET", url: "/api/v1/organization-hr/leave-requests", headers: headersB });
+        assert.equal(orgLeavesB.statusCode, 200, orgLeavesB.body);
+        assert.equal(orgLeavesB.json().requests.length, 0);
+        const approvedLeave = await app.inject({ method: "PATCH", url: "/api/v1/organization-hr/leave-requests/" + encodeURIComponent(leaveId) + "/review", headers: headersA, payload: { decision: "approved", reviewNote: "تأیید آزمایشی" } });
+        assert.equal(approvedLeave.statusCode, 200, approvedLeave.body);
+        const myReviewedLeaves = await app.inject({ method: "GET", url: "/api/v1/organization-hr/leave-requests/mine", headers: { "x-session-id": employeeSession } });
+        assert.equal(myReviewedLeaves.json().requests[0].status, "approved");
+        const duplicateReview = await app.inject({ method: "PATCH", url: "/api/v1/organization-hr/leave-requests/" + encodeURIComponent(leaveId) + "/review", headers: headersA, payload: { decision: "rejected" } });
+        assert.equal(duplicateReview.statusCode, 404);
+        const crossTenantReview = await app.inject({ method: "PATCH", url: "/api/v1/organization-hr/leave-requests/" + encodeURIComponent(leaveId) + "/review", headers: headersB, payload: { decision: "rejected" } });
+        assert.equal(crossTenantReview.statusCode, 404);
         const noSession = await app.inject({ method: "GET", url: "/api/v1/organization-hr/me" });
         assert.equal(noSession.statusCode, 401);
         const logout = await app.inject({

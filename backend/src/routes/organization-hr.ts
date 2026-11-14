@@ -59,6 +59,27 @@ async function ensureSchema(pool: Pool): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS hormoz_org_hr_audit_org_idx
       ON hormoz_org_hr_audit (organization_id, created_at DESC);
+    CREATE TABLE IF NOT EXISTS hormoz_org_leave_requests (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL,
+      employee_id TEXT NOT NULL,
+      request_type TEXT NOT NULL CHECK (request_type IN ('annual','sick','unpaid','other')),
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      reason TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','cancelled')),
+      review_note TEXT NOT NULL DEFAULT '',
+      reviewed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CHECK (end_date >= start_date),
+      FOREIGN KEY (organization_id, employee_id)
+        REFERENCES hormoz_org_employees(organization_id, id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS hormoz_org_leave_requests_org_idx
+      ON hormoz_org_leave_requests (organization_id, status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS hormoz_org_leave_requests_employee_idx
+      ON hormoz_org_leave_requests (employee_id, created_at DESC);
   `);
   schemaReady.add(pool);
 }
@@ -234,6 +255,133 @@ export const organizationHrRoutes: FastifyPluginAsync<OrganizationHrOptions> = a
       return reply.code(503).send({ message: "تغییر وضعیت پرونده ناموفق بود." });
     }
   });
+  app.post("/api/v1/organization-hr/leave-requests", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    if (!pool) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const sessionId = request.headers[SESSION_HEADER];
+    if (typeof sessionId !== "string" || !sessionId.trim()) return reply.code(401).send({ message: "ورود لازم است." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const requestType = body.requestType;
+    const startDate = typeof body.startDate === "string" ? body.startDate : "";
+    const endDate = typeof body.endDate === "string" ? body.endDate : "";
+    const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+    const validDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value + "T00:00:00Z")) && new Date(value + "T00:00:00Z").toISOString().slice(0, 10) === value;
+    if (!["annual", "sick", "unpaid", "other"].includes(String(requestType)) || !validDate(startDate) || !validDate(endDate) || endDate < startDate || reason.length < 3 || reason.length > 1000) {
+      return reply.code(400).send({ message: "نوع، تاریخ یا شرح درخواست مرخصی معتبر نیست." });
+    }
+    try {
+      await ensureSchema(pool);
+      const identity = await identityService.authenticate(sessionId.trim());
+      const employee = await pool.query(
+        "SELECT a.organization_id,a.employee_id FROM hormoz_org_employee_accounts a JOIN hormoz_org_employees e ON e.id=a.employee_id AND e.organization_id=a.organization_id JOIN hormoz_organization_connections o ON o.id=a.organization_id WHERE a.identity_user_id=$1 AND a.status='active' AND a.must_change_password=FALSE AND e.status='active' AND o.status='connected' LIMIT 1",
+        [identity.user.userId],
+      );
+      if (!employee.rowCount) return reply.code(403).send({ message: "حساب کارمندی فعال پیدا نشد." });
+      const row = employee.rows[0];
+      const id = crypto.randomUUID();
+      const created = await pool.query(
+        "INSERT INTO hormoz_org_leave_requests (id,organization_id,employee_id,request_type,start_date,end_date,reason) VALUES ($1,$2,$3,$4,$5::date,$6::date,$7) RETURNING id,request_type,start_date,end_date,reason,status,created_at",
+        [id, row.organization_id, row.employee_id, requestType, startDate, endDate, reason],
+      );
+      await pool.query(
+        "INSERT INTO hormoz_org_hr_audit (id,organization_id,actor_user_id,employee_id,action) VALUES ($1,$2,$3,$4,'leave_request_submitted')",
+        [crypto.randomUUID(), row.organization_id, identity.user.userId, row.employee_id],
+      );
+      return reply.code(201).send({ ok: true, request: created.rows[0], message: "درخواست مرخصی برای بررسی ثبت شد." });
+    } catch (error) {
+      if (error instanceof IdentityError) return reply.code(401).send({ message: "نشست ورود معتبر نیست." });
+      request.log.error(error);
+      return reply.code(503).send({ message: "ثبت درخواست مرخصی ناموفق بود." });
+    }
+  });
+
+  app.get("/api/v1/organization-hr/leave-requests/mine", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    if (!pool) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const sessionId = request.headers[SESSION_HEADER];
+    if (typeof sessionId !== "string" || !sessionId.trim()) return reply.code(401).send({ message: "ورود لازم است." });
+    try {
+      await ensureSchema(pool);
+      const identity = await identityService.authenticate(sessionId.trim());
+      const employee = await pool.query(
+        "SELECT a.organization_id,a.employee_id FROM hormoz_org_employee_accounts a JOIN hormoz_org_employees e ON e.id=a.employee_id AND e.organization_id=a.organization_id JOIN hormoz_organization_connections o ON o.id=a.organization_id WHERE a.identity_user_id=$1 AND a.status='active' AND a.must_change_password=FALSE AND e.status='active' AND o.status='connected' LIMIT 1",
+        [identity.user.userId],
+      );
+      if (!employee.rowCount) return reply.code(403).send({ message: "حساب کارمندی فعال پیدا نشد." });
+      const result = await pool.query(
+        "SELECT id,request_type,start_date,end_date,reason,status,review_note,reviewed_at,created_at FROM hormoz_org_leave_requests WHERE organization_id=$1 AND employee_id=$2 ORDER BY created_at DESC LIMIT 100",
+        [employee.rows[0].organization_id, employee.rows[0].employee_id],
+      );
+      return { ok: true, requests: result.rows };
+    } catch (error) {
+      if (error instanceof IdentityError) return reply.code(401).send({ message: "نشست ورود معتبر نیست." });
+      request.log.error(error);
+      return reply.code(503).send({ message: "دریافت درخواست‌ها ناموفق بود." });
+    }
+  });
+
+  app.get("/api/v1/organization-hr/leave-requests", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    if (!pool) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureSchema(pool);
+      const org = await authorizedOrganization(pool, request);
+      if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نیست." });
+      const result = await pool.query(
+        "SELECT r.id,r.employee_id,e.employee_code,e.full_name,r.request_type,r.start_date,r.end_date,r.reason,r.status,r.review_note,r.created_at FROM hormoz_org_leave_requests r JOIN hormoz_org_employees e ON e.id=r.employee_id AND e.organization_id=r.organization_id WHERE r.organization_id=$1 ORDER BY CASE WHEN r.status='pending' THEN 0 ELSE 1 END,r.created_at DESC LIMIT 500",
+        [org.id],
+      );
+      return { ok: true, requests: result.rows };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "دریافت درخواست‌های سازمان ناموفق بود." });
+    }
+  });
+
+  app.patch("/api/v1/organization-hr/leave-requests/:id/review", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    if (!pool) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const params = request.params as { id?: string };
+    const requestId = typeof params.id === "string" ? params.id : "";
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const decision = body.decision;
+    const reviewNote = typeof body.reviewNote === "string" ? body.reviewNote.trim() : "";
+    if (!/^[0-9a-f-]{36}$/i.test(requestId) || !["approved", "rejected"].includes(String(decision)) || reviewNote.length > 500) {
+      return reply.code(400).send({ message: "تصمیم یا توضیح بررسی معتبر نیست." });
+    }
+    try {
+      await ensureSchema(pool);
+      const org = await authorizedOrganization(pool, request);
+      if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نیست." });
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        const updated = await client.query(
+          "UPDATE hormoz_org_leave_requests SET status=$3,review_note=$4,reviewed_at=NOW(),updated_at=NOW() WHERE id=$1 AND organization_id=$2 AND status='pending' RETURNING id,employee_id,status,review_note",
+          [requestId, org.id, decision, reviewNote],
+        );
+        if (!updated.rowCount) {
+          await client.query("ROLLBACK");
+          return reply.code(404).send({ message: "درخواست در انتظار بررسی در این سازمان پیدا نشد." });
+        }
+        await client.query(
+          "INSERT INTO hormoz_org_hr_audit (id,organization_id,employee_id,action) VALUES ($1,$2,$3,$4)",
+          [crypto.randomUUID(), org.id, updated.rows[0].employee_id, "leave_request_" + String(decision)],
+        );
+        await client.query("COMMIT");
+        return { ok: true, request: updated.rows[0], message: "نتیجه بررسی ثبت شد." };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "بررسی درخواست ناموفق بود." });
+    }
+  });
+
   app.post("/api/v1/organization-hr/login", async (request, reply) => {
     reply.header("Cache-Control", "no-store");
     if (!pool) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
