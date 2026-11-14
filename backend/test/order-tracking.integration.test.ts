@@ -132,6 +132,16 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
     await t.test("approved organization API keys manage only their own units", async () => {
       const suffix = crypto.randomUUID();
       const connectionIds: string[] = [];
+      const previousAdminPassword = process.env.HORMOZ_ADMIN_PASSWORD;
+      const adminPassword = "integration-admin-" + suffix;
+      process.env.HORMOZ_ADMIN_PASSWORD = adminPassword;
+      const adminLogin = await app.inject({
+        method: "POST",
+        url: "/api/v1/global-admin/login",
+        payload: { password: adminPassword },
+      });
+      assert.equal(adminLogin.statusCode, 200, adminLogin.body);
+      const adminToken = adminLogin.json().token;
       const registerOrganization = async (name: string) => {
         const response = await app.inject({
           method: "POST",
@@ -160,13 +170,26 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         assert.equal(found.rowCount, 1);
         const id = String(found.rows[0].id);
         connectionIds.push(id);
-        const apiKey = "hz_org_" + crypto.randomBytes(32).toString("base64url");
-        const hash = crypto.createHash("sha256").update(apiKey).digest("hex");
-        await testPool.query(
-          "UPDATE hormoz_organization_connections SET status='connected',api_key_hash=$2,api_key_prefix=$3 WHERE id=$1",
-          [id, hash, apiKey.slice(0, 14)],
-        );
-        return { id, apiKey };
+        const review = await app.inject({
+          method: "POST",
+          url: "/api/v1/global-admin/organization-connections/" + encodeURIComponent(id) + "/review",
+          headers: { Authorization: "Bearer " + adminToken },
+          payload: {
+            status: "connected",
+            publicNote: "Integration test connection approved",
+            adminNote: "Integration approval reference " + suffix,
+            authorizationConfirmed: true,
+          },
+        });
+        assert.equal(review.statusCode, 200, review.body);
+        const issued = await app.inject({
+          method: "POST",
+          url: "/api/v1/global-admin/organization-connections/" + encodeURIComponent(id) + "/api-key",
+          headers: { Authorization: "Bearer " + adminToken },
+          payload: { authorizationConfirmed: true },
+        });
+        assert.equal(issued.statusCode, 200, issued.body);
+        return { id, apiKey: issued.json().apiKey };
       };
 
       try {
@@ -242,6 +265,8 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         if (connectionIds.length) {
           await testPool.query("DELETE FROM hormoz_organization_connections WHERE id = ANY($1::text[])", [connectionIds]);
         }
+        if (previousAdminPassword === undefined) delete process.env.HORMOZ_ADMIN_PASSWORD;
+        else process.env.HORMOZ_ADMIN_PASSWORD = previousAdminPassword;
       }
     });
 
