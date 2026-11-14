@@ -3,7 +3,9 @@ import type { Pool } from "pg";
 import type { IdentityService } from "../modules/identity/identity.service.js";
 import { IdentityError } from "../modules/identity/repositories/errors.js";
 
-type OrganizationRole = "owner" | "admin" | "manager" | "staff" | "viewer";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ORGANIZATION_ROLES = ["owner", "admin", "manager", "staff", "viewer"] as const;
+type OrganizationRole = typeof ORGANIZATION_ROLES[number];
 
 function sessionId(request: any): string {
   const header = request.headers["x-session-id"];
@@ -27,7 +29,7 @@ async function identityFor(request: any, reply: any, identityService: IdentitySe
   }
 }
 
-async function ensureOrganizationSchema(pool: Pool): Promise<void> {
+export async function ensureOrganizationSchema(pool: Pool): Promise<void> {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS hormoz_organizations (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -64,6 +66,24 @@ async function ensureOrganizationSchema(pool: Pool): Promise<void> {
     CREATE INDEX IF NOT EXISTS hormoz_org_units_org_idx
       ON hormoz_organization_units(organization_id);
   `);
+}
+
+function validOrganizationId(value: unknown): value is string {
+  return typeof value === "string" && UUID_PATTERN.test(value);
+}
+
+function canManageUnits(role: OrganizationRole): boolean {
+  return role === "owner" || role === "admin" || role === "manager";
+}
+
+function sendDatabaseConstraintError(error: any, reply: any, duplicateCode: string) {
+  if (error?.code === "23505") {
+    return reply.code(409).send({ success: false, error: duplicateCode });
+  }
+  if (error?.code === "23503" || error?.code === "22P02") {
+    return reply.code(400).send({ success: false, error: "INVALID_ORGANIZATION_REFERENCE" });
+  }
+  throw error;
 }
 
 export async function organizationRoutes(
@@ -116,9 +136,8 @@ export async function organizationRoutes(
       await client.query("COMMIT");
       return reply.code(201).send({ success: true, organization: { ...organization, role: "owner" } });
     } catch (error: any) {
-      await client.query("ROLLBACK");
-      if (error?.code === "23505") return reply.code(409).send({ success: false, error: "ORGANIZATION_SLUG_EXISTS" });
-      throw error;
+      try { await client.query("ROLLBACK"); } catch { /* preserve the original database error */ }
+      return sendDatabaseConstraintError(error, reply, "ORGANIZATION_SLUG_EXISTS");
     } finally {
       client.release();
     }
@@ -129,11 +148,12 @@ export async function organizationRoutes(
     if (!identity) return;
     if (!pool) return reply.code(503).send({ success: false, error: "PERSISTENCE_UNAVAILABLE" });
     const { organizationId } = request.params as { organizationId: string };
+    if (!validOrganizationId(organizationId)) return reply.code(400).send({ success: false, error: "INVALID_ORGANIZATION_ID" });
     const result = await pool.query(
       `SELECT o.id, o.name, o.slug, o.description, o.status, m.role, o.created_at
        FROM hormoz_organizations o
        JOIN hormoz_organization_memberships m ON m.organization_id = o.id
-       WHERE o.id = $1 AND m.user_id = $2 AND m.status = 'active'`,
+       WHERE o.id = $1 AND o.status = 'active' AND m.user_id = $2 AND m.status = 'active'`,
       [organizationId, identity.user.userId]
     );
     if (!result.rowCount) return reply.code(404).send({ success: false, error: "ORGANIZATION_NOT_FOUND" });
@@ -145,9 +165,12 @@ export async function organizationRoutes(
     if (!identity) return;
     if (!pool) return reply.code(503).send({ success: false, error: "PERSISTENCE_UNAVAILABLE" });
     const { organizationId } = request.params as { organizationId: string };
+    if (!validOrganizationId(organizationId)) return reply.code(400).send({ success: false, error: "INVALID_ORGANIZATION_ID" });
     const membership = await pool.query(
-      `SELECT 1 FROM hormoz_organization_memberships
-       WHERE organization_id = $1 AND user_id = $2 AND status = 'active'`,
+      `SELECT 1 FROM hormoz_organization_memberships m
+       JOIN hormoz_organizations o ON o.id = m.organization_id
+       WHERE m.organization_id = $1 AND m.user_id = $2
+         AND m.status = 'active' AND o.status = 'active'`,
       [organizationId, identity.user.userId]
     );
     if (!membership.rowCount) return reply.code(404).send({ success: false, error: "ORGANIZATION_NOT_FOUND" });
@@ -164,20 +187,24 @@ export async function organizationRoutes(
     if (!identity) return;
     if (!pool) return reply.code(503).send({ success: false, error: "PERSISTENCE_UNAVAILABLE" });
     const { organizationId } = request.params as { organizationId: string };
+    if (!validOrganizationId(organizationId)) return reply.code(400).send({ success: false, error: "INVALID_ORGANIZATION_ID" });
     const body = (request.body ?? {}) as Record<string, unknown>;
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const code = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
     const parentUnitId = typeof body.parentUnitId === "string" ? body.parentUnitId : null;
-    if (name.length < 2 || name.length > 120 || !/^[A-Z0-9_-]{2,40}$/.test(code)) {
+    if (name.length < 2 || name.length > 120 || !/^[A-Z0-9_-]{2,40}$/.test(code) ||
+        (parentUnitId !== null && !validOrganizationId(parentUnitId))) {
       return reply.code(400).send({ success: false, error: "INVALID_UNIT_INPUT" });
     }
     const membership = await pool.query(
-      `SELECT role FROM hormoz_organization_memberships
-       WHERE organization_id = $1 AND user_id = $2 AND status = 'active'`,
+      `SELECT m.role FROM hormoz_organization_memberships m
+       JOIN hormoz_organizations o ON o.id = m.organization_id
+       WHERE m.organization_id = $1 AND m.user_id = $2
+         AND m.status = 'active' AND o.status = 'active'`,
       [organizationId, identity.user.userId]
     );
     if (!membership.rowCount) return reply.code(404).send({ success: false, error: "ORGANIZATION_NOT_FOUND" });
-    if (!["owner", "admin", "manager"].includes(membership.rows[0].role)) {
+    if (!canManageUnits(membership.rows[0].role as OrganizationRole)) {
       return reply.code(403).send({ success: false, error: "INSUFFICIENT_ORGANIZATION_ROLE" });
     }
     try {
@@ -190,10 +217,8 @@ export async function organizationRoutes(
       return reply.code(201).send({ success: true, unit: result.rows[0] });
     } catch (error: any) {
       if (error?.code === "23505") return reply.code(409).send({ success: false, error: "UNIT_CODE_EXISTS" });
-      if (error?.code === "23503") return reply.code(400).send({ success: false, error: "INVALID_PARENT_UNIT" });
+      if (error?.code === "23503" || error?.code === "22P02") return reply.code(400).send({ success: false, error: "INVALID_PARENT_UNIT" });
       throw error;
     }
   });
 }
-
-export { ensureOrganizationSchema };
