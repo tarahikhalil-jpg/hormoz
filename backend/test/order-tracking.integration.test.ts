@@ -333,6 +333,11 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         });
         assert.equal(employeeLogin.statusCode, 200, employeeLogin.body);
         const employeeSession = employeeLogin.json().sessionId;
+        assert.equal(employeeLogin.json().mustChangePassword, true);
+        const blockedProfile = await app.inject({ method: "GET", url: "/api/v1/organization-hr/me", headers: { "x-session-id": employeeSession } });
+        assert.equal(blockedProfile.statusCode, 403);
+        const changedPassword = await app.inject({ method: "POST", url: "/api/v1/organization-hr/password", headers: { "x-session-id": employeeSession }, payload: { currentPassword: "Strong-Test-Password-777", newPassword: "New-Strong-Test-Password-778" } });
+        assert.equal(changedPassword.statusCode, 200, changedPassword.body);
         const employeeMe = await app.inject({
           method: "GET",
           url: "/api/v1/organization-hr/me",
@@ -355,6 +360,10 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
           headers: { "x-session-id": employeeSession },
         });
         assert.equal(afterLogout.statusCode, 401);
+        const oldPasswordLogin = await app.inject({ method: "POST", url: "/api/v1/organization-hr/login", payload: { organizationReference: organizationA.referenceNumber, username: "hrtest" + suffix.slice(0, 8), password: "Strong-Test-Password-777" } });
+        assert.equal(oldPasswordLogin.statusCode, 401);
+        const newPasswordLogin = await app.inject({ method: "POST", url: "/api/v1/organization-hr/login", payload: { organizationReference: organizationA.referenceNumber, username: "hrtest" + suffix.slice(0, 8), password: "New-Strong-Test-Password-778" } });
+        assert.equal(newPasswordLogin.statusCode, 200, newPasswordLogin.body);
       } finally {
         if (connectionIds.length) {
           await testPool.query("DELETE FROM hormoz_organization_connections WHERE id = ANY($1::text[])", [connectionIds]);
