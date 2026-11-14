@@ -39,6 +39,10 @@ test("organization routes enforce tenant isolation and membership permissions in
     await initializeHormozPersistence(pool);
     await ensureOrganizationSchema(pool);
     await ensureOrganizationSchema(pool); // schema setup must be safe to repeat
+    const migration = await pool.query(
+      "SELECT count(*)::int AS count FROM hormoz_schema_migrations WHERE version='organization-core-001'",
+    );
+    assert.equal(migration.rows[0].count, 1, "organization schema migration should be recorded exactly once");
 
     identityService = new IdentityService({
       userRepository: new PostgresUserRepository(pool),
