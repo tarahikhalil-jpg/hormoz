@@ -207,7 +207,7 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
           payload: { authorizationConfirmed: true },
         });
         assert.equal(issued.statusCode, 200, issued.body);
-        return { id, apiKey: issued.json().apiKey };
+        return { id, apiKey: issued.json().apiKey, referenceNumber: body.referenceNumber };
       };
 
         const organizationA = await registerOrganization("Unit Test A " + suffix.slice(0, 8));
@@ -293,6 +293,68 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         const listB = await app.inject({ method: "GET", url: "/api/v1/organization-portal/units", headers: headersB });
         assert.equal(listB.statusCode, 200);
         assert.deepEqual(listB.json().units.map((unit: any) => unit.code), ["EXT"]);
+
+        const unauthenticatedHr = await app.inject({ method: "GET", url: "/api/v1/organization-hr/employees" });
+        assert.equal(unauthenticatedHr.statusCode, 401);
+        const createdEmployee = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-hr/employees",
+          headers: headersA,
+          payload: {
+            fullName: "Employee Test " + suffix.slice(0, 6),
+            employeeCode: "EMP_" + suffix.slice(0, 6).toUpperCase(),
+            jobTitle: "Integration Officer",
+            unitId: rootId,
+            username: "hrtest" + suffix.slice(0, 8),
+            temporaryPassword: "Strong-Test-Password-777",
+          },
+        });
+        assert.equal(createdEmployee.statusCode, 201, createdEmployee.body);
+        const employeeId = createdEmployee.json().employee.id;
+        const employeeListA = await app.inject({ method: "GET", url: "/api/v1/organization-hr/employees", headers: headersA });
+        assert.equal(employeeListA.statusCode, 200, employeeListA.body);
+        assert.equal(employeeListA.headers["cache-control"], "no-store");
+        assert.equal(employeeListA.json().employees.length, 1);
+        assert.equal(employeeListA.json().employees[0].id, employeeId);
+        const employeeListB = await app.inject({ method: "GET", url: "/api/v1/organization-hr/employees", headers: headersB });
+        assert.equal(employeeListB.statusCode, 200, employeeListB.body);
+        assert.equal(employeeListB.json().employees.length, 0);
+
+        const wrongPassword = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-hr/login",
+          payload: { organizationReference: organizationA.referenceNumber, username: "hrtest" + suffix.slice(0, 8), password: "wrong-password" },
+        });
+        assert.equal(wrongPassword.statusCode, 401);
+        const employeeLogin = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-hr/login",
+          payload: { organizationReference: organizationA.referenceNumber, username: "hrtest" + suffix.slice(0, 8), password: "Strong-Test-Password-777" },
+        });
+        assert.equal(employeeLogin.statusCode, 200, employeeLogin.body);
+        const employeeSession = employeeLogin.json().sessionId;
+        const employeeMe = await app.inject({
+          method: "GET",
+          url: "/api/v1/organization-hr/me",
+          headers: { "x-session-id": employeeSession },
+        });
+        assert.equal(employeeMe.statusCode, 200, employeeMe.body);
+        assert.equal(employeeMe.json().employee.id, employeeId);
+        assert.equal(employeeMe.json().employee.organization_name, "Unit Test A " + suffix.slice(0, 8));
+        const noSession = await app.inject({ method: "GET", url: "/api/v1/organization-hr/me" });
+        assert.equal(noSession.statusCode, 401);
+        const logout = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-hr/logout",
+          headers: { "x-session-id": employeeSession },
+        });
+        assert.equal(logout.statusCode, 200, logout.body);
+        const afterLogout = await app.inject({
+          method: "GET",
+          url: "/api/v1/organization-hr/me",
+          headers: { "x-session-id": employeeSession },
+        });
+        assert.equal(afterLogout.statusCode, 401);
       } finally {
         if (connectionIds.length) {
           await testPool.query("DELETE FROM hormoz_organization_connections WHERE id = ANY($1::text[])", [connectionIds]);
