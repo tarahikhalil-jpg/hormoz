@@ -158,6 +158,19 @@ async function ensureTable() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await db.query("CREATE INDEX IF NOT EXISTS hormoz_org_services_public_idx ON hormoz_organization_services (status, updated_at DESC)");
+  await db.query(`CREATE TABLE IF NOT EXISTS hormoz_organization_units (
+    id TEXT PRIMARY KEY,
+    organization_id TEXT NOT NULL REFERENCES hormoz_organization_connections(id) ON DELETE CASCADE,
+    name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 2 AND 120),
+    code TEXT NOT NULL CHECK (length(trim(code)) BETWEEN 2 AND 40),
+    parent_unit_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (organization_id, code),
+    UNIQUE (organization_id, id),
+    FOREIGN KEY (organization_id, parent_unit_id)
+      REFERENCES hormoz_organization_units(organization_id, id)
+  )`);
+  await db.query("CREATE INDEX IF NOT EXISTS hormoz_org_units_org_idx ON hormoz_organization_units (organization_id)");
   tableReady = true;
 }
 
@@ -745,6 +758,55 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نشده است." });
       return { ok: true, organization: { referenceNumber: org.reference_number, name: org.organization_name, type: org.organization_type, country: org.country, region: org.region, website: org.website, officialEmail: org.official_email, representativeName: org.representative_name, representativeTitle: org.representative_title, contact: org.contact, status: org.status } };
     } catch (error) { request.log.error(error); return reply.code(503).send({ message: "دریافت اطلاعات پنل سازمان ناموفق بود." }); }
+  });
+
+  app.get("/api/v1/organization-portal/units", async (request, reply) => {
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTable();
+      const org = await authorizedOrganization(request);
+      if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نشده است." });
+      const result = await db.query(
+        "SELECT id,name,code,parent_unit_id,created_at FROM hormoz_organization_units WHERE organization_id=$1 ORDER BY name",
+        [org.id],
+      );
+      return { ok: true, units: result.rows };
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(503).send({ message: "دریافت واحدهای سازمان ناموفق بود." });
+    }
+  });
+
+  app.post("/api/v1/organization-portal/units", async (request, reply) => {
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    try {
+      await ensureTable();
+      const org = await authorizedOrganization(request);
+      if (!org) return reply.code(401).send({ message: "کلید API معتبر نیست یا اتصال سازمان فعال نشده است." });
+      const body = (request.body ?? {}) as Record<string, unknown>;
+      const name = typeof body.name === "string" ? body.name.trim() : "";
+      const code = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
+      const parentUnitId = typeof body.parentUnitId === "string" && body.parentUnitId.trim()
+        ? body.parentUnitId.trim().toLowerCase()
+        : null;
+      if (name.length < 2 || name.length > 120 || !/^[A-Z0-9_-]{2,40}$/.test(code) ||
+          (parentUnitId !== null && !/^[a-f0-9]{24}$/.test(parentUnitId))) {
+        return reply.code(400).send({ message: "نام، کد یا واحد بالادست معتبر نیست." });
+      }
+      const id = crypto.randomBytes(12).toString("hex");
+      const result = await db.query(
+        `INSERT INTO hormoz_organization_units (id,organization_id,name,code,parent_unit_id)
+         VALUES ($1,$2,$3,$4,$5)
+         RETURNING id,name,code,parent_unit_id,created_at`,
+        [id, org.id, name, code, parentUnitId],
+      );
+      return reply.code(201).send({ ok: true, unit: result.rows[0], message: "واحد سازمانی ثبت شد." });
+    } catch (error: any) {
+      if (error?.code === "23505") return reply.code(409).send({ ok: false, message: "کد این واحد قبلاً در همین سازمان ثبت شده است." });
+      if (error?.code === "23503") return reply.code(400).send({ ok: false, message: "واحد بالادست باید متعلق به همین سازمان باشد." });
+      request.log.error(error);
+      return reply.code(503).send({ ok: false, message: "ثبت واحد سازمانی ناموفق بود." });
+    }
   });
 
   app.get("/api/v1/organization-portal/services", async (request, reply) => {
