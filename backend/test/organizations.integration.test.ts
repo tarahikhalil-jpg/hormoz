@@ -151,6 +151,25 @@ test("organization routes enforce tenant isolation and membership permissions in
       assert.equal(malformed.statusCode, 400);
     });
 
+    await t.test("rolls back organization creation when owner membership insertion fails", async () => {
+      const constraintName = "org_test_force_membership_failure_" + suffix.replace(/-/g, "");
+      await pool.query(`ALTER TABLE hormoz_organization_memberships
+        ADD CONSTRAINT ${constraintName} CHECK (user_id <> '${userIds.ownerA}')`);
+      try {
+        const failed = await request("POST", "/api/v1/organizations", sessions.ownerA, {
+          name: "Must Roll Back", slug: "rollback-" + suffix.slice(0, 8),
+        });
+        assert.equal(failed.statusCode, 500);
+        const persisted = await pool.query(
+          "SELECT id FROM hormoz_organizations WHERE slug=$1",
+          ["rollback-" + suffix.slice(0, 8)],
+        );
+        assert.equal(persisted.rowCount, 0, "organization row must roll back with failed owner membership");
+      } finally {
+        await pool.query(`ALTER TABLE hormoz_organization_memberships DROP CONSTRAINT IF EXISTS ${constraintName}`);
+      }
+    });
+
     await t.test("denies invited and disabled memberships and suspended organizations", async () => {
       const invited = await request("GET", "/api/v1/organizations/" + organizationAId, sessions.invited);
       assert.equal(invited.statusCode, 404);
