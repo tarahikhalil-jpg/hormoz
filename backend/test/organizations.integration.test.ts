@@ -158,7 +158,7 @@ test("organization routes enforce tenant isolation and membership permissions in
     await t.test("rolls back organization creation when owner membership insertion fails", async () => {
       const constraintName = "org_test_fail_" + suffix.replace(/-/g, "");
       await pool.query(`ALTER TABLE hormoz_organization_memberships
-        ADD CONSTRAINT ${constraintName} CHECK (user_id <> '${userIds.ownerA}')`);
+        ADD CONSTRAINT ${constraintName} CHECK (user_id <> '${userIds.ownerA}') NOT VALID`);
       try {
         const failed = await request("POST", "/api/v1/organizations", sessions.ownerA, {
           name: "Must Roll Back", slug: "rollback-" + suffix.slice(0, 8),
