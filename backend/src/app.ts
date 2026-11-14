@@ -29,6 +29,7 @@ import { adminRoutes, recordPublicVisit } from "./routes/admin.js";
 import { imageGenerationRoutes } from "./routes/image-generation.js";
 import { globalOrderRoutes } from "./routes/global-orders.js";
 import { discoveryRoutes } from "./routes/discovery.js";
+import { organizationRoutes, ensureOrganizationSchema } from "./routes/organizations.js";
 
 export interface AppOptions {
   light?: LightDevice;
@@ -1935,7 +1936,8 @@ export function buildApp(
   if (persistencePool) {
     app.addHook("onReady", async () => {
       await initializeHormozPersistence(persistencePool);
-      app.log.info("Hormoz PostgreSQL repositories initialized");
+      await ensureOrganizationSchema(persistencePool);
+      app.log.info("Hormoz PostgreSQL and organization repositories initialized");
     });
     app.addHook("onClose", async () => {
       await persistencePool.end();
@@ -2458,6 +2460,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
   );
 
   app.register(recoveryRoutes, { pool: persistencePool, identityService });
+  app.register(organizationRoutes, { pool: persistencePool, identityService });
 
 
   app.register(healthRoutes, { pool: persistencePool });
