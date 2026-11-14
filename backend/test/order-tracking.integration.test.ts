@@ -382,6 +382,41 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         assert.equal(duplicateReview.statusCode, 404);
         const crossTenantReview = await app.inject({ method: "PATCH", url: "/api/v1/organization-hr/leave-requests/" + encodeURIComponent(leaveId) + "/review", headers: headersB, payload: { decision: "rejected" } });
         assert.equal(crossTenantReview.statusCode, 404);
+        const correspondenceUnauthenticated = await app.inject({ method: "GET", url: "/api/v1/organization-correspondence" });
+        assert.equal(correspondenceUnauthenticated.statusCode, 401);
+        const sentLetter = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-correspondence",
+          headers: headersA,
+          payload: { recipientReference: organizationB.referenceNumber, subject: "تست مکاتبه بین سازمانی", body: "این یک نامه آزمایشی برای بررسی جداسازی سازمانی است.", classification: "normal" },
+        });
+        assert.equal(sentLetter.statusCode, 201, sentLetter.body);
+        const correspondenceIdResult = await testPool.query("SELECT id FROM hormoz_org_correspondence WHERE reference_number=$1", [sentLetter.json().referenceNumber]);
+        assert.equal(correspondenceIdResult.rowCount, 1);
+        const correspondenceId = String(correspondenceIdResult.rows[0].id);
+        const inboxB = await app.inject({ method: "GET", url: "/api/v1/organization-correspondence?box=inbox", headers: headersB });
+        assert.equal(inboxB.statusCode, 200, inboxB.body);
+        assert.equal(inboxB.json().correspondence.length, 1);
+        assert.equal(inboxB.json().correspondence[0].subject, "تست مکاتبه بین سازمانی");
+        const outboxA = await app.inject({ method: "GET", url: "/api/v1/organization-correspondence?box=outbox", headers: headersA });
+        assert.equal(outboxA.statusCode, 200, outboxA.body);
+        assert.equal(outboxA.json().correspondence.length, 1);
+        const senderCannotProcessRecipientLetter = await app.inject({
+          method: "PATCH", url: "/api/v1/organization-correspondence/" + encodeURIComponent(correspondenceId) + "/status",
+          headers: headersA, payload: { status: "in_review" },
+        });
+        assert.equal(senderCannotProcessRecipientLetter.statusCode, 404);
+        const recipientProcessesLetter = await app.inject({
+          method: "PATCH", url: "/api/v1/organization-correspondence/" + encodeURIComponent(correspondenceId) + "/status",
+          headers: headersB, payload: { status: "in_review", note: "دریافت و بررسی آغاز شد." },
+        });
+        assert.equal(recipientProcessesLetter.statusCode, 200, recipientProcessesLetter.body);
+        const letterDetail = await app.inject({
+          method: "GET", url: "/api/v1/organization-correspondence/" + encodeURIComponent(correspondenceId), headers: headersB,
+        });
+        assert.equal(letterDetail.statusCode, 200, letterDetail.body);
+        assert.equal(letterDetail.json().correspondence.status, "in_review");
+        assert.equal(letterDetail.json().events.length, 2);
         const noSession = await app.inject({ method: "GET", url: "/api/v1/organization-hr/me" });
         assert.equal(noSession.statusCode, 401);
         const logout = await app.inject({

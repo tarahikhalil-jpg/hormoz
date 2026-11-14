@@ -29,6 +29,7 @@ import { adminRoutes, recordPublicVisit } from "./routes/admin.js";
 import { imageGenerationRoutes } from "./routes/image-generation.js";
 import { globalOrderRoutes } from "./routes/global-orders.js";
 import { organizationHrRoutes } from "./routes/organization-hr.js";
+import { organizationCorrespondenceRoutes } from "./routes/organization-correspondence.js";
 import { discoveryRoutes } from "./routes/discovery.js";
 
 export interface AppOptions {
@@ -2467,6 +2468,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
 
   app.register(globalOrderRoutes);
   app.register(organizationHrRoutes, { pool: persistencePool, identityService });
+  app.register(organizationCorrespondenceRoutes, { pool: persistencePool });
 
   app.register(discoveryRoutes);
 
