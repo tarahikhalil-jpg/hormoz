@@ -364,6 +364,12 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         assert.equal(oldPasswordLogin.statusCode, 401);
         const newPasswordLogin = await app.inject({ method: "POST", url: "/api/v1/organization-hr/login", payload: { organizationReference: organizationA.referenceNumber, username: "hrtest" + suffix.slice(0, 8), password: "New-Strong-Test-Password-778" } });
         assert.equal(newPasswordLogin.statusCode, 200, newPasswordLogin.body);
+        const suspended = await app.inject({ method: "PATCH", url: "/api/v1/organization-hr/employees/" + encodeURIComponent(employeeId) + "/status", headers: headersA, payload: { status: "inactive" } });
+        assert.equal(suspended.statusCode, 200, suspended.body);
+        const disabledLogin = await app.inject({ method: "POST", url: "/api/v1/organization-hr/login", payload: { organizationReference: organizationA.referenceNumber, username: "hrtest" + suffix.slice(0, 8), password: "New-Strong-Test-Password-778" } });
+        assert.equal(disabledLogin.statusCode, 401);
+        const crossTenantStatus = await app.inject({ method: "PATCH", url: "/api/v1/organization-hr/employees/" + encodeURIComponent(employeeId) + "/status", headers: headersB, payload: { status: "active" } });
+        assert.equal(crossTenantStatus.statusCode, 404);
       } finally {
         if (connectionIds.length) {
           await testPool.query("DELETE FROM hormoz_organization_connections WHERE id = ANY($1::text[])", [connectionIds]);
