@@ -156,7 +156,7 @@ test("organization routes enforce tenant isolation and membership permissions in
     });
 
     await t.test("rolls back organization creation when owner membership insertion fails", async () => {
-      const constraintName = "org_test_force_membership_failure_" + suffix.replace(/-/g, "");
+      const constraintName = "org_test_fail_" + suffix.replace(/-/g, "");
       await pool.query(`ALTER TABLE hormoz_organization_memberships
         ADD CONSTRAINT ${constraintName} CHECK (user_id <> '${userIds.ownerA}')`);
       try {
