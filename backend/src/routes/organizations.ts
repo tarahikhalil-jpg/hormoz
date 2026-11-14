@@ -30,42 +30,72 @@ async function identityFor(request: any, reply: any, identityService: IdentitySe
 }
 
 export async function ensureOrganizationSchema(pool: Pool): Promise<void> {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS hormoz_organizations (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 2 AND 160),
-      slug TEXT NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9][a-z0-9-]{1,62}$'),
-      description TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','archived')),
-      created_by TEXT NOT NULL REFERENCES hormoz_identity_users(user_id),
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(777777777)");
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS hormoz_schema_migrations (
+        version TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    const applied = await client.query(
+      "SELECT 1 FROM hormoz_schema_migrations WHERE version = $1",
+      ["organization-core-001"],
     );
-    CREATE TABLE IF NOT EXISTS hormoz_organization_memberships (
-      organization_id UUID NOT NULL REFERENCES hormoz_organizations(id) ON DELETE CASCADE,
-      user_id TEXT NOT NULL REFERENCES hormoz_identity_users(user_id) ON DELETE CASCADE,
-      role TEXT NOT NULL CHECK (role IN ('owner','admin','manager','staff','viewer')),
-      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','invited','disabled')),
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      PRIMARY KEY (organization_id, user_id)
+    if (applied.rowCount) {
+      await client.query("COMMIT");
+      return;
+    }
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS hormoz_organizations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 2 AND 160),
+        slug TEXT NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9][a-z0-9-]{1,62}$'),
+        description TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','archived')),
+        created_by TEXT NOT NULL REFERENCES hormoz_identity_users(user_id),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS hormoz_organization_memberships (
+        organization_id UUID NOT NULL REFERENCES hormoz_organizations(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES hormoz_identity_users(user_id) ON DELETE CASCADE,
+        role TEXT NOT NULL CHECK (role IN ('owner','admin','manager','staff','viewer')),
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','invited','disabled')),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (organization_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS hormoz_org_members_user_idx
+        ON hormoz_organization_memberships(user_id, status);
+      CREATE TABLE IF NOT EXISTS hormoz_organization_units (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        organization_id UUID NOT NULL REFERENCES hormoz_organizations(id) ON DELETE CASCADE,
+        name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 2 AND 120),
+        code TEXT NOT NULL CHECK (length(trim(code)) BETWEEN 2 AND 40),
+        parent_unit_id UUID,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (organization_id, code),
+        UNIQUE (organization_id, id),
+        FOREIGN KEY (organization_id, parent_unit_id)
+          REFERENCES hormoz_organization_units(organization_id, id)
+      );
+      CREATE INDEX IF NOT EXISTS hormoz_org_units_org_idx
+        ON hormoz_organization_units(organization_id);
+    `);
+    await client.query(
+      "INSERT INTO hormoz_schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING",
+      ["organization-core-001"],
     );
-    CREATE INDEX IF NOT EXISTS hormoz_org_members_user_idx
-      ON hormoz_organization_memberships(user_id, status);
-    CREATE TABLE IF NOT EXISTS hormoz_organization_units (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      organization_id UUID NOT NULL REFERENCES hormoz_organizations(id) ON DELETE CASCADE,
-      name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 2 AND 120),
-      code TEXT NOT NULL CHECK (length(trim(code)) BETWEEN 2 AND 40),
-      parent_unit_id UUID,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE (organization_id, code),
-      UNIQUE (organization_id, id),
-      FOREIGN KEY (organization_id, parent_unit_id)
-        REFERENCES hormoz_organization_units(organization_id, id)
-    );
-    CREATE INDEX IF NOT EXISTS hormoz_org_units_org_idx
-      ON hormoz_organization_units(organization_id);
-  `);
+    await client.query("COMMIT");
+  } catch (error) {
+    try { await client.query("ROLLBACK"); } catch { /* preserve the original migration error */ }
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 function validOrganizationId(value: unknown): value is string {
