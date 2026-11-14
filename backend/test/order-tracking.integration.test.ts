@@ -263,6 +263,20 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
           payload: { name: "Malformed Child", code: "MAL", parentUnitId: "not-a-unit-id" },
         });
         assert.equal(malformedParent.statusCode, 400);
+        const invalidParentType = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-portal/units",
+          headers: headersA,
+          payload: { name: "Numeric Parent", code: "NUM", parentUnitId: 123 },
+        });
+        assert.equal(invalidParentType.statusCode, 400);
+        const invalidCode = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-portal/units",
+          headers: headersA,
+          payload: { name: "Invalid Code", code: "BAD CODE" },
+        });
+        assert.equal(invalidCode.statusCode, 400);
 
         const duplicate = await app.inject({
           method: "POST",
