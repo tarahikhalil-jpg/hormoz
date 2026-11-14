@@ -135,6 +135,7 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
       const previousAdminPassword = process.env.HORMOZ_ADMIN_PASSWORD;
       const adminPassword = "integration-admin-" + suffix;
       process.env.HORMOZ_ADMIN_PASSWORD = adminPassword;
+      try {
       const adminLogin = await app.inject({
         method: "POST",
         url: "/api/v1/global-admin/login",
@@ -192,7 +193,6 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         return { id, apiKey: issued.json().apiKey };
       };
 
-      try {
         const organizationA = await registerOrganization("Unit Test A " + suffix.slice(0, 8));
         const organizationB = await registerOrganization("Unit Test B " + suffix.slice(0, 8));
         const headersA = { Authorization: "Bearer " + organizationA.apiKey };
