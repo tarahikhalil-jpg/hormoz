@@ -61,12 +61,12 @@ async function ensureSchema(pool: Pool): Promise<void> {
   schemaReady.add(pool);
 }
 
-function bearer(request: { headers: Record<string, unknown> }): string {
+function bearer(request: { headers: { authorization?: unknown } }): string {
   const value = request.headers.authorization;
   return typeof value === "string" && value.startsWith("Bearer ") ? value.slice(7).trim() : "";
 }
 
-async function authorizedOrganization(pool: Pool, request: { headers: Record<string, unknown> }) {
+async function authorizedOrganization(pool: Pool, request: { headers: { authorization?: unknown } }) {
   const key = bearer(request);
   if (!key || key.length > 200) return null;
   const hash = crypto.createHash("sha256").update(key).digest("hex");
