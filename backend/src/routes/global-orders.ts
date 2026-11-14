@@ -869,7 +869,9 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       { method: "GET", path: "/me", description: "اطلاعات پایه سازمان متصل" },
       { method: "GET", path: "/services", description: "فهرست خدمات سازمان" },
       { method: "POST", path: "/services", description: "ثبت خدمت برای بررسی و انتشار" },
-      { method: "PATCH", path: "/services/{id}", description: "ویرایش خدمت؛ ویرایش مجدد به بررسی می‌رود" }
+      { method: "PATCH", path: "/services/{id}", description: "ویرایش خدمت؛ ویرایش مجدد به بررسی می‌رود" },
+      { method: "GET", path: "/units", description: "فهرست واحدهای همین سازمان" },
+      { method: "POST", path: "/units", description: "ثبت واحد یا زیرواحد در ساختار همین سازمان" }
     ], publicCatalog: "GET /api/v1/organization-services", notes: ["کلید API فقط پس از تأیید رسمی و فعال‌سازی سازمان صادر می‌شود.", "کلید را در مرورگر عمومی یا کد سمت کاربر قرار ندهید؛ برای اتصال تولیدی، درخواست‌ها باید از سرور امن سازمان ارسال شوند.", "این API در این مرحله کاتالوگ خدمات را مدیریت می‌کند؛ به پایگاه‌های داده داخلی ادارات دسترسی نمی‌دهد."] };
   });
 
