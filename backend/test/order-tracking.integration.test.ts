@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import crypto from "node:crypto";
 import { Pool } from "pg";
 
 const testDatabaseUrl = process.env.HORMOZ_TEST_DATABASE_URL;
@@ -125,6 +126,122 @@ test("order tracking integration (requires isolated HORMOZ_TEST_DATABASE_URL)", 
         "Global order integration test"
       ]) {
         assert.equal(JSON.stringify(trackedBody).includes(privateValue), false);
+      }
+    });
+
+    await t.test("approved organization API keys manage only their own units", async () => {
+      const suffix = crypto.randomUUID();
+      const connectionIds: string[] = [];
+      const registerOrganization = async (name: string) => {
+        const response = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-connections",
+          payload: {
+            organizationType: "municipality",
+            organizationName: name,
+            country: "Iran",
+            region: "Hormozgan",
+            website: "",
+            officialEmail: "",
+            representativeName: "Integration Test",
+            representativeTitle: "Test",
+            contact: "test-contact",
+            servicesDescription: "Organization unit integration test request",
+            integrationType: "portal_panel",
+            consent: true,
+          },
+        });
+        assert.equal(response.statusCode, 201, response.body);
+        const body = response.json();
+        const found = await testPool.query(
+          "SELECT id FROM hormoz_organization_connections WHERE reference_number=$1",
+          [body.referenceNumber],
+        );
+        assert.equal(found.rowCount, 1);
+        const id = String(found.rows[0].id);
+        connectionIds.push(id);
+        const apiKey = "hz_org_" + crypto.randomBytes(32).toString("base64url");
+        const hash = crypto.createHash("sha256").update(apiKey).digest("hex");
+        await testPool.query(
+          "UPDATE hormoz_organization_connections SET status='connected',api_key_hash=$2,api_key_prefix=$3 WHERE id=$1",
+          [id, hash, apiKey.slice(0, 14)],
+        );
+        return { id, apiKey };
+      };
+
+      try {
+        const organizationA = await registerOrganization("Unit Test A " + suffix.slice(0, 8));
+        const organizationB = await registerOrganization("Unit Test B " + suffix.slice(0, 8));
+        const headersA = { Authorization: "Bearer " + organizationA.apiKey };
+        const headersB = { Authorization: "Bearer " + organizationB.apiKey };
+
+        const unauthenticated = await app.inject({ method: "GET", url: "/api/v1/organization-portal/units" });
+        assert.equal(unauthenticated.statusCode, 401);
+
+        const emptyA = await app.inject({ method: "GET", url: "/api/v1/organization-portal/units", headers: headersA });
+        assert.equal(emptyA.statusCode, 200, emptyA.body);
+        assert.deepEqual(emptyA.json().units, []);
+
+        const root = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-portal/units",
+          headers: headersA,
+          payload: { name: "Head Office", code: "HQ" },
+        });
+        assert.equal(root.statusCode, 201, root.body);
+        const rootId = root.json().unit.id;
+        assert.match(rootId, /^[a-f0-9]{24}$/);
+
+        const child = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-portal/units",
+          headers: headersA,
+          payload: { name: "Finance", code: "FIN", parentUnitId: rootId },
+        });
+        assert.equal(child.statusCode, 201, child.body);
+
+        const foreign = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-portal/units",
+          headers: headersB,
+          payload: { name: "Foreign Unit", code: "EXT" },
+        });
+        assert.equal(foreign.statusCode, 201, foreign.body);
+
+        const crossTenantParent = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-portal/units",
+          headers: headersA,
+          payload: { name: "Invalid Child", code: "BAD", parentUnitId: foreign.json().unit.id },
+        });
+        assert.equal(crossTenantParent.statusCode, 400);
+
+        const malformedParent = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-portal/units",
+          headers: headersA,
+          payload: { name: "Malformed Child", code: "MAL", parentUnitId: "not-a-unit-id" },
+        });
+        assert.equal(malformedParent.statusCode, 400);
+
+        const duplicate = await app.inject({
+          method: "POST",
+          url: "/api/v1/organization-portal/units",
+          headers: headersA,
+          payload: { name: "Duplicate Code", code: "HQ" },
+        });
+        assert.equal(duplicate.statusCode, 409);
+
+        const listA = await app.inject({ method: "GET", url: "/api/v1/organization-portal/units", headers: headersA });
+        assert.equal(listA.statusCode, 200);
+        assert.deepEqual(listA.json().units.map((unit: any) => unit.code).sort(), ["FIN", "HQ"]);
+        const listB = await app.inject({ method: "GET", url: "/api/v1/organization-portal/units", headers: headersB });
+        assert.equal(listB.statusCode, 200);
+        assert.deepEqual(listB.json().units.map((unit: any) => unit.code), ["EXT"]);
+      } finally {
+        if (connectionIds.length) {
+          await testPool.query("DELETE FROM hormoz_organization_connections WHERE id = ANY($1::text[])", [connectionIds]);
+        }
       }
     });
 
