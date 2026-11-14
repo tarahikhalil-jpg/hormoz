@@ -28,6 +28,7 @@ import { OpenRouterIntelligenceProvider } from "./modules/intelligence/openroute
 import { adminRoutes, recordPublicVisit } from "./routes/admin.js";
 import { imageGenerationRoutes } from "./routes/image-generation.js";
 import { globalOrderRoutes } from "./routes/global-orders.js";
+import { organizationHrRoutes } from "./routes/organization-hr.js";
 import { discoveryRoutes } from "./routes/discovery.js";
 
 export interface AppOptions {
@@ -2465,6 +2466,7 @@ return reply.type("application/xml; charset=utf-8").send(content);
   app.register(imageGenerationRoutes);
 
   app.register(globalOrderRoutes);
+  app.register(organizationHrRoutes, { pool: persistencePool, identityService });
 
   app.register(discoveryRoutes);
 
