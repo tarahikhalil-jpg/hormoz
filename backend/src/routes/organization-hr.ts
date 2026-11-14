@@ -255,7 +255,7 @@ export const organizationHrRoutes: FastifyPluginAsync<OrganizationHrOptions> = a
       await ensureSchema(pool);
       const identity = await identityService.authenticate(sessionId.trim());
       const result = await pool.query(
-        "SELECT e.id,e.employee_code,e.full_name,e.job_title,e.unit_id,e.status,o.organization_name,o.reference_number,u.name AS unit_name FROM hormoz_org_employee_accounts a JOIN hormoz_org_employees e ON e.id=a.employee_id AND e.organization_id=a.organization_id JOIN hormoz_organization_connections o ON o.id=a.organization_id LEFT JOIN hormoz_organization_units u ON u.id=e.unit_id AND u.organization_id=e.organization_id WHERE a.identity_user_id=$1 AND a.status='active' AND e.status='active' AND o.status='connected' LIMIT 1",
+        "SELECT e.id,e.employee_code,e.full_name,e.job_title,e.unit_id,e.status,o.organization_name,o.reference_number,u.name AS unit_name FROM hormoz_org_employee_accounts a JOIN hormoz_org_employees e ON e.id=a.employee_id AND e.organization_id=a.organization_id JOIN hormoz_organization_connections o ON o.id=a.organization_id LEFT JOIN hormoz_organization_units u ON u.id=e.unit_id AND u.organization_id=e.organization_id WHERE a.identity_user_id=$1 AND a.status='active' AND a.must_change_password=FALSE AND e.status='active' AND o.status='connected' LIMIT 1",
         [identity.user.userId],
       );
       if (!result.rowCount) return reply.code(403).send({ message: "حساب کارمندی فعال پیدا نشد." });
