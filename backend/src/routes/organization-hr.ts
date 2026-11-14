@@ -39,6 +39,7 @@ async function ensureSchema(pool: Pool): Promise<void> {
       employee_id TEXT NOT NULL UNIQUE,
       username TEXT NOT NULL,
       password_hash TEXT NOT NULL,
+      must_change_password BOOLEAN NOT NULL DEFAULT TRUE,
       identity_user_id TEXT NOT NULL UNIQUE REFERENCES hormoz_identity_users(user_id) ON DELETE CASCADE,
       status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','disabled')),
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -47,6 +48,7 @@ async function ensureSchema(pool: Pool): Promise<void> {
       FOREIGN KEY (organization_id, employee_id)
         REFERENCES hormoz_org_employees(organization_id, id) ON DELETE CASCADE
     );
+    ALTER TABLE hormoz_org_employee_accounts ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT TRUE;
     CREATE TABLE IF NOT EXISTS hormoz_org_hr_audit (
       id TEXT PRIMARY KEY,
       organization_id TEXT NOT NULL REFERENCES hormoz_organization_connections(id) ON DELETE CASCADE,
@@ -223,7 +225,7 @@ export const organizationHrRoutes: FastifyPluginAsync<OrganizationHrOptions> = a
     try {
       await ensureSchema(pool);
       const result = await pool.query(
-        "SELECT a.identity_user_id,a.password_hash,a.status AS account_status,e.status AS employee_status FROM hormoz_org_employee_accounts a JOIN hormoz_org_employees e ON e.id=a.employee_id AND e.organization_id=a.organization_id JOIN hormoz_organization_connections o ON o.id=a.organization_id WHERE o.reference_number=$1 AND o.status='connected' AND a.username=$2 LIMIT 1",
+        "SELECT a.identity_user_id,a.password_hash,a.must_change_password,a.status AS account_status,e.status AS employee_status FROM hormoz_org_employee_accounts a JOIN hormoz_org_employees e ON e.id=a.employee_id AND e.organization_id=a.organization_id JOIN hormoz_organization_connections o ON o.id=a.organization_id WHERE o.reference_number=$1 AND o.status='connected' AND a.username=$2 LIMIT 1",
         [reference, username],
       );
       const row = result.rows[0];
@@ -237,7 +239,7 @@ export const organizationHrRoutes: FastifyPluginAsync<OrganizationHrOptions> = a
         "INSERT INTO hormoz_org_hr_audit (id,organization_id,actor_user_id,action) SELECT $1,a.organization_id,$2,'employee_login' FROM hormoz_org_employee_accounts a WHERE a.identity_user_id=$2",
         [crypto.randomUUID(), row.identity_user_id],
       );
-      return { ok: true, sessionId, expiresInSeconds: 86400, message: "ورود موفق بود." };
+      return { ok: true, sessionId, expiresInSeconds: 86400, mustChangePassword: Boolean(row.must_change_password), message: "ورود موفق بود." };
     } catch (error) {
       request.log.error(error);
       return reply.code(503).send({ message: "ورود کارمند فعلاً ممکن نیست." });
@@ -265,6 +267,32 @@ export const organizationHrRoutes: FastifyPluginAsync<OrganizationHrOptions> = a
     }
   });
 
+  app.post("/api/v1/organization-hr/password", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    if (!pool) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const sessionId = request.headers[SESSION_HEADER];
+    if (typeof sessionId !== "string" || !sessionId.trim()) return reply.code(401).send({ message: "ورود لازم است." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : "";
+    const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
+    if (currentPassword.length < 1 || currentPassword.length > 200 || newPassword.length < 12 || newPassword.length > 200) {
+      return reply.code(400).send({ message: "گذرواژه جدید باید حداقل ۱۲ نویسه داشته باشد." });
+    }
+    try {
+      await ensureSchema(pool);
+      const identity = await identityService.authenticate(sessionId.trim());
+      const found = await pool.query("SELECT a.password_hash,a.organization_id,a.employee_id FROM hormoz_org_employee_accounts a WHERE a.identity_user_id=$1 AND a.status=$2", [identity.user.userId, "active"]);
+      const account = found.rows[0];
+      if (!account || !verifyPassword(currentPassword, String(account.password_hash))) return reply.code(401).send({ message: "گذرواژه فعلی نادرست است." });
+      await pool.query("UPDATE hormoz_org_employee_accounts SET password_hash=$2,must_change_password=FALSE,updated_at=NOW() WHERE identity_user_id=$1", [identity.user.userId, passwordHash(newPassword)]);
+      await pool.query("INSERT INTO hormoz_org_hr_audit (id,organization_id,actor_user_id,employee_id,action) VALUES ($1,$2,$3,$4,$5)", [crypto.randomUUID(), account.organization_id, identity.user.userId, account.employee_id, "employee_password_changed"]);
+      return { ok: true, message: "گذرواژه تغییر کرد." };
+    } catch (error) {
+      if (error instanceof IdentityError) return reply.code(401).send({ message: "نشست ورود معتبر نیست." });
+      request.log.error(error);
+      return reply.code(503).send({ message: "تغییر گذرواژه ناموفق بود." });
+    }
+  });
   app.post("/api/v1/organization-hr/logout", async (request, reply) => {
     const sessionId = request.headers[SESSION_HEADER];
     if (typeof sessionId !== "string" || !sessionId.trim()) return reply.code(401).send({ message: "ورود لازم است." });
