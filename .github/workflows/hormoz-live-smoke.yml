@@ -153,8 +153,10 @@ jobs:
               signal: AbortSignal.timeout(45000)
             });
             const text = await r.text();
-            if (r.status !== 400) throw new Error("expected safe HTTP 400, got " + r.status + ": " + text.slice(0,180));
-            return "validation works; no production order was created";
+            if (r.status !== 400 && r.status !== 429) throw new Error("expected safe HTTP 400 or rate-limit 429, got " + r.status + ": " + text.slice(0,180));
+            return r.status === 429
+              ? "rate limiter safely rejected the repeated smoke-test request; no production order was created"
+              : "validation works; no production order was created";
           });
           if (failures.length) {
             console.error("\nSMOKE TEST FAILURES:\n" + failures.join("\n"));
