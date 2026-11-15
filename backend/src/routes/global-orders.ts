@@ -687,12 +687,49 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     }catch(error){request.log.error(error);return reply.code(503).send({ok:false,message:"پیگیری درخواست ناموفق بود."});}
   });
 
+  // Owner-only manual organization intake for pre-approved onboarding workflows.
+  app.post("/api/v1/global-admin/organization-connections/manual", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی مجاز است." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const b = (request.body ?? {}) as Record<string, unknown>;
+    const types = new Set(["ministry","provincial","municipality","public_agency","bank_finance","insurance","judicial_registry","e_services","education","healthcare","telecom_utility","charity","private_company","business","international","other"]);
+    const methods = new Set(["public_link","service_referral","human_workflow","api_proposal","portal_panel","consultation"]);
+    const type = String(b.organizationType ?? "");
+    const name = String(b.organizationName ?? "").trim().slice(0,180);
+    const country = String(b.country ?? "").trim().slice(0,100);
+    const region = String(b.region ?? "").trim().slice(0,120);
+    const website = String(b.website ?? "").trim().slice(0,240);
+    const email = String(b.officialEmail ?? "").trim().slice(0,180);
+    const rep = String(b.representativeName ?? "").trim().slice(0,120);
+    const title = String(b.representativeTitle ?? "").trim().slice(0,120);
+    const contact = String(b.contact ?? "").trim().slice(0,180);
+    const details = String(b.servicesDescription ?? "").trim().slice(0,4000);
+    const method = String(b.integrationType ?? "api_proposal");
+    if (!types.has(type) || !name || !rep || !contact || details.length < 10 || !methods.has(method))
+      return reply.code(400).send({ message: "نوع و نام مجموعه، نماینده، راه تماس، شرح خدمات و روش همکاری الزامی است." });
+    if (website) { try { const u = new URL(website); if (!["http:","https:"].includes(u.protocol)) throw new Error(); } catch { return reply.code(400).send({ message: "نشانی وب‌سایت معتبر نیست." }); } }
+    if (email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return reply.code(400).send({ message: "ایمیل رسمی معتبر نیست." });
+    try {
+      await ensureTable();
+      const id = crypto.randomBytes(12).toString("hex").toUpperCase();
+      const ref = "HZ-ORG-" + new Date().toISOString().slice(0,10).replaceAll("-","") + "-" + id.slice(0,8);
+      const trackingToken = crypto.randomBytes(24).toString("base64url");
+      await db.query(`INSERT INTO hormoz_organization_connections
+        (id,reference_number,tracking_token,organization_type,organization_name,country,region,website,official_email,representative_name,representative_title,contact,services_description,integration_type,status,admin_note)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'screening',$15)`,
+        [id,ref,trackingToken,type,name,country,region,website,email,rep,title,contact,details,method,"ثبت اولیه توسط مدیر؛ احراز مجوز رسمی و اتصال API هنوز انجام نشده است."]);
+      return reply.code(201).send({ ok:true, referenceNumber:ref, status:"screening", message:"پرونده دستی ایجاد شد؛ هنوز اتصال یا کلید API فعال نشده است." });
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message:"ایجاد پرونده سازمانی انجام نشد." }); }
+  });
+
   app.get("/api/v1/global-admin/organization-connections",async(request,reply)=>{
     const session=adminSession(request);
     if(!session)return reply.code(401).send({message:"ورود مدیر لازم است."});
     if(session.role!=="owner")return reply.code(403).send({message:"فقط مدیر اصلی مجاز است."});
     if(!db)return reply.code(503).send({message:"پایگاه داده آماده نیست."});
-    try{await ensureTable();const q=await db.query("SELECT id,reference_number,organization_type,organization_name,country,region,website,official_email,representative_name,representative_title,contact,services_description,integration_type,status,public_note,admin_note,created_at,updated_at FROM hormoz_organization_connections ORDER BY created_at DESC LIMIT 300");return {connections:q.rows};}
+    try{await ensureTable();const q=await db.query("SELECT id,reference_number,organization_type,organization_name,country,region,website,official_email,representative_name,representative_title,contact,services_description,integration_type,status,public_note,admin_note,api_key_prefix,api_key_created_at,created_at,updated_at FROM hormoz_organization_connections ORDER BY created_at DESC LIMIT 300");return {connections:q.rows};}
     catch(error){request.log.error(error);return reply.code(503).send({message:"دریافت پرونده‌های سازمانی ناموفق بود."});}
   });
 
@@ -748,6 +785,21 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
       await db.query("UPDATE hormoz_organization_connections SET api_key_hash=$2, api_key_prefix=$3, api_key_created_at=NOW(), updated_at=NOW() WHERE id=$1", [id, hash, apiKey.slice(0, 14)]);
       return { ok: true, apiKey, prefix: apiKey.slice(0, 14), message: "کلید فقط همین یک بار نمایش داده می‌شود. آن را در محل امن نگهداری کنید؛ در صورت افشا، کلید جدید صادر کنید." };
     } catch (error) { request.log.error(error); return reply.code(503).send({ message: "صدور کلید API ناموفق بود." }); }
+  });
+
+  app.post("/api/v1/global-admin/organization-connections/:id/revoke-api-key", async (request, reply) => {
+    const session = adminSession(request);
+    if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
+    if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی مجاز است." });
+    if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
+    const id = String((request.params as { id?: string }).id ?? "");
+    if (!id) return reply.code(400).send({ message: "شناسه سازمان معتبر نیست." });
+    try {
+      await ensureTable();
+      const q = await db.query("UPDATE hormoz_organization_connections SET api_key_hash=NULL,api_key_prefix='',api_key_created_at=NULL,updated_at=NOW() WHERE id=$1 AND api_key_hash IS NOT NULL RETURNING reference_number", [id]);
+      if (!q.rows.length) return reply.code(404).send({ message: "کلید فعالی برای این پرونده پیدا نشد." });
+      return { ok:true, referenceNumber:String(q.rows[0].reference_number), message:"کلید API لغو شد؛ درخواست‌های قبلی با آن کلید دیگر پذیرفته نمی‌شوند." };
+    } catch (error) { request.log.error(error); return reply.code(503).send({ message:"لغو کلید API انجام نشد." }); }
   });
 
   app.get("/api/v1/organization-portal/me", async (request, reply) => {
