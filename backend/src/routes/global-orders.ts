@@ -710,7 +710,7 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     if (!types.has(type) || !name || !rep || !contact || details.length < 10 || !methods.has(method))
       return reply.code(400).send({ message: "نوع و نام مجموعه، نماینده، راه تماس، شرح خدمات و روش همکاری الزامی است." });
     if (website) { try { const u = new URL(website); if (!["http:","https:"].includes(u.protocol)) throw new Error(); } catch { return reply.code(400).send({ message: "نشانی وب‌سایت معتبر نیست." }); } }
-    if (email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return reply.code(400).send({ message: "ایمیل رسمی معتبر نیست." });
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply.code(400).send({ message: "ایمیل رسمی معتبر نیست." });
     try {
       await ensureTable();
       const id = crypto.randomBytes(12).toString("hex").toUpperCase();
