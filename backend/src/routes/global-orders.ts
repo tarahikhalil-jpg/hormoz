@@ -802,50 +802,48 @@ export const globalOrderRoutes: FastifyPluginAsync = async (app) => {
     } catch (error) { request.log.error(error); return reply.code(503).send({ message:"لغو کلید API انجام نشد." }); }
   });
 
-  // Owner-only deletion for non-connected organization test/intake records.
-  // Removing the parent row also invalidates any API key because authentication
-  // resolves the key hash against this table. Related organization data is removed
-  // explicitly in the same transaction.
-  app.post("/api/v1/global-admin/organization-connections/:id/delete", async (request, reply) => {
+  // Owner-only bulk deletion. Only explicitly selected IDs are affected.
+  // All selected rows are locked and validated before any deletion is committed.
+  app.post("/api/v1/global-admin/organization-connections/delete-selected", async (request, reply) => {
     const session = adminSession(request);
     if (!session) return reply.code(401).send({ message: "ورود مدیر لازم است." });
     if (session.role !== "owner") return reply.code(403).send({ message: "فقط مدیر اصلی مجاز است." });
     if (!db) return reply.code(503).send({ message: "پایگاه داده آماده نیست." });
-    const id = String((request.params as { id?: string }).id ?? "");
     const body = (request.body ?? {}) as Record<string, unknown>;
-    if (!id || body.confirmation !== "DELETE") return reply.code(400).send({ message: "برای حذف قطعی، تأیید DELETE الزامی است." });
+    const rawIds = body.ids;
+    if (body.confirmation !== "DELETE" || !Array.isArray(rawIds) || rawIds.length < 1 || rawIds.length > 50) {
+      return reply.code(400).send({ message: "فقط پرونده‌های انتخاب‌شده را همراه با تأیید DELETE ارسال کنید (حداکثر ۵۰ پرونده)." });
+    }
+    const ids = [...new Set(rawIds.map(value => String(value ?? "").trim()).filter(Boolean))];
+    if (ids.length !== rawIds.length) return reply.code(400).send({ message: "شناسه پرونده‌های انتخاب‌شده معتبر یا یکتا نیست." });
     let client: any;
     try {
       await ensureTable();
       client = await db.connect();
       await client.query("BEGIN");
       const found = await client.query(
-        "SELECT reference_number,status FROM hormoz_organization_connections WHERE id=$1 FOR UPDATE",
-        [id],
+        "SELECT id,reference_number,status FROM hormoz_organization_connections WHERE id = ANY($1::text[]) ORDER BY id FOR UPDATE",
+        [ids],
       );
-      if (!found.rows.length) {
+      if (found.rows.length !== ids.length) {
         await client.query("ROLLBACK");
-        return reply.code(404).send({ message: "پرونده سازمانی پیدا نشد." });
+        return reply.code(404).send({ message: "حداقل یکی از پرونده‌های انتخاب‌شده پیدا نشد؛ هیچ پرونده‌ای حذف نشد." });
       }
-      if (String(found.rows[0].status) === "connected") {
+      const connected = found.rows.filter((row: any) => String(row.status) === "connected");
+      if (connected.length) {
         await client.query("ROLLBACK");
-        return reply.code(409).send({ message: "پرونده متصل قابل حذف از این مسیر نیست؛ ابتدا اتصال را طبق روال رسمی غیرفعال کنید." });
+        return reply.code(409).send({ message: "پرونده متصل قابل حذف نیست: " + connected.map((row: any) => String(row.reference_number)).join("، ") + "؛ هیچ پرونده‌ای حذف نشد." });
       }
-      await client.query("DELETE FROM hormoz_organization_services WHERE organization_id=$1", [id]);
-      await client.query("UPDATE hormoz_organization_units SET parent_unit_id=NULL WHERE organization_id=$1", [id]);
-      await client.query("DELETE FROM hormoz_organization_units WHERE organization_id=$1", [id]);
-      const removed = await client.query(
-        "DELETE FROM hormoz_organization_connections WHERE id=$1 RETURNING reference_number",
-        [id],
-      );
+      await client.query("DELETE FROM hormoz_organization_services WHERE organization_id = ANY($1::text[])", [ids]);
+      await client.query("UPDATE hormoz_organization_units SET parent_unit_id=NULL WHERE organization_id = ANY($1::text[])", [ids]);
+      await client.query("DELETE FROM hormoz_organization_units WHERE organization_id = ANY($1::text[])", [ids]);
+      await client.query("DELETE FROM hormoz_organization_connections WHERE id = ANY($1::text[])", [ids]);
       await client.query("COMMIT");
-      return { ok: true, referenceNumber: String(removed.rows[0].reference_number), message: "پرونده حذف شد؛ هر کلید API وابسته نیز نامعتبر شد." };
+      return { ok: true, deletedCount: found.rows.length, referenceNumbers: found.rows.map((row: any) => String(row.reference_number)), message: "فقط پرونده‌های انتخاب‌شده حذف شدند؛ کلیدهای API وابسته نیز نامعتبر شدند." };
     } catch (error) {
-      if (client) {
-        try { await client.query("ROLLBACK"); } catch {}
-      }
+      if (client) { try { await client.query("ROLLBACK"); } catch {} }
       request.log.error(error);
-      return reply.code(503).send({ message: "حذف پرونده انجام نشد؛ هیچ تغییر ناقصی ثبت نشد." });
+      return reply.code(503).send({ message: "حذف انجام نشد؛ هیچ تغییر ناقصی ثبت نشد." });
     } finally {
       client?.release();
     }
