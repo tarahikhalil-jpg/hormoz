@@ -101,18 +101,27 @@ export class MockIntelligenceEngine implements IntelligenceEngine {
 
       return { content, correlationId: request.correlationId, status: "completed" };
     } catch (error) {
+      const providerError = error instanceof Error ? error.message : String(error);
       console.error(
         "Primary intelligence provider failed; refusing to present a mock answer as AI:",
-        error instanceof Error ? error.message : error,
+        providerError,
       );
+
+      // A quota/rate-limit response is different from an outage. Tell users
+      // plainly what happened, without exposing provider response bodies or secrets.
+      const quotaLimited =
+        /(?:status:\s*429|status:\s*402|failed:\s*(?:429|402)\b|insufficient[_ -]?quota|free[_ -]?model.*(?:limit|quota)|quota.*(?:exhaust|limit)|rate[_ -]?limit)/iu.test(providerError);
+
       return {
         correlationId: request.correlationId,
         status: "failed",
         error: {
-          code: "AI_PROVIDER_UNAVAILABLE",
-          category: "unavailable",
+          code: quotaLimited ? "AI_PROVIDER_QUOTA_LIMITED" : "AI_PROVIDER_UNAVAILABLE",
+          category: quotaLimited ? "rate_limit" : "unavailable",
           retryable: true,
-          message: "موتور هوش مصنوعی نوا فعلاً پاسخ نداد. لطفاً کمی بعد دوباره تلاش کنید.",
+          message: quotaLimited
+            ? "سهمیه یا سقف درخواست سرویس هوش مصنوعی فعلی به پایان رسیده است. این موضوع به معنی خرابی درگاه هوش هرمز نیست؛ پس از بازشدن سهمیه یا تنظیم سرویس جایگزین دوباره تلاش کنید."
+            : "موتور هوش مصنوعی نوا فعلاً پاسخ نداد. لطفاً کمی بعد دوباره تلاش کنید.",
           correlationId: request.correlationId,
         },
       };
