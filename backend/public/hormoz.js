@@ -480,10 +480,21 @@ if (voiceReplyButton) {
 
 if (speechButton) {
   if (!SpeechRecognitionAPI) {
-    speechButton.disabled = true;
-    speechButton.textContent = "🎙️ گفتار در این مرورگر پشتیبانی نمی‌شود";
-    speechButton.style.opacity = "0.65";
-    setVoiceStatus("تشخیص گفتار در این مرورگر در دسترس نیست. در صورت امکان سایت را با Chrome به‌روز باز کن.");
+    // Keep the control usable even when this browser cannot capture speech.
+    // Offer a real text-entry fallback instead of leaving a permanently disabled button.
+    speechButton.disabled = false;
+    speechButton.textContent = "🎙️ گفتار در دسترس نیست؛ نوشتن پیام";
+    speechButton.style.opacity = "1";
+    speechButton.title = "این مرورگر تشخیص گفتار را پشتیبانی نمی‌کند؛ برای ادامه، کادر پیام را باز کن.";
+    speechButton.addEventListener("click", () => {
+      if (input) {
+        input.focus();
+        setVoiceStatus("تشخیص گفتار در این مرورگر پشتیبانی نمی‌شود؛ پیام خود را بنویس و دکمه ارسال را بزن.");
+      } else {
+        setVoiceStatus("تشخیص گفتار در این مرورگر پشتیبانی نمی‌شود؛ از بخش گفت‌وگوی متنی استفاده کن.");
+      }
+    });
+    setVoiceStatus("گفتار در این مرورگر در دسترس نیست؛ مسیر جایگزینِ گفت‌وگوی متنی فعال است.");
   } else {
     recognition = new SpeechRecognitionAPI();
     recognition.lang = "fa-IR";
